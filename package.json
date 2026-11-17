@@ -30,7 +30,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "start:admin": "APP_VARIANT=admin expo start"
+    "start:admin": "APP_VARIANT=admin expo start",
+    "build:web": "node scripts/build-web.js"
   },
   "private": true
 }

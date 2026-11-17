@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="%LANG_ISO_CODE%">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>%WEB_TITLE%</title>
+    <!-- Телефондун башкы экранына "колдонмо" катары кошуу үчүн -->
+    <link rel="manifest" href="%BASE_URL%/manifest.json" />
+    <link rel="apple-touch-icon" href="%BASE_URL%/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Jorgo" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- Instagram/WhatsApp'та шилтеме бөлүшкөндө көрүнүүчү карточка -->
+    <meta property="og:title" content="Jorgo — Электровелосипед дүкөнү" />
+    <meta property="og:description" content="Электровелосипеддер, батареялар, запчасттар жана оңдоо. Онлайн буйрутма WhatsApp аркылуу." />
+    <meta property="og:image" content="%SITE_URL%/icon-512.png" />
+    <meta property="og:type" content="website" />
+    <style id="expo-reset">
+      html, body { height: 100%; }
+      body { overflow: hidden; background: #F5F7F8; }
+      #root { display: flex; height: 100%; flex: 1; }
+      /* Компьютерде ачылганда телефон өлчөмүндө ортодо көрсөтүү */
+      @media (min-width: 600px) {
+        body { background: #DDE7E5; }
+        #root { max-width: 480px; margin: 0 auto; background: #F5F7F8; box-shadow: 0 0 40px rgba(15, 118, 110, 0.18); }
+      }
+    </style>
+  </head>
+  <body>
+    <noscript>Колдонмону ачуу үчүн JavaScript'ти күйгүзүңүз.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

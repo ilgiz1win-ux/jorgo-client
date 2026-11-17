@@ -3,7 +3,11 @@
 //   админ үчүн:      APP_VARIANT=admin npx expo start
 const IS_ADMIN = process.env.APP_VARIANT === 'admin';
 
-module.exports = ({ config }) => {
+// Сайт подпапкада жайгашса (мисалы GitHub Pages: /jorgo-client)
+const BASE_URL = process.env.EXPO_BASE_URL || '';
+
+module.exports = ({ config: base }) => {
+  const config = BASE_URL ? { ...base, experiments: { ...base.experiments, baseUrl: BASE_URL } } : base;
   if (!IS_ADMIN) return { ...config, extra: { ...config.extra, variant: 'client' } };
   return {
     ...config,

@@ -2,6 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Card } from '../../components/ui';
+import { isRemote } from '../../config/backend';
 import { SHOP } from '../../config/shop';
 import { colors } from '../../config/theme';
 import type { IconName } from '../../data/products';
@@ -46,9 +47,12 @@ export default function Contacts() {
         <Text style={styles.p}>💳 Накталай, карта менен же бөлүп төлөө мүмкүн.</Text>
       </Card>
 
-      <Link href="/admin" style={styles.admin}>
-        Дүкөн ээси үчүн: админ панель
-      </Link>
+      {/* Сервер туташканда гана көрсөтүлөт; демо режимде /admin дареги аркылуу кирсе болот */}
+      {isRemote && (
+        <Link href="/admin" style={styles.admin}>
+          Дүкөн ээси үчүн: админ панель
+        </Link>
+      )}
     </ScrollView>
   );
 }

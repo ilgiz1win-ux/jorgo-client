@@ -67,6 +67,22 @@ npx expo start --web  # браузерде ачуу
 npm run typecheck
 ```
 
+## Веб-сайт (Instagram үчүн шилтеме)
+
+Колдонмонун веб-версиясы GitHub Pages'те акысыз иштейт:
+**https://ilgiz1win-ux.github.io/jorgo-client/**
+
+- `main` бутагына ар бир өзгөртүүдөн кийин сайт автоматтык жаңырат (`.github/workflows/deploy-web.yml`).
+- Биринчи жолу бир гана жолу күйгүзүү керек: GitHub → репозиторий → **Settings → Pages → Source: GitHub Actions**.
+- Шилтемени Instagram профилинин bio бөлүгүнө коюңуз. Кардар браузерде ачат, каалаганда
+  «Башкы экранга кошуу» (Add to Home Screen) аркылуу колдонмо сыяктуу иконка кылып коё алат.
+- Буйрутма жана оңдоого жазылуу `src/config/shop.ts` ичиндеги WhatsApp номерине келет.
+- Supabase туташкандан кийин анын URL жана anon ачкычын GitHub'та
+  **Settings → Secrets and variables → Actions → Variables** бөлүмүнө
+  `EXPO_PUBLIC_SUPABASE_URL` жана `EXPO_PUBLIC_SUPABASE_ANON_KEY` деп кошуңуз.
+
+Өзүңүздүн компьютериңизде чогултуу: `npm run build:web` (натыйжа `dist/` папкасында).
+
 ## Play Market / App Store'го чыгаруу
 
 ```bash

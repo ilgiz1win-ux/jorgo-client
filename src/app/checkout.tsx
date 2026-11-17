@@ -82,9 +82,10 @@ export default function Checkout() {
       customer: name.trim(),
       phone: phone.trim(),
     });
-    openWhatsApp(msg).catch(() => {});
     clear();
     setDone(id);
+    // Буйрутма сакталгандан кийин WhatsApp'ты ачабыз
+    setTimeout(() => openWhatsApp(msg).catch(() => {}), 400);
   };
 
   return (

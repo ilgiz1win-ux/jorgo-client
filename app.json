@@ -22,7 +22,10 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "output": "single"
+      "output": "single",
+      "lang": "ky",
+      "themeColor": "#0F766E",
+      "description": "Электровелосипеддер, запчасттар жана оңдоо"
     },
     "scheme": "jorgo",
     "plugins": [
