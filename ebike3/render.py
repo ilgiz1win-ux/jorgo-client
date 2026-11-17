@@ -736,11 +736,12 @@ SCENES = [scene1, scene2, scene3, scene4]
 
 
 # ---------------- ЖЫЙНОО ----------------
-LINES = json.load(open("lines.json", encoding="utf-8"))
+VOICE_DIR = os.environ.get("VOICE_DIR", "voice")
+LINES = json.load(open(os.environ.get("LINES", "lines.json"), encoding="utf-8"))
 
 
 def load_voice(i):
-    with wave.open(f"voice/{i}.wav") as w:
+    with wave.open(f"{VOICE_DIR}/{i}.wav") as w:
         a = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(np.float32) / 32768
     return resample_poly(a, SR, 16000).astype(np.float32)
 
@@ -748,9 +749,9 @@ def load_voice(i):
 N = len(LINES)
 VOICES = [load_voice(i + 1) for i in range(N)]
 LEAD = 0.15
-TOTAL = 35.0
 DUR = [len(v) / SR + 0.3 for v in VOICES]
-DUR[-1] += TOTAL - sum(DUR)
+DUR[-1] += 0.6  # аягында тыным
+TOTAL = round(sum(DUR) * FPS) / FPS
 TOTAL_F = int(round(TOTAL * FPS))
 STARTS = list(np.cumsum([0] + DUR[:-1]))
 CHUNKS = [chunks_of(l["sub"]) for l in LINES]
@@ -882,5 +883,5 @@ if __name__ == "__main__":
     else:
         audio()
         with Pool(4) as pool:
-            build(True, pool, "litiy_vs_lifepo4.mp4")
-            build(False, pool, "litiy_vs_lifepo4_subtitrsiz.mp4")
+            build(True, pool, os.environ.get("OUT_NAME", "litiy_vs_lifepo4") + ".mp4")
+            build(False, pool, os.environ.get("OUT_NAME", "litiy_vs_lifepo4") + "_subtitrsiz.mp4")
