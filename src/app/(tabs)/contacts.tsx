@@ -6,7 +6,7 @@ import { isRemote } from '../../config/backend';
 import { SHOP } from '../../config/shop';
 import { colors } from '../../config/theme';
 import type { IconName } from '../../data/products';
-import { callShop, formatPrice, openWhatsApp } from '../../lib/format';
+import { callShop, formatPrice, mapUrl, openWhatsApp } from '../../lib/format';
 
 function Row({ icon, title, value, onPress, color = colors.primary }: { icon: IconName; title: string; value: string; onPress?: () => void; color?: string }) {
   return (
@@ -30,13 +30,16 @@ export default function Contacts() {
         <Row icon="phone" title="Телефон" value={SHOP.phone} onPress={callShop} />
         <Row icon="whatsapp" title="WhatsApp" value={`+${SHOP.whatsapp}`} color={colors.whatsapp} onPress={() => openWhatsApp('Саламатсызбы!')} />
         <Row icon="instagram" title="Instagram" value={`@${SHOP.instagram}`} color="#DB2777" onPress={() => Linking.openURL(`https://instagram.com/${SHOP.instagram}`)} />
-        <Row
-          icon="map-marker"
-          title="Дарек"
-          value={SHOP.address}
-          color={colors.danger}
-          onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(SHOP.address)}`)}
-        />
+        {SHOP.branches.map((b, i) => (
+          <Row
+            key={b}
+            icon="map-marker"
+            title={`Филиал ${i + 1} · ${SHOP.city}`}
+            value={b}
+            color={colors.danger}
+            onPress={() => Linking.openURL(mapUrl(b))}
+          />
+        ))}
         <Row icon="clock-outline" title="Иш убактысы" value={SHOP.hours} color={colors.accent} />
       </Card>
 

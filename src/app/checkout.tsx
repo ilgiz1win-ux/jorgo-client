@@ -23,6 +23,7 @@ export default function Checkout() {
   const [phone, setPhone] = useState('+996 ');
   const [delivery, setDelivery] = useState<Delivery>('pickup');
   const [address, setAddress] = useState('');
+  const [branch, setBranch] = useState(SHOP.branches[0]);
   const [payment, setPayment] = useState<Payment>('cash');
   const [comment, setComment] = useState('');
   const [done, setDone] = useState<string | null>(null);
@@ -67,7 +68,7 @@ export default function Checkout() {
       '',
       `Аты: ${name.trim()}`,
       `Тел: ${phone.trim()}`,
-      `Алуу: ${delivery === 'pickup' ? 'Дүкөндөн өзү алып кетет' : `Жеткирүү — ${address.trim()}`}`,
+      `Алуу: ${delivery === 'pickup' ? `Филиалдан өзү алып кетет — ${branch}` : `Жеткирүү — ${address.trim()}`}`,
       `Төлөм: ${PAYMENT_LABEL[payment]}`,
       comment.trim() ? `Комментарий: ${comment.trim()}` : null,
     ]
@@ -104,7 +105,14 @@ export default function Checkout() {
             <Chip label="Жеткирүү" active={delivery === 'courier'} onPress={() => setDelivery('courier')} />
           </View>
           {delivery === 'pickup' ? (
-            <Text style={{ color: colors.muted }}>📍 {SHOP.address}</Text>
+            <View style={{ gap: 8 }}>
+              <Text style={{ color: colors.muted, fontSize: 13 }}>Кайсы филиалдан аласыз? ({SHOP.city})</Text>
+              <View style={styles.chips}>
+                {SHOP.branches.map((b) => (
+                  <Chip key={b} label={`📍 ${b}`} active={branch === b} onPress={() => setBranch(b)} />
+                ))}
+              </View>
+            </View>
           ) : (
             <Field label="Дарек *" value={address} onChangeText={setAddress} placeholder="Көчө, үй, батир" />
           )}

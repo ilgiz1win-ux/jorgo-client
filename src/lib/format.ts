@@ -18,3 +18,6 @@ export const openWhatsApp = async (text: string) => {
 };
 
 export const callShop = () => Linking.openURL(`tel:${SHOP.phone.replace(/\s/g, '')}`);
+
+export const mapUrl = (branch: string) =>
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${SHOP.city}, ${branch}`)}`;
