@@ -1,4 +1,5 @@
 import type { ComponentProps } from 'react';
+import type { ImageSourcePropType } from 'react-native';
 import type { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -14,6 +15,9 @@ export type Product = {
   price: number;
   oldPrice?: number;
   icon: IconName;
+  // Сүрөт (милдеттүү эмес). Мисалы: require('../../assets/products/fat-bike.jpg')
+  // же интернеттеги шилтеме: { uri: 'https://...' }. Сүрөт жок болсо иконка көрүнөт.
+  image?: ImageSourcePropType;
   description: string;
   specs: [string, string][];
   inStock: boolean;

@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radius } from '../config/theme';
 import { useCart } from '../context/CartContext';
 import { getCategory, Product } from '../data/products';
@@ -10,7 +10,11 @@ export function ProductImage({ product, size = 64, height = 110 }: { product: Pr
   const cat = getCategory(product.category);
   return (
     <View style={[styles.image, { height, backgroundColor: cat.color + '18' }]}>
-      <MaterialCommunityIcons name={product.icon} size={size} color={cat.color} />
+      {product.image ? (
+        <Image source={product.image} style={styles.photo} resizeMode="cover" accessibilityLabel={product.name} />
+      ) : (
+        <MaterialCommunityIcons name={product.icon} size={size} color={cat.color} />
+      )}
     </View>
   );
 }
@@ -68,7 +72,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  image: { borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  image: { borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  photo: { width: '100%', height: '100%' },
   badge: { position: 'absolute', top: 8, left: 8, backgroundColor: colors.danger, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   badgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   name: { fontSize: 14, fontWeight: '600', color: colors.text, minHeight: 36 },
