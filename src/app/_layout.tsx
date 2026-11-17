@@ -1,11 +1,16 @@
-import { Stack } from 'expo-router';
+import { useRef } from 'react';
+import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { SplashIntro } from '../components/SplashIntro';
 import { colors } from '../config/theme';
+import { APP_VARIANT } from '../config/variant';
 import { CartProvider } from '../context/CartContext';
 import { CatalogProvider } from '../context/CatalogContext';
 import { ToastProvider } from '../context/ToastContext';
 
 export default function RootLayout() {
+  // Логотип экраны кардарлар үчүн гана, админ панелде көрсөтүлбөйт
+  const showSplash = useRef(APP_VARIANT === 'client' && !usePathname().startsWith('/admin')).current;
   return (
     <CatalogProvider>
     <CartProvider>
@@ -26,6 +31,7 @@ export default function RootLayout() {
         <Stack.Screen name="orders" options={{ title: 'Менин буйрутмаларым' }} />
         <Stack.Screen name="admin" options={{ headerShown: false }} />
       </Stack>
+      {showSplash && <SplashIntro />}
     </ToastProvider>
     </CartProvider>
     </CatalogProvider>
