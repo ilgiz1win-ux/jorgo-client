@@ -41,8 +41,13 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       }
       return 'PIN-код туура эмес';
     }
-    const { error } = await supabase.auth.signInWithPassword({ email: mail.trim(), password });
-    return error ? 'Email же сырсөз туура эмес' : null;
+    const { error } = await supabase.auth.signInWithPassword({ email: mail.trim().toLowerCase(), password });
+    if (!error) return null;
+    const msg = error.message.toLowerCase();
+    if (msg.includes('not confirmed')) return 'Email ырастала элек. Supabase → Authentication → Users бөлүмүндө колдонуучуну ырастаңыз.';
+    if (msg.includes('invalid login')) return 'Email же сырсөз туура эмес';
+    if (msg.includes('fetch') || msg.includes('network')) return 'Серверге туташуу болбоду. Интернетти текшериңиз.';
+    return `Кирүү болбоду: ${error.message}`;
   };
 
   const logout = async () => {
