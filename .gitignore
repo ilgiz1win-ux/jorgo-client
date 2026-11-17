@@ -1,1 +1,4 @@
 video/*.wav
+series/output/tmp/
+series/output/preview/
+__pycache__/
