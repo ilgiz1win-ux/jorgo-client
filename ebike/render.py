@@ -516,7 +516,45 @@ def scene5(c, t, d):
     text(c, "Батареяны узакка сактоо", 540, 1330, 40, "#9fc3f0", b=False, a=a)
 
 
-SCENES = [scene1, scene2, scene3, scene4, scene5]
+LOGO = skia.Image.open("logo.png")
+
+
+def scene6(c, t, d):
+    bg(c, t)
+    p = eo(t / 0.6)
+    # ак карта логотип менен
+    cw, chh = 940, 560
+    x0, y0 = (W - cw) / 2, 330 + 40 * (1 - p)
+    c.drawRoundRect(RR(x0, y0, cw, chh), 44, 44, F("#7bd23a", int(90 * p), blur=50))
+    c.drawRoundRect(RR(x0, y0, cw, chh), 44, 44, F("#ffffff", int(255 * p)))
+    lw = cw - 80
+    lh = lw * LOGO.height() / LOGO.width()
+    paint = skia.Paint(AntiAlias=True)
+    paint.setAlphaf(p)
+    c.drawImageRect(LOGO, RR(x0 + 40, y0 + (chh - lh) / 2, lw, lh), skia.SamplingOptions(skia.FilterMode.kLinear, skia.MipmapMode.kLinear), paint)
+    a2 = int(255 * eo((t - 0.5) / 0.5))
+    text(c, "Батареяңызда көйгөй болсо", 540, 1010, 50, WHITE, a=a2)
+    text(c, "кайрылыңыз:", 540, 1075, 50, WHITE, a=a2)
+    # телефон
+    a3 = int(255 * eo((t - 0.9) / 0.5))
+    sc = 1 + 0.03 * math.sin(t * 5)
+    c.save()
+    c.translate(540, 1215)
+    c.scale(sc, sc)
+    c.drawRoundRect(RR(-400, -75, 800, 150), 75, 75, F("#5fbf2a", int(a3 * .45), blur=24))
+    c.drawRoundRect(RR(-400, -75, 800, 150), 75, 75, F("#4caf28", a3))
+    # трубка белгиси
+    hx = -315
+    c.drawCircle(hx, 0, 46, F("#ffffff", a3))
+    ph = skia.Path()
+    ph.moveTo(hx - 20, -22)
+    ph.cubicTo(hx - 26, 6, hx - 6, 26, hx + 22, 22)
+    c.drawPath(ph, S("#4caf28", 13, a3))
+    text(c, "0702 088 089", 50, 26, 74, WHITE, a=a3)
+    c.restore()
+
+
+SCENES = [scene1, scene2, scene3, scene4, scene5, scene6]
 
 
 # ---------------- СУБТИТР ----------------
@@ -569,12 +607,15 @@ def load_voice(i):
     return resample_poly(a, SR, 16000).astype(np.float32)
 
 
-VOICES = [load_voice(i + 1) for i in range(5)]
+VOICES = [load_voice(i + 1) for i in range(6)]
 LEAD = 0.15
-DUR = [len(v) / SR + 0.3 for v in VOICES]
-DUR[-1] += 30 - sum(DUR)  # так 30 сек
+DUR = [len(v) / SR + 0.3 for v in VOICES[:5]]
+DUR[-1] += 30 - sum(DUR)  # негизги бөлүк так 30 сек
+DUR.append(len(VOICES[5]) / SR + 1.4)  # логотип жана байланыш
+TOTAL = sum(DUR)
+TOTAL_F = int(round(TOTAL * FPS))
 STARTS = list(np.cumsum([0] + DUR[:-1]))
-CHUNKS = [chunks_of(l["sub"]) for l in LINES]
+CHUNKS = [chunks_of(l["sub"]) for l in LINES] + [chunks_of("Батареяңызда көйгөй болсо, Jorgo Eco Service'ке кайрылыңыз!")]
 WITH_SUBS = True
 
 
@@ -587,20 +628,20 @@ def frame(fi, with_subs=True):
     gt = fi / FPS
     surf = skia.Surface.MakeRaster(skia.ImageInfo.Make(W, H, skia.kRGBA_8888_ColorType, skia.kPremul_AlphaType))
     c = surf.getCanvas()
-    i = max(k for k in range(5) if STARTS[k] <= gt + 1e-9)
+    i = max(k for k in range(6) if STARTS[k] <= gt + 1e-9)
     scene_at(c, i, gt)
     # кийинки сахнага жумшак өтүү
-    if i < 4 and gt > STARTS[i + 1] - XF:
+    if i < 5 and gt > STARTS[i + 1] - XF:
         a = ease((gt - (STARTS[i + 1] - XF)) / XF)
         c.saveLayerAlpha(None, int(255 * a))
         scene_at(c, i + 1, gt)
         c.restore()
-    if with_subs:
+    if with_subs and i < 5:
         subs(c, CHUNKS[i], gt - STARTS[i] - LEAD, len(VOICES[i]) / SR)
     if gt < 0.3:
         c.drawRect(RR(0, 0, W, H), F("#000000", int(255 * (1 - gt / .3))))
-    if gt > 29.4:
-        c.drawRect(RR(0, 0, W, H), F("#000000", int(255 * ease((gt - 29.4) / .6))))
+    if gt > TOTAL - 0.5:
+        c.drawRect(RR(0, 0, W, H), F("#000000", int(255 * ease((gt - (TOTAL - 0.5)) / .5))))
     return surf.makeImageSnapshot().toarray(colorType=skia.kRGBA_8888_ColorType)
 
 
@@ -617,12 +658,12 @@ def render_part(args):
 
 
 def music():
-    n = 30 * SR
+    n = int(TOTAL * SR)
     t = np.arange(n) / SR
     out = np.zeros(n, np.float32)
     # жумшак синт-пад (Dm — Bb — F — C)
     prog = [[146.8, 174.6, 220], [116.5, 146.8, 174.6], [174.6, 220, 261.6], [130.8, 164.8, 196]]
-    for b in range(8):
+    for b in range(int(TOTAL / 3.75) + 1):
         st, en = int(b * 3.75 * SR), min(n, int((b + 1) * 3.75 * SR + SR))
         tt = t[st:en] - b * 3.75
         env = np.minimum(1, tt / 0.8) * np.exp(-np.maximum(0, tt - 3.5) * 3)
@@ -631,13 +672,13 @@ def music():
     # технологиялык арпеджио
     step = 60 / 120 / 2
     notes = [587.3, 698.5, 880, 698.5]
-    for k in range(int(30 / step)):
+    for k in range(int(TOTAL / step)):
         st = int(k * step * SR)
         L = min(int(0.22 * SR), n - st)
         tt = np.arange(L) / SR
         out[st:st + L] += 0.035 * np.sign(np.sin(2 * np.pi * notes[k % 4] * tt)) * np.exp(-tt * 14)
     # пульс-бас
-    for k in range(int(30 / 0.5)):
+    for k in range(int(TOTAL / 0.5)):
         st = int(k * 0.5 * SR)
         L = min(int(0.3 * SR), n - st)
         tt = np.arange(L) / SR
@@ -656,7 +697,7 @@ def music():
 
 
 def audio():
-    n = 30 * SR
+    n = int(TOTAL * SR)
     v = np.zeros(n, np.float32)
     for i, a in enumerate(VOICES):
         st = int((STARTS[i] + LEAD) * SR)
@@ -681,7 +722,7 @@ def build(ws, pool, name):
         for p in paths:
             f.write(f"file '{os.path.abspath(p)}'\n")
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", "out/tmp/list.txt", "-i", "out/tmp/mix.wav",
-                    "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-t", "30", "-movflags", "+faststart", f"out/{name}"], check=True)
+                    "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-t", f"{TOTAL_F / FPS:.3f}", "-movflags", "+faststart", f"out/{name}"], check=True)
     print("даяр:", name, flush=True)
 
 
@@ -691,7 +732,7 @@ if __name__ == "__main__":
     if sys.argv[1:] == ["preview"]:
         from PIL import Image
         os.makedirs("out/preview", exist_ok=True)
-        for i in range(5):
+        for i in range(6):
             for frac in (0.25, 0.8):
                 fi = int((STARTS[i] + DUR[i] * frac) * FPS)
                 Image.fromarray(frame(fi)).convert("RGB").save(f"out/preview/s{i + 1}_{int(frac * 100)}.png")
