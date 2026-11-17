@@ -14,3 +14,8 @@ export const colors = {
 };
 
 export const radius = { sm: 8, md: 12, lg: 18 };
+
+// Админ колдонмонун түстөрү (кардар колдонмосунан айырмалануу үчүн)
+export const adminColors = {
+  header: '#1E293B',
+};

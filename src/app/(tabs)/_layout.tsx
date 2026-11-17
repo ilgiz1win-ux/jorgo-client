@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import type { ColorValue } from 'react-native';
 import { colors } from '../../config/theme';
+import { APP_VARIANT } from '../../config/variant';
 import { useCart } from '../../context/CartContext';
 import type { IconName } from '../../data/products';
 
@@ -11,6 +12,8 @@ const icon =
 
 export default function TabsLayout() {
   const { count } = useCart();
+  // Админ колдонмо дароо админ панелден ачылат
+  if (APP_VARIANT === 'admin') return <Redirect href="/admin" />;
   return (
     <Tabs
       screenOptions={{

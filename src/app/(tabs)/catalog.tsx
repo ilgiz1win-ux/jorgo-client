@@ -1,11 +1,12 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ProductGrid } from '../../components/ProductGrid';
 import { Chip } from '../../components/ui';
 import { colors, radius } from '../../config/theme';
-import { CATEGORIES, CategoryId, PRODUCTS } from '../../data/products';
+import { useCatalog } from '../../context/CatalogContext';
+import { CATEGORIES, CategoryId } from '../../data/products';
 
 type Sort = 'popular' | 'cheap' | 'expensive';
 
@@ -14,6 +15,7 @@ export default function Catalog() {
   const [category, setCategory] = useState<CategoryId | 'all'>(params.category ?? 'all');
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<Sort>('popular');
+  const { products, loading, refresh } = useCatalog();
 
   useEffect(() => {
     if (params.category) setCategory(params.category);
@@ -21,16 +23,20 @@ export default function Catalog() {
 
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const filtered = PRODUCTS.filter(
+    const filtered = products.filter(
       (p) => (category === 'all' || p.category === category) && (!q || p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q)),
     );
     if (sort === 'cheap') return [...filtered].sort((a, b) => a.price - b.price);
     if (sort === 'expensive') return [...filtered].sort((a, b) => b.price - a.price);
     return [...filtered].sort((a, b) => Number(!!b.popular) - Number(!!a.popular) || Number(b.inStock) - Number(a.inStock));
-  }, [category, query, sort]);
+  }, [category, query, sort, products]);
 
   return (
-    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+      refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
+    >
       <View style={styles.search}>
         <MaterialCommunityIcons name="magnify" size={20} color={colors.muted} />
         <TextInput

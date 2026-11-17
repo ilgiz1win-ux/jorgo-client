@@ -15,8 +15,10 @@ export type Product = {
   price: number;
   oldPrice?: number;
   icon: IconName;
-  // Сүрөт (милдеттүү эмес). Мисалы: require('../../assets/products/fat-bike.jpg')
-  // же интернеттеги шилтеме: { uri: 'https://...' }. Сүрөт жок болсо иконка көрүнөт.
+  // Админ колдонмодон жүктөлгөн сүрөттүн шилтемеси.
+  imageUrl?: string;
+  // Колдонмонун ичине салынган сүрөт (милдеттүү эмес):
+  // require('../../assets/products/fat-bike.jpg'). Сүрөт жок болсо иконка көрүнөт.
   image?: ImageSourcePropType;
   description: string;
   specs: [string, string][];
@@ -203,5 +205,18 @@ export const PRODUCTS: Product[] = [
   },
 ];
 
-export const getProduct = (id: string) => PRODUCTS.find((p) => p.id === id);
+export type Promo = {
+  id: string;
+  title: string;
+  text: string;
+  color: string;
+  active: boolean;
+};
+
+export const PROMO_COLORS = ['#F59E0B', '#DC2626', '#7C3AED', '#0284C7', '#16A34A', '#DB2777'];
+
+export const DEFAULT_PROMOS: Promo[] = [
+  { id: 'promo-city', title: 'City 350W −10%', text: 'Шаардык электровелосипедге арзандатуу', color: '#DC2626', active: true },
+];
+
 export const getCategory = (id: CategoryId) => CATEGORIES.find((c) => c.id === id)!;

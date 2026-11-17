@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Link } from 'expo-router';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Card } from '../../components/ui';
 import { SHOP } from '../../config/shop';
@@ -44,6 +45,10 @@ export default function Contacts() {
         <Text style={styles.p}>🛡 Электровелосипеддерге жана батареяларга кепилдик берилет.</Text>
         <Text style={styles.p}>💳 Накталай, карта менен же бөлүп төлөө мүмкүн.</Text>
       </Card>
+
+      <Link href="/admin" style={styles.admin}>
+        Дүкөн ээси үчүн: админ панель
+      </Link>
     </ScrollView>
   );
 }
@@ -53,4 +58,5 @@ const styles = StyleSheet.create({
   icon: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   h: { fontSize: 16, fontWeight: '800', color: colors.text },
   p: { fontSize: 14, lineHeight: 20, color: colors.text },
+  admin: { color: colors.muted, fontSize: 13, textAlign: 'center', paddingVertical: 12, textDecorationLine: 'underline' },
 });

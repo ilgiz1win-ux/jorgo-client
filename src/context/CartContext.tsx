@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
-import { getProduct, Product } from '../data/products';
+import { Product } from '../data/products';
+import { useCatalog } from './CatalogContext';
 
 type CartLine = { product: Product; qty: number };
 
@@ -31,6 +32,7 @@ const ORDERS_KEY = 'jorgo.orders';
 const CartContext = createContext<CartContextValue | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { getProduct } = useCatalog();
   const [items, setItems] = useState<Record<string, number>>({});
   const [orders, setOrders] = useState<Order[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -80,7 +82,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       orders,
       addOrder: (o) => setOrders((p) => [o, ...p]),
     };
-  }, [items, orders]);
+  }, [items, orders, getProduct]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

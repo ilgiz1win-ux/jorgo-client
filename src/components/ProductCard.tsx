@@ -10,8 +10,8 @@ export function ProductImage({ product, size = 64, height = 110 }: { product: Pr
   const cat = getCategory(product.category);
   return (
     <View style={[styles.image, { height, backgroundColor: cat.color + '18' }]}>
-      {product.image ? (
-        <Image source={product.image} style={styles.photo} resizeMode="cover" accessibilityLabel={product.name} />
+      {product.imageUrl || product.image ? (
+        <Image source={product.imageUrl ? { uri: product.imageUrl } : product.image!} style={styles.photo} resizeMode="cover" accessibilityLabel={product.name} />
       ) : (
         <MaterialCommunityIcons name={product.icon} size={size} color={cat.color} />
       )}

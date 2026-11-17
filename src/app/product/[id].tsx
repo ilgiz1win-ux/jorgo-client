@@ -8,11 +8,13 @@ import { ProductGrid } from '../../components/ProductGrid';
 import { Button, Card, QtyStepper, SectionTitle } from '../../components/ui';
 import { colors } from '../../config/theme';
 import { useCart } from '../../context/CartContext';
-import { getCategory, getProduct, PRODUCTS } from '../../data/products';
+import { useCatalog } from '../../context/CatalogContext';
+import { getCategory } from '../../data/products';
 import { formatPrice, openWhatsApp } from '../../lib/format';
 
 export default function ProductScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { getProduct, products } = useCatalog();
   const product = getProduct(id);
   const { add } = useCart();
   const [qty, setQty] = useState(1);
@@ -28,7 +30,7 @@ export default function ProductScreen() {
   }
 
   const cat = getCategory(product.category);
-  const related = PRODUCTS.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
+  const related = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4);
 
   return (
     <View style={{ flex: 1 }}>
