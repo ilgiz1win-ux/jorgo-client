@@ -9,6 +9,7 @@ import { Button, Card, QtyStepper, SectionTitle } from '../../components/ui';
 import { colors } from '../../config/theme';
 import { useCart } from '../../context/CartContext';
 import { useCatalog } from '../../context/CatalogContext';
+import { useToast } from '../../context/ToastContext';
 import { getCategory } from '../../data/products';
 import { formatPrice, openWhatsApp } from '../../lib/format';
 
@@ -17,6 +18,7 @@ export default function ProductScreen() {
   const { getProduct, products } = useCatalog();
   const product = getProduct(id);
   const { add } = useCart();
+  const toast = useToast();
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const insets = useSafeAreaInsets();
@@ -91,6 +93,7 @@ export default function ProductScreen() {
             if (added) return router.push('/cart');
             add(product.id, qty);
             setAdded(true);
+            toast.show(`Себетке кошулду: ${qty} даана`);
           }}
         />
       </View>

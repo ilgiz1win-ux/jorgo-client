@@ -3,6 +3,8 @@ import { Link } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radius } from '../config/theme';
 import { useCart } from '../context/CartContext';
+import { useToast } from '../context/ToastContext';
+import { PressScale } from './anim';
 import { getCategory, Product } from '../data/products';
 import { formatPrice } from '../lib/format';
 
@@ -21,10 +23,11 @@ export function ProductImage({ product, size = 64, height = 110 }: { product: Pr
 
 export function ProductCard({ product }: { product: Product }) {
   const { add } = useCart();
+  const toast = useToast();
   const discount = product.oldPrice ? Math.round((1 - product.price / product.oldPrice) * 100) : 0;
   return (
     <Link href={`/product/${product.id}`} asChild>
-      <Pressable style={styles.card}>
+      <PressScale outerStyle={{ flex: 1 }} style={styles.card}>
         <View>
           <ProductImage product={product} />
           {discount > 0 && (
@@ -48,6 +51,7 @@ export function ProductCard({ product }: { product: Product }) {
               onPress={(e) => {
                 e.preventDefault();
                 add(product.id);
+                toast.show('Себетке кошулду');
               }}
               accessibilityLabel="Себетке кошуу"
             >
@@ -57,7 +61,7 @@ export function ProductCard({ product }: { product: Product }) {
             <Text style={styles.out}>Жок</Text>
           )}
         </View>
-      </Pressable>
+      </PressScale>
     </Link>
   );
 }
