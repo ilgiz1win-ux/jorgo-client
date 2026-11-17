@@ -2,3 +2,5 @@ video/*.wav
 series/output/tmp/
 series/output/preview/
 __pycache__/
+ebike/out/tmp/
+ebike/out/preview/
