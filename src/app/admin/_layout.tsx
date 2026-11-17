@@ -27,6 +27,7 @@ function Gate() {
       <Stack.Screen name="index" options={{ title: 'Админ панель' }} />
       <Stack.Screen name="product/[id]" options={{ title: 'Товар' }} />
       <Stack.Screen name="promos" options={{ title: 'Акциялар' }} />
+      <Stack.Screen name="services" options={{ title: 'Оңдоо кызматтары' }} />
     </Stack>
   );
 }

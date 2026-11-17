@@ -3,7 +3,7 @@ import { Link, router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ProductGrid } from '../../components/ProductGrid';
-import { PromoBanner } from '../../components/PromoBanner';
+import { PromoCarousel } from '../../components/PromoCarousel';
 import { SectionTitle } from '../../components/ui';
 import { SHOP } from '../../config/shop';
 import { colors, radius } from '../../config/theme';
@@ -28,13 +28,7 @@ export default function Home() {
       </View>
 
       <View style={styles.body}>
-        {activePromos.length > 0 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-            {activePromos.map((p) => (
-              <PromoBanner key={p.id} promo={p} style={activePromos.length === 1 ? { flex: 1, minWidth: '100%' } : { width: 300 }} />
-            ))}
-          </ScrollView>
-        )}
+        <PromoCarousel promos={activePromos} />
 
         <Link href="/repair" asChild>
           <Pressable style={styles.promo}>

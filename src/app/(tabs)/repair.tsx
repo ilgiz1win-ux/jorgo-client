@@ -4,10 +4,11 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { PopIn } from '../../components/anim';
 import { Button, Card, Field, SectionTitle } from '../../components/ui';
 import { colors } from '../../config/theme';
-import { SERVICES } from '../../data/services';
+import { useCatalog } from '../../context/CatalogContext';
 import { callShop, openWhatsApp } from '../../lib/format';
 
 export default function Repair() {
+  const { services: SERVICES } = useCatalog();
   const [selected, setSelected] = useState<string[]>([]);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('+996 ');

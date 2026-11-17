@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
 import type { ColorValue } from 'react-native';
+import { CartTabIcon } from '../../components/CartTabIcon';
 import { colors } from '../../config/theme';
 import { APP_VARIANT } from '../../config/variant';
 import { useCart } from '../../context/CartContext';
@@ -32,7 +33,7 @@ export default function TabsLayout() {
         name="cart"
         options={{
           title: 'Себет',
-          tabBarIcon: icon('cart'),
+          tabBarIcon: CartTabIcon,
           tabBarBadge: count > 0 ? count : undefined,
           tabBarBadgeStyle: { backgroundColor: colors.accent },
         }}

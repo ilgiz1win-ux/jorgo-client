@@ -2,7 +2,24 @@ import type { IconName } from './products';
 
 export type RepairService = { id: string; title: string; price: string; icon: IconName };
 
-// Оңдоо кызматтары — бааларды өзүңүз өзгөртүңүз.
+// Админ панелде кызматка тандаса боло турган иконкалар
+export const SERVICE_ICONS: IconName[] = [
+  'wrench',
+  'stethoscope',
+  'battery-sync',
+  'engine',
+  'chip',
+  'flash',
+  'car-brake-alert',
+  'tire',
+  'bicycle-electric',
+  'cog',
+  'lightbulb-on',
+  'shield-check',
+];
+
+// Баштапкы оңдоо кызматтары (сервер туташпаса же база бош болсо).
+// Бааларды админ панелден өзгөртүңүз.
 export const SERVICES: RepairService[] = [
   { id: 'diag', title: 'Диагностика', price: '300 сом', icon: 'stethoscope' },
   { id: 'battery', title: 'Батареяны оңдоо / ячейка алмаштыруу', price: '1500 сомдон', icon: 'battery-sync' },
