@@ -81,6 +81,15 @@ export default function AdminHome() {
           <MaterialCommunityIcons name="chevron-right" size={24} color="#fff" />
         </Pressable>
 
+        <Pressable style={[styles.promoLink, { backgroundColor: colors.accent }]} onPress={() => router.push('/admin/services')}>
+          <MaterialCommunityIcons name="wrench" size={24} color="#fff" />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.promoLinkTitle}>Оңдоо кызматтары</Text>
+            <Text style={{ color: '#FFFBEB', fontSize: 13 }}>Кызматтарды жана бааларды өзгөртүү</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={24} color="#fff" />
+        </Pressable>
+
         {error && <Text style={{ color: colors.danger }}>{error}</Text>}
 
         <View style={styles.search}>

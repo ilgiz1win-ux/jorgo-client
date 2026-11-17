@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IMAGES_BUCKET } from '../config/backend';
 import { CategoryId, DEFAULT_PROMOS, IconName, Product, PRODUCTS, Promo } from '../data/products';
+import { RepairService, SERVICES } from '../data/services';
 import { supabase } from './supabase';
 
 // Товарлар жана акциялар менен иштөө. Supabase туташса — сервер,
@@ -8,6 +9,8 @@ import { supabase } from './supabase';
 
 const LOCAL_PRODUCTS = 'jorgo.local.products';
 const LOCAL_PROMOS = 'jorgo.local.promos';
+const LOCAL_SERVICES = 'jorgo.local.services';
+const CACHE_SERVICES = 'jorgo.cache.services';
 const CACHE_PRODUCTS = 'jorgo.cache.products';
 const CACHE_PROMOS = 'jorgo.cache.promos';
 
@@ -175,6 +178,55 @@ export async function deletePromo(id: string, all: Promo[]): Promise<Promo[]> {
     if (error) throw error;
   } else {
     await writeJson(LOCAL_PROMOS, next);
+  }
+  return next;
+}
+
+// ---------- Оңдоо кызматтары ----------
+
+type ServiceRow = { id: string; title: string; price: string; icon: string; sort?: number };
+
+const serviceFromRow = (r: ServiceRow): RepairService => ({
+  id: r.id,
+  title: r.title,
+  price: r.price ?? '',
+  icon: (r.icon || 'wrench') as IconName,
+});
+
+export async function fetchServices(): Promise<RepairService[]> {
+  if (!supabase) return (await readJson<RepairService[]>(LOCAL_SERVICES)) ?? SERVICES;
+  try {
+    const { data, error } = await supabase.from('services').select('*').order('sort').order('title');
+    if (error) throw error;
+    const list = (data as ServiceRow[]).map(serviceFromRow);
+    writeJson(CACHE_SERVICES, list);
+    return list;
+  } catch {
+    // Таблица али түзүлө элек же интернет жок — акыркы тизме же баштапкы кызматтар
+    return (await readJson<RepairService[]>(CACHE_SERVICES)) ?? SERVICES;
+  }
+}
+
+export async function saveService(sv: RepairService, all: RepairService[]): Promise<RepairService[]> {
+  const idx = all.findIndex((x) => x.id === sv.id);
+  const next = idx >= 0 ? all.map((x) => (x.id === sv.id ? sv : x)) : [...all, sv];
+  if (supabase) {
+    const row: ServiceRow = { id: sv.id, title: sv.title, price: sv.price, icon: sv.icon, sort: idx >= 0 ? idx : next.length - 1 };
+    const { error } = await supabase.from('services').upsert(row);
+    if (error) throw error;
+  } else {
+    await writeJson(LOCAL_SERVICES, next);
+  }
+  return next;
+}
+
+export async function deleteService(id: string, all: RepairService[]): Promise<RepairService[]> {
+  const next = all.filter((x) => x.id !== id);
+  if (supabase) {
+    const { error } = await supabase.from('services').delete().eq('id', id);
+    if (error) throw error;
+  } else {
+    await writeJson(LOCAL_SERVICES, next);
   }
   return next;
 }

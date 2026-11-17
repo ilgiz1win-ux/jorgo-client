@@ -30,6 +30,15 @@ create table if not exists public.promos (
   created_at timestamptz not null default now()
 );
 
+-- Оңдоо кызматтары
+create table if not exists public.services (
+  id    text primary key,
+  title text not null,
+  price text not null default '',
+  icon  text not null default 'wrench',
+  sort  integer not null default 0
+);
+
 -- Мурун түзүлгөн базалар үчүн (кайра иштетсе зыяны жок)
 alter table public.promos add column if not exists image_url text;
 
@@ -43,11 +52,17 @@ create trigger products_touch before update on public.products
 -- Коопсуздук: баары окуй алат, өзгөртүүнү кирген админ гана жасайт.
 alter table public.products enable row level security;
 alter table public.promos   enable row level security;
+alter table public.services enable row level security;
 
 drop policy if exists "products read"  on public.products;
 drop policy if exists "products write" on public.products;
 create policy "products read"  on public.products for select using (true);
 create policy "products write" on public.products for all to authenticated using (true) with check (true);
+
+drop policy if exists "services read"  on public.services;
+drop policy if exists "services write" on public.services;
+create policy "services read"  on public.services for select using (true);
+create policy "services write" on public.services for all to authenticated using (true) with check (true);
 
 drop policy if exists "promos read"  on public.promos;
 drop policy if exists "promos write" on public.promos;
