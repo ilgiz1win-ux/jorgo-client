@@ -5,6 +5,7 @@ import { isRemote } from '../../config/backend';
 import { SHOP } from '../../config/shop';
 import { adminColors, colors } from '../../config/theme';
 import { useAdminAuth } from '../../context/AdminAuthContext';
+import { BikeTowIn, bikeSpace } from '../BikeRide';
 import { Button, Card, Field } from '../ui';
 
 export function AdminLogin() {
@@ -27,7 +28,9 @@ export function AdminLogin() {
         <Text style={styles.title}>{SHOP.name} Админ</Text>
         <Text style={styles.sub}>Товарларды, бааларды жана акцияларды башкаруу</Text>
       </View>
+      <BikeTowIn bikeWidth={110}>
       <Card style={{ gap: 14 }}>
+        <View style={{ height: bikeSpace(110) }} />
         {isRemote && (
           <Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholder="admin@mail.com" />
         )}
@@ -48,12 +51,13 @@ export function AdminLogin() {
           </Text>
         )}
       </Card>
+      </BikeTowIn>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, justifyContent: 'center', padding: 20, gap: 20, backgroundColor: adminColors.header },
+  wrap: { flex: 1, justifyContent: 'center', padding: 20, gap: 20, backgroundColor: adminColors.header, overflow: 'hidden' },
   head: { alignItems: 'center', gap: 6 },
   title: { color: '#fff', fontSize: 26, fontWeight: '900' },
   sub: { color: '#CBD5E1', textAlign: 'center' },
