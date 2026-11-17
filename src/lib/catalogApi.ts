@@ -26,7 +26,25 @@ type ProductRow = {
   sort?: number | null;
 };
 
-type PromoRow = { id: string; title: string; text: string; color: string; active: boolean; sort: number | null };
+type PromoRow = { id: string; title: string; text: string; color: string; image_url: string | null; active: boolean; sort?: number | null };
+
+const promoFromRow = (r: PromoRow): Promo => ({
+  id: r.id,
+  title: r.title,
+  text: r.text ?? '',
+  color: r.color,
+  imageUrl: r.image_url ?? undefined,
+  active: r.active,
+});
+
+const promoToRow = (p: Promo): PromoRow => ({
+  id: p.id,
+  title: p.title,
+  text: p.text,
+  color: p.color,
+  image_url: p.imageUrl ?? null,
+  active: p.active,
+});
 
 const fromRow = (r: ProductRow): Product => ({
   id: r.id,
@@ -130,7 +148,7 @@ export async function fetchPromos(): Promise<Promo[]> {
   try {
     const { data, error } = await supabase.from('promos').select('*').order('sort').order('title');
     if (error) throw error;
-    const list = (data as PromoRow[]).map(({ sort: _s, ...p }) => p);
+    const list = (data as PromoRow[]).map(promoFromRow);
     writeJson(CACHE_PROMOS, list);
     return list;
   } catch {
@@ -142,7 +160,7 @@ export async function savePromo(p: Promo, all: Promo[]): Promise<Promo[]> {
   const exists = all.some((x) => x.id === p.id);
   const next = exists ? all.map((x) => (x.id === p.id ? p : x)) : [...all, p];
   if (supabase) {
-    const { error } = await supabase.from('promos').upsert(p);
+    const { error } = await supabase.from('promos').upsert(promoToRow(p));
     if (error) throw error;
   } else {
     await writeJson(LOCAL_PROMOS, next);

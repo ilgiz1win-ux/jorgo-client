@@ -3,11 +3,13 @@ import { StatusBar } from 'expo-status-bar';
 import { colors } from '../config/theme';
 import { CartProvider } from '../context/CartContext';
 import { CatalogProvider } from '../context/CatalogContext';
+import { ToastProvider } from '../context/ToastContext';
 
 export default function RootLayout() {
   return (
     <CatalogProvider>
     <CartProvider>
+    <ToastProvider>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -24,6 +26,7 @@ export default function RootLayout() {
         <Stack.Screen name="orders" options={{ title: 'Менин буйрутмаларым' }} />
         <Stack.Screen name="admin" options={{ headerShown: false }} />
       </Stack>
+    </ToastProvider>
     </CartProvider>
     </CatalogProvider>
   );

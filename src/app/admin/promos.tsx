@@ -1,11 +1,13 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { PromoBanner } from '../../components/PromoBanner';
 import { Button, Card, Field } from '../../components/ui';
-import { colors, radius } from '../../config/theme';
+import { colors } from '../../config/theme';
 import { useCatalog } from '../../context/CatalogContext';
 import { Promo, PROMO_COLORS } from '../../data/products';
 import { newId } from '../../lib/catalogApi';
+import { pickAndUploadImage } from '../../lib/pickImage';
 
 const empty = (): Promo => ({ id: '', title: '', text: '', color: PROMO_COLORS[0], active: true });
 
@@ -14,6 +16,20 @@ export default function Promos() {
   const [draft, setDraft] = useState<Promo | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const pickImage = async () => {
+    if (!draft) return;
+    setError(null);
+    setUploading(true);
+    try {
+      const url = await pickAndUploadImage([16, 9]);
+      if (url) setDraft((d) => (d ? { ...d, imageUrl: url } : d));
+    } catch (e) {
+      setError('Сүрөт жүктөлгөн жок: ' + (e instanceof Error ? e.message : ''));
+    }
+    setUploading(false);
+  };
 
   const run = async (fn: () => Promise<void>) => {
     setError(null);
@@ -44,14 +60,26 @@ export default function Promos() {
         {draft ? (
           <Card style={{ gap: 14 }}>
             <Text style={styles.h}>{draft.id ? 'Акцияны өзгөртүү' : 'Жаңы акция'}</Text>
-            <View style={[styles.preview, { backgroundColor: draft.color }]}>
-              <Text style={styles.previewTitle}>{draft.title || 'Акциянын аталышы'}</Text>
-              <Text style={{ color: '#fff' }}>{draft.text || 'Кыскача сүрөттөмө'}</Text>
+            <PromoBanner promo={{ ...draft, title: draft.title || 'Акциянын аталышы', text: draft.text || 'Кыскача сүрөттөмө' }} />
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <Button
+                title={uploading ? 'Жүктөлүүдө…' : draft.imageUrl ? 'Сүрөттү алмаштыруу' : 'Сүрөт кошуу'}
+                icon="image-plus"
+                variant="outline"
+                style={{ flex: 1 }}
+                disabled={uploading}
+                onPress={pickImage}
+              />
+              {draft.imageUrl && !uploading && (
+                <Button title="Алып салуу" variant="outline" onPress={() => setDraft({ ...draft, imageUrl: undefined })} />
+              )}
             </View>
+            {uploading && <ActivityIndicator color={colors.primary} />}
+            <Text style={styles.hint}>Сүрөт туурасынан (16:9) кесилет. Сүрөт жок болсо, тандалган түс колдонулат.</Text>
             <Field label="Аталышы *" value={draft.title} onChangeText={(t) => setDraft({ ...draft, title: t })} placeholder="Мисалы: Батареяларга −15%" />
             <Field label="Сүрөттөмө" value={draft.text} onChangeText={(t) => setDraft({ ...draft, text: t })} placeholder="Мисалы: 30-ноябрга чейин" />
             <View style={{ gap: 6 }}>
-              <Text style={styles.label}>Түсү</Text>
+              <Text style={styles.label}>Түсү (сүрөт жок болсо фон, болсо «Акция» белгиси)</Text>
               <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
                 {PROMO_COLORS.map((c) => (
                   <Pressable
@@ -67,7 +95,7 @@ export default function Promos() {
             </View>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button title="Жокко чыгаруу" variant="outline" style={{ flex: 1 }} onPress={() => setDraft(null)} />
-              <Button title="Сактоо" icon="content-save" style={{ flex: 1 }} disabled={draft.title.trim().length < 2} onPress={saveDraft} />
+              <Button title="Сактоо" icon="content-save" style={{ flex: 1 }} disabled={draft.title.trim().length < 2 || uploading} onPress={saveDraft} />
             </View>
           </Card>
         ) : (
@@ -78,10 +106,7 @@ export default function Promos() {
 
         {promos.map((p) => (
           <Card key={p.id} style={{ gap: 10, opacity: p.active ? 1 : 0.6 }}>
-            <View style={[styles.preview, { backgroundColor: p.color }]}>
-              <Text style={styles.previewTitle}>{p.title}</Text>
-              {!!p.text && <Text style={{ color: '#fff' }}>{p.text}</Text>}
-            </View>
+            <PromoBanner promo={p} />
             <View style={styles.actions}>
               <Switch value={p.active} onValueChange={(v) => { run(() => savePromo({ ...p, active: v })); }} trackColor={{ true: colors.primary, false: colors.border }} />
               <Text style={{ flex: 1, color: colors.text, fontWeight: '600' }}>{p.active ? 'Көрсөтүлүүдө' : 'Өчүк'}</Text>
@@ -108,8 +133,7 @@ export default function Promos() {
 const styles = StyleSheet.create({
   h: { fontSize: 16, fontWeight: '800', color: colors.text },
   label: { fontSize: 13, fontWeight: '600', color: colors.muted },
-  preview: { borderRadius: radius.md, padding: 14, gap: 4 },
-  previewTitle: { color: '#fff', fontSize: 18, fontWeight: '900' },
+  hint: { color: colors.muted, fontSize: 13 },
   swatch: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   swatchOn: { borderWidth: 3, borderColor: colors.text },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 14 },

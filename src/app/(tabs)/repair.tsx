@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { PopIn } from '../../components/anim';
 import { Button, Card, Field, SectionTitle } from '../../components/ui';
 import { colors } from '../../config/theme';
 import { SERVICES } from '../../data/services';
@@ -67,7 +68,9 @@ export default function Repair() {
         <SectionTitle>Жазылуу</SectionTitle>
         {sent ? (
           <Card style={{ alignItems: 'center', gap: 10 }}>
-            <MaterialCommunityIcons name="check-circle" size={48} color={colors.success} />
+            <PopIn>
+              <MaterialCommunityIcons name="check-circle" size={48} color={colors.success} />
+            </PopIn>
             <Text style={{ fontSize: 16, fontWeight: '700', textAlign: 'center' }}>Өтүнмө жөнөтүлдү! Сиз менен жакында байланышабыз.</Text>
             <Button
               title="Жаңы өтүнмө"

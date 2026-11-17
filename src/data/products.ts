@@ -210,6 +210,8 @@ export type Promo = {
   title: string;
   text: string;
   color: string;
+  // Баннердин сүрөтү (милдеттүү эмес)
+  imageUrl?: string;
   active: boolean;
 };
 

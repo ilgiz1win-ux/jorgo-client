@@ -2,6 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { PopIn } from '../components/anim';
 import { Button, Card, Chip, Field } from '../components/ui';
 import { SHOP } from '../config/shop';
 import { colors } from '../config/theme';
@@ -36,7 +37,9 @@ export default function Checkout() {
   if (done) {
     return (
       <View style={styles.done}>
-        <MaterialCommunityIcons name="check-decagram" size={80} color={colors.success} />
+        <PopIn>
+          <MaterialCommunityIcons name="check-decagram" size={80} color={colors.success} />
+        </PopIn>
         <Text style={styles.doneTitle}>Рахмат! Буйрутма №{done} кабыл алынды</Text>
         <Text style={{ color: colors.muted, textAlign: 'center' }}>
           Менеджерибиз жакын арада {phone} номерине чалып, буйрутманы ырастайт.

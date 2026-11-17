@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
@@ -7,7 +6,8 @@ import { Button, Card, Chip, Field } from '../../../components/ui';
 import { colors, radius } from '../../../config/theme';
 import { useCatalog } from '../../../context/CatalogContext';
 import { CATEGORIES, CategoryId, getCategory, Product } from '../../../data/products';
-import { newId, uploadImage } from '../../../lib/catalogApi';
+import { newId } from '../../../lib/catalogApi';
+import { pickAndUploadImage } from '../../../lib/pickImage';
 import { formatPrice } from '../../../lib/format';
 
 const toNumber = (s: string) => Number(s.replace(/[^\d]/g, '')) || 0;
@@ -38,25 +38,10 @@ export default function ProductEditor() {
 
   const pickImage = async () => {
     setError(null);
-    const res = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.6,
-      base64: true,
-    });
-    if (res.canceled || !res.assets?.length) return;
-    const asset = res.assets[0];
-    let base64 = asset.base64 ?? '';
-    let mime = asset.mimeType ?? 'image/jpeg';
-    if (!base64 && asset.uri.startsWith('data:')) {
-      const m = asset.uri.match(/^data:([^;]+);base64,(.*)$/);
-      if (m) [, mime, base64] = m;
-    }
-    if (!base64) return setError('Сүрөттү окуй алган жокпуз, башкасын тандаңыз');
     setUploading(true);
     try {
-      setImageUrl(await uploadImage(base64, mime));
+      const url = await pickAndUploadImage([1, 1]);
+      if (url) setImageUrl(url);
     } catch (e) {
       setError('Сүрөт жүктөлгөн жок: ' + (e instanceof Error ? e.message : ''));
     }

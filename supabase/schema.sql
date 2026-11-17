@@ -24,10 +24,14 @@ create table if not exists public.promos (
   title      text not null,
   text       text not null default '',
   color      text not null default '#F59E0B',
+  image_url  text,
   active     boolean not null default true,
   sort       integer not null default 0,
   created_at timestamptz not null default now()
 );
+
+-- Мурун түзүлгөн базалар үчүн (кайра иштетсе зыяны жок)
+alter table public.promos add column if not exists image_url text;
 
 create or replace function public.touch_updated_at() returns trigger
 language plpgsql as $$ begin new.updated_at = now(); return new; end $$;
