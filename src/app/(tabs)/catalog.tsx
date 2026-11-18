@@ -8,6 +8,7 @@ import { Chip } from '../../components/ui';
 import { colors, radius } from '../../config/theme';
 import { useCatalog } from '../../context/CatalogContext';
 import { CATEGORIES, CategoryId } from '../../data/products';
+import { useT } from '../../i18n';
 
 type Sort = 'popular' | 'cheap' | 'expensive';
 
@@ -17,6 +18,7 @@ export default function Catalog() {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<Sort>('popular');
   const { products, loading, refresh } = useCatalog();
+  const { t } = useT();
 
   useEffect(() => {
     if (params.category) setCategory(params.category);
@@ -43,7 +45,7 @@ export default function Catalog() {
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder="Товар издөө…"
+          placeholder={t('common.search')}
           placeholderTextColor={colors.muted}
           style={styles.input}
           returnKeyType="search"
@@ -52,18 +54,18 @@ export default function Catalog() {
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-        <Chip label="Баары" active={category === 'all'} onPress={() => setCategory('all')} />
+        <Chip label={t('common.all')} active={category === 'all'} onPress={() => setCategory('all')} />
         {CATEGORIES.map((c) => (
-          <Chip key={c.id} label={c.title} active={category === c.id} onPress={() => setCategory(c.id)} />
+          <Chip key={c.id} label={t(`cat.${c.id}`)} active={category === c.id} onPress={() => setCategory(c.id)} />
         ))}
       </ScrollView>
 
       <View style={styles.sortRow}>
-        <Text style={styles.count}>{list.length} товар</Text>
+        <Text style={styles.count}>{t('catalog.count', { n: list.length })}</Text>
         <View style={{ flexDirection: 'row', gap: 6 }}>
-          <Chip label="Популярдуу" active={sort === 'popular'} onPress={() => setSort('popular')} />
-          <Chip label="Арзан ↑" active={sort === 'cheap'} onPress={() => setSort('cheap')} />
-          <Chip label="Кымбат ↓" active={sort === 'expensive'} onPress={() => setSort('expensive')} />
+          <Chip label={t('catalog.popular')} active={sort === 'popular'} onPress={() => setSort('popular')} />
+          <Chip label={t('catalog.cheap')} active={sort === 'cheap'} onPress={() => setSort('cheap')} />
+          <Chip label={t('catalog.expensive')} active={sort === 'expensive'} onPress={() => setSort('expensive')} />
         </View>
       </View>
 
@@ -74,7 +76,7 @@ export default function Catalog() {
       ) : (
         <View style={styles.empty}>
           <MaterialCommunityIcons name="package-variant" size={48} color={colors.muted} />
-          <Text style={{ color: colors.muted }}>Эч нерсе табылган жок</Text>
+          <Text style={{ color: colors.muted }}>{t('catalog.empty')}</Text>
         </View>
       )}
     </ScrollView>

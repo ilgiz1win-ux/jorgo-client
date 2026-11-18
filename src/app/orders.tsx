@@ -3,13 +3,15 @@ import { Card } from '../components/ui';
 import { colors } from '../config/theme';
 import { useCart } from '../context/CartContext';
 import { formatPrice } from '../lib/format';
+import { useT } from '../i18n';
 
 export default function Orders() {
   const { orders } = useCart();
+  const { t } = useT();
   if (!orders.length) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: colors.muted }}>Азырынча буйрутма жок</Text>
+        <Text style={{ color: colors.muted }}>{t('orders.empty')}</Text>
       </View>
     );
   }

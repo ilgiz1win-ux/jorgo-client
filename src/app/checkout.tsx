@@ -8,23 +8,22 @@ import { SHOP } from '../config/shop';
 import { colors } from '../config/theme';
 import { useCart } from '../context/CartContext';
 import { formatPrice, openWhatsApp } from '../lib/format';
+import { TKey, useT } from '../i18n';
 
 type Delivery = 'pickup' | 'courier';
 type Payment = 'cash' | 'transfer' | 'installment';
 
-const PAYMENT_LABEL: Record<Payment, string> = {
-  cash: 'Накталай',
-  transfer: 'Карта / которуу',
-  installment: 'Бөлүп төлөө',
-};
+const PAYMENTS: Payment[] = ['cash', 'transfer', 'installment'];
 
 export default function Checkout() {
+  const { t } = useT();
   const { lines, subtotal, clear, addOrder } = useCart();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('+996 ');
   const [delivery, setDelivery] = useState<Delivery>('pickup');
   const [address, setAddress] = useState('');
-  const [branch, setBranch] = useState(SHOP.branches[0]);
+  const [branchIdx, setBranchIdx] = useState(0);
+  const branchName = (i: number) => t(`shop.branch.${i}` as TKey);
   const [payment, setPayment] = useState<Payment>('cash');
   const [comment, setComment] = useState('');
   const [done, setDone] = useState<string | null>(null);
@@ -40,11 +39,11 @@ export default function Checkout() {
         <PopIn>
           <MaterialCommunityIcons name="check-decagram" size={80} color={colors.success} />
         </PopIn>
-        <Text style={styles.doneTitle}>Рахмат! Буйрутма №{done} кабыл алынды</Text>
+        <Text style={styles.doneTitle}>{t('checkout.done', { id: done })}</Text>
         <Text style={{ color: colors.muted, textAlign: 'center' }}>
-          Менеджерибиз жакын арада {phone} номерине чалып, буйрутманы ырастайт.
+          {t('checkout.doneText', { phone })}
         </Text>
-        <Button title="Башкы бетке" icon="home" onPress={() => router.replace('/')} />
+        <Button title={t('checkout.home')} icon="home" onPress={() => router.replace('/')} />
       </View>
     );
   }
@@ -52,8 +51,8 @@ export default function Checkout() {
   if (!lines.length) {
     return (
       <View style={styles.done}>
-        <Text style={{ color: colors.muted }}>Себет бош</Text>
-        <Button title="Каталогго өтүү" onPress={() => router.replace('/catalog')} />
+        <Text style={{ color: colors.muted }}>{t('cart.empty')}</Text>
+        <Button title={t('common.goCatalog')} onPress={() => router.replace('/catalog')} />
       </View>
     );
   }
@@ -62,18 +61,18 @@ export default function Checkout() {
     const id = String(Date.now()).slice(-6);
     const itemsText = lines.map((l, i) => `${i + 1}. ${l.product.name} × ${l.qty} = ${formatPrice(l.product.price * l.qty)}`).join('\n');
     const msg = [
-      `🛒 Жаңы буйрутма №${id}`,
+      t('msg.newOrder', { id }),
       '',
       itemsText,
       '',
-      deliveryFee ? `Жеткирүү: ${formatPrice(deliveryFee)}` : null,
-      `Жалпы: ${formatPrice(total)}`,
+      deliveryFee ? t('msg.delivery', { sum: formatPrice(deliveryFee) }) : null,
+      t('msg.total', { sum: formatPrice(total) }),
       '',
-      `Аты: ${name.trim()}`,
-      `Тел: ${phone.trim()}`,
-      `Алуу: ${delivery === 'pickup' ? `Филиалдан өзү алып кетет — ${branch}` : `Жеткирүү — ${address.trim()}`}`,
-      `Төлөм: ${PAYMENT_LABEL[payment]}`,
-      comment.trim() ? `Комментарий: ${comment.trim()}` : null,
+      t('msg.name', { v: name.trim() }),
+      t('msg.phone', { v: phone.trim() }),
+      delivery === 'pickup' ? t('msg.pickup', { v: branchName(branchIdx) }) : t('msg.courier', { v: address.trim() }),
+      t('msg.payment', { v: t(`pay.${payment}`) }),
+      comment.trim() ? t('msg.comment', { v: comment.trim() }) : null,
     ]
       .filter((x) => x !== null)
       .join('\n');
@@ -96,39 +95,39 @@ export default function Checkout() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }} keyboardShouldPersistTaps="handled">
         <Card style={{ gap: 14 }}>
-          <Text style={styles.h}>Байланыш маалыматы</Text>
-          <Field label="Атыңыз *" value={name} onChangeText={setName} placeholder="Мисалы: Азамат" />
-          <Field label="Телефон *" value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="+996 700 123 456" />
+          <Text style={styles.h}>{t('checkout.contact')}</Text>
+          <Field label={t('common.name')} value={name} onChangeText={setName} placeholder={t('checkout.namePh')} />
+          <Field label={t('common.phone')} value={phone} onChangeText={setPhone} keyboardType="phone-pad" placeholder="+996 700 123 456" />
         </Card>
 
         <Card style={{ gap: 12 }}>
-          <Text style={styles.h}>Алуу ыкмасы</Text>
+          <Text style={styles.h}>{t('checkout.method')}</Text>
           <View style={styles.chips}>
-            <Chip label="Дүкөндөн алуу" active={delivery === 'pickup'} onPress={() => setDelivery('pickup')} />
-            <Chip label="Жеткирүү" active={delivery === 'courier'} onPress={() => setDelivery('courier')} />
+            <Chip label={t('checkout.pickup')} active={delivery === 'pickup'} onPress={() => setDelivery('pickup')} />
+            <Chip label={t('checkout.courier')} active={delivery === 'courier'} onPress={() => setDelivery('courier')} />
           </View>
           {delivery === 'pickup' ? (
             <View style={{ gap: 8 }}>
-              <Text style={{ color: colors.muted, fontSize: 13 }}>Кайсы филиалдан аласыз? ({SHOP.city})</Text>
+              <Text style={{ color: colors.muted, fontSize: 13 }}>{t('checkout.whichBranch', { city: SHOP.city })}</Text>
               <View style={styles.chips}>
-                {SHOP.branches.map((b) => (
-                  <Chip key={b} label={`📍 ${b}`} active={branch === b} onPress={() => setBranch(b)} />
+                {SHOP.branches.map((b, i) => (
+                  <Chip key={b} label={`📍 ${branchName(i)}`} active={branchIdx === i} onPress={() => setBranchIdx(i)} />
                 ))}
               </View>
             </View>
           ) : (
-            <Field label="Дарек *" value={address} onChangeText={setAddress} placeholder="Көчө, үй, батир" />
+            <Field label={t('checkout.address')} value={address} onChangeText={setAddress} placeholder={t('checkout.addressPh')} />
           )}
         </Card>
 
         <Card style={{ gap: 12 }}>
-          <Text style={styles.h}>Төлөм</Text>
+          <Text style={styles.h}>{t('checkout.payment')}</Text>
           <View style={styles.chips}>
-            {(Object.keys(PAYMENT_LABEL) as Payment[]).map((p) => (
-              <Chip key={p} label={PAYMENT_LABEL[p]} active={payment === p} onPress={() => setPayment(p)} />
+            {PAYMENTS.map((p) => (
+              <Chip key={p} label={t(`pay.${p}`)} active={payment === p} onPress={() => setPayment(p)} />
             ))}
           </View>
-          <Field label="Комментарий" value={comment} onChangeText={setComment} multiline placeholder="Кошумча каалоолор" />
+          <Field label={t('checkout.comment')} value={comment} onChangeText={setComment} multiline placeholder={t('checkout.commentPh')} />
         </Card>
 
         <Card style={{ gap: 8 }}>
@@ -141,17 +140,17 @@ export default function Checkout() {
             </View>
           ))}
           <View style={styles.row}>
-            <Text style={{ color: colors.muted }}>Жеткирүү</Text>
-            <Text style={{ fontWeight: '600' }}>{deliveryFee ? formatPrice(deliveryFee) : 'Акысыз'}</Text>
+            <Text style={{ color: colors.muted }}>{t('checkout.delivery')}</Text>
+            <Text style={{ fontWeight: '600' }}>{deliveryFee ? formatPrice(deliveryFee) : t('checkout.free')}</Text>
           </View>
           <View style={[styles.row, { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 8 }]}>
-            <Text style={styles.h}>Жалпы</Text>
+            <Text style={styles.h}>{t('checkout.total')}</Text>
             <Text style={[styles.h, { color: colors.primary }]}>{formatPrice(total)}</Text>
           </View>
         </Card>
 
-        <Button title="Буйрутманы WhatsApp'ка жөнөтүү" icon="whatsapp" variant="whatsapp" disabled={!valid} onPress={submit} />
-        {!valid && <Text style={{ color: colors.muted, textAlign: 'center', fontSize: 13 }}>* белгиленген талааларды толтуруңуз</Text>}
+        <Button title={t('checkout.send')} icon="whatsapp" variant="whatsapp" disabled={!valid} onPress={submit} />
+        {!valid && <Text style={{ color: colors.muted, textAlign: 'center', fontSize: 13 }}>{t('checkout.fill')}</Text>}
       </ScrollView>
     </KeyboardAvoidingView>
   );

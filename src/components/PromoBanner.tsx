@@ -2,14 +2,16 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ImageBackground, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { radius } from '../config/theme';
 import type { Promo } from '../data/products';
+import { useT } from '../i18n';
 
 // Акция баннери: сүрөт болсо фон катары, болбосо тандалган түс
 export function PromoBanner({ promo, style }: { promo: Pick<Promo, 'title' | 'text' | 'color' | 'imageUrl'>; style?: StyleProp<ViewStyle> }) {
+  const { t } = useT();
   const content = (
     <View style={[styles.inner, promo.imageUrl && styles.overlay]}>
       <View style={styles.tag}>
         <MaterialCommunityIcons name="sale" size={14} color={promo.color} />
-        <Text style={[styles.tagText, { color: promo.color }]}>Акция</Text>
+        <Text style={[styles.tagText, { color: promo.color }]}>{t('common.promo')}</Text>
       </View>
       <Text style={styles.title} numberOfLines={2}>
         {promo.title}

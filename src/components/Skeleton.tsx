@@ -2,10 +2,12 @@ import { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 import { colors, radius } from '../config/theme';
 import { nativeDriver, useReduceMotion } from './anim';
+import { useT } from '../i18n';
 
 // Товарлар жүктөлүп жатканда боз «скелет» карточкалары жылтылдап турат
 export function SkeletonGrid({ count = 4 }: { count?: number }) {
   const reduce = useReduceMotion();
+  const { t } = useT();
   const pulse = useRef(new Animated.Value(0.55)).current;
   useEffect(() => {
     if (reduce) return;
@@ -21,7 +23,7 @@ export function SkeletonGrid({ count = 4 }: { count?: number }) {
 
   const rows = Array.from({ length: Math.ceil(count / 2) });
   return (
-    <Animated.View style={{ gap: 12, opacity: pulse }} accessibilityLabel="Товарлар жүктөлүүдө">
+    <Animated.View style={{ gap: 12, opacity: pulse }} accessibilityLabel={t('common.productsLoading')}>
       {rows.map((_, r) => (
         <View key={r} style={styles.row}>
           {[0, 1].map((c) => (

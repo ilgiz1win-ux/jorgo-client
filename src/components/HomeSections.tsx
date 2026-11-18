@@ -2,18 +2,21 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Image, ImageBackground, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, radius } from '../config/theme';
-import type { Review, SiteSettings, Stat } from '../data/content';
+import { localizeSettings, localizeStats, type Review, type SiteSettings, type Stat } from '../data/content';
 import { BIKE_IMAGE, BIKE_RATIO } from './BikeRide';
 import { PressScale } from './anim';
+import { useT } from '../i18n';
 
 // Чоң баннер: админден жүктөлгөн сүрөт болсо фон, болбосо бренд түсү + логотиптеги велосипед
 export function HeroBanner({ settings }: { settings: SiteSettings }) {
+  const { t, lang } = useT();
+  settings = localizeSettings(settings, lang);
   const content = (
     <View style={[styles.heroInner, settings.heroImageUrl && styles.heroOverlay]}>
       <Text style={styles.heroTitle}>{settings.heroTitle}</Text>
       {!!settings.heroText && <Text style={styles.heroText}>{settings.heroText}</Text>}
       <PressScale onPress={() => router.push('/catalog')} style={styles.heroBtn} accessibilityRole="button">
-        <Text style={styles.heroBtnText}>Каталогду көрүү</Text>
+        <Text style={styles.heroBtnText}>{t('common.viewCatalog')}</Text>
         <MaterialCommunityIcons name="arrow-right" size={18} color={colors.ink} />
       </PressScale>
     </View>
@@ -36,6 +39,8 @@ export function HeroBanner({ settings }: { settings: SiteSettings }) {
 
 // Сандар: жазылуучулар, филиалдар, кепилдик, иш убактысы
 export function StatsRow({ stats }: { stats: Stat[] }) {
+  const { lang } = useT();
+  stats = localizeStats(stats, lang);
   return (
     <View style={styles.stats}>
       {stats.slice(0, 4).map((s, i) => (
@@ -53,8 +58,9 @@ export function StatsRow({ stats }: { stats: Stat[] }) {
 }
 
 export function Stars({ rating, size = 16 }: { rating: number; size?: number }) {
+  const { t } = useT();
   return (
-    <View style={{ flexDirection: 'row' }} accessibilityLabel={`${rating} жылдыз`}>
+    <View style={{ flexDirection: 'row' }} accessibilityLabel={t('common.stars', { n: rating })}>
       {[1, 2, 3, 4, 5].map((n) => (
         <MaterialCommunityIcons key={n} name={n <= rating ? 'star' : 'star-outline'} size={size} color="#F59E0B" />
       ))}
@@ -91,6 +97,7 @@ export function ReviewsCarousel({ reviews }: { reviews: Review[] }) {
 
 // «Чейин / Кийин» бир жуп сүрөт
 export function BeforeAfter({ title, beforeUrl, afterUrl }: { title: string; beforeUrl?: string; afterUrl?: string }) {
+  const { t } = useT();
   const half = (label: string, url?: string, highlight?: boolean) => (
     <View style={{ flex: 1 }}>
       {url ? <Image source={{ uri: url }} style={styles.baImg} resizeMode="cover" /> : <View style={[styles.baImg, { backgroundColor: '#E5E9EC' }]} />}
@@ -102,8 +109,8 @@ export function BeforeAfter({ title, beforeUrl, afterUrl }: { title: string; bef
   return (
     <View style={styles.ba}>
       <View style={{ flexDirection: 'row', gap: 4 }}>
-        {half('Чейин', beforeUrl)}
-        {half('Кийин', afterUrl, true)}
+        {half(t('repair.before'), beforeUrl)}
+        {half(t('repair.after'), afterUrl, true)}
       </View>
       {!!title && <Text style={styles.baTitle}>{title}</Text>}
     </View>

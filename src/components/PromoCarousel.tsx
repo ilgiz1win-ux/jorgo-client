@@ -5,12 +5,14 @@ import { colors } from '../config/theme';
 import type { Promo } from '../data/products';
 import { useReduceMotion } from './anim';
 import { PromoBanner } from './PromoBanner';
+import { useT } from '../i18n';
 
 const INTERVAL = 4000;
 
 // Акция баннерлери: 4 секунд сайын өзү алмашат, колу менен да сүрсө болот
 export function PromoCarousel({ promos }: { promos: Promo[] }) {
   const reduce = useReduceMotion();
+  const { t } = useT();
   const ref = useRef<ScrollViewInstance>(null);
   const [width, setWidth] = useState(0);
   const [index, setIndex] = useState(0);
@@ -67,7 +69,7 @@ export function PromoCarousel({ promos }: { promos: Promo[] }) {
       </ScrollView>
       <View style={styles.dots}>
         {promos.map((p, i) => (
-          <Pressable key={p.id} onPress={() => goTo(i)} hitSlop={6} accessibilityLabel={`Акция ${i + 1}`}>
+          <Pressable key={p.id} onPress={() => goTo(i)} hitSlop={6} accessibilityLabel={t('common.promoN', { n: i + 1 })}>
             <View style={[styles.dot, i === index && styles.dotOn]} />
           </Pressable>
         ))}

@@ -5,10 +5,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../config/theme';
 import { openWhatsApp } from '../lib/format';
 import { nativeDriver, useReduceMotion } from './anim';
+import { useT } from '../i18n';
 
 // Экрандын бурчунда ар дайым турган WhatsApp баскычы
 export function FloatingWhatsApp({ bottomOffset = 64 }: { bottomOffset?: number }) {
   const insets = useSafeAreaInsets();
+  const { t } = useT();
   const reduce = useReduceMotion();
   const scale = useRef(new Animated.Value(reduce ? 1 : 0)).current;
 
@@ -24,10 +26,10 @@ export function FloatingWhatsApp({ bottomOffset = 64 }: { bottomOffset?: number 
   return (
     <Animated.View style={[styles.wrap, { bottom: insets.bottom + bottomOffset, transform: [{ scale }] }]}>
       <Pressable
-        onPress={() => openWhatsApp('Саламатсызбы! Сайттан жазып жатам.').catch(() => {})}
+        onPress={() => openWhatsApp(t('common.helloSite')).catch(() => {})}
         style={({ pressed }) => [styles.btn, pressed && { opacity: 0.85 }]}
         accessibilityRole="button"
-        accessibilityLabel="WhatsApp аркылуу жазуу"
+        accessibilityLabel={t('common.writeWhatsApp')}
       >
         <MaterialCommunityIcons name="whatsapp" size={30} color="#fff" />
       </Pressable>
