@@ -63,6 +63,15 @@ function CustomerDocs({ p, onVerify }: { p: Profile; onVerify: (v: boolean) => v
         <Text style={{ flex: 1, color: colors.text, fontWeight: '600' }}>{p.verified ? 'Документтер текшерилди' : 'Документтерди текшерүү'}</Text>
         <Switch value={p.verified} onValueChange={onVerify} trackColor={{ true: colors.primary, false: colors.border }} />
       </View>
+      {p.relatives.map((r, i) => (
+        <Row
+          key={i}
+          icon="account-heart-outline"
+          label={r.relation || `Тууганы ${i + 1}`}
+          value={`${r.name} · ${r.phone}`}
+          onPress={() => Linking.openURL(`tel:${r.phone.replace(/[^\d+]/g, '')}`)}
+        />
+      ))}
       {(!!p.address || !!p.birthDate) && (
         <Text style={styles.muted}>
           {[p.birthDate && `Туулган: ${p.birthDate}`, p.address && `Дареги: ${p.address}`].filter(Boolean).join(' · ')}

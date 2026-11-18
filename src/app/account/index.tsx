@@ -21,7 +21,7 @@ export default function AccountMenu() {
         </View>
       </View>
 
-      {ready && !profile && <Button title={t('acc.signIn')} icon="login" onPress={() => router.push('/account/login')} />}
+      {ready && !profile && <Button title={t('acc.signIn')} icon="login" onPress={() => router.replace('/rent')} />}
 
       {profile && (
         <MenuGroup>
@@ -39,7 +39,6 @@ export default function AccountMenu() {
       <MenuGroup>
         <MenuRow first icon="bell-outline" label={t('acc.notifications')} onPress={() => router.push('/account/notifications')} />
         <MenuRow icon="wallet-outline" label={t('acc.payments')} onPress={() => router.push('/account/payments')} />
-        <MenuRow icon="package-variant-closed" label={t('acc.orders')} onPress={() => router.push('/orders')} />
         <MenuRow icon="cog-outline" label={t('acc.settings')} onPress={() => router.push('/account/settings')} />
       </MenuGroup>
     </ScrollView>

@@ -45,9 +45,6 @@ export default function Home() {
       {/* Логотип жана издөө */}
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <View style={styles.headerRow}>
-          <Pressable style={styles.menuPos} onPress={() => router.push('/account')} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('acc.menu')}>
-            <MaterialCommunityIcons name="menu" size={24} color={colors.text} />
-          </Pressable>
           <Image source={LOGO} style={styles.logo} resizeMode="contain" accessibilityLabel="Jorgo Eco Service" />
           <View style={styles.langPos}>
             <LangSwitch />
@@ -144,7 +141,6 @@ export default function Home() {
 const styles = StyleSheet.create({
   header: { backgroundColor: colors.card, paddingHorizontal: 16, paddingBottom: 14, gap: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
   headerRow: { alignItems: 'center', justifyContent: 'center' },
-  menuPos: { position: 'absolute', left: 0, top: 0, width: 44, height: 44, borderRadius: 22, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   logo: { width: 150, height: 84 },
   langPos: { position: 'absolute', right: 0, top: 0 },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.bg, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: colors.border },

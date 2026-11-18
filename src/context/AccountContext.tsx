@@ -17,8 +17,9 @@ type Account = {
 
 const Ctx = createContext<Account | null>(null);
 
-// Ижара үчүн документтер даярбы (селфи + паспорт + паспорт номери)
-export const docsReady = (p: Profile | null) => !!p && !!p.selfiePath && !!p.passportPath && p.passportNo.trim().length >= 5;
+// Ижара үчүн маалымат даярбы: аты-жөнү, селфи, паспорт (сүрөтү жана номери), эки тууганы
+export const docsReady = (p: Profile | null) =>
+  !!p && p.fullName.trim().length > 1 && !!p.selfiePath && !!p.passportPath && p.passportNo.trim().length >= 5 && api.relativesReady(p.relatives);
 
 export function AccountProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { Avatar, MenuGroup, MenuRow } from '../../components/account/MenuGroup';
+import { RelativesForm } from '../../components/account/RelativesForm';
 import { RequireAccount } from '../../components/account/RequireAccount';
 import { Button } from '../../components/ui';
 import { colors } from '../../config/theme';
@@ -72,6 +73,7 @@ function ProfileForm() {
               <EditRow label={t('acc.address')} value={p.address} onChange={set('address')} placeholder={t('acc.addressPh')} />
             </View>
           </MenuGroup>
+          <RelativesForm value={p.relatives} onChange={(relatives) => setP((x) => ({ ...x, relatives }))} />
           {dirty && <Button title={t('acc.save')} icon="content-save" onPress={submit} disabled={busy || p.fullName.trim().length < 2} style={{ borderRadius: 999 }} />}
 
           <MenuGroup title={t('acc.account')}>

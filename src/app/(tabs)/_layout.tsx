@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Redirect, Tabs } from 'expo-router';
+import { Redirect, Tabs, usePathname } from 'expo-router';
 import { View, type ColorValue } from 'react-native';
 import { CartTabIcon } from '../../components/CartTabIcon';
 import { FloatingWhatsApp } from '../../components/FloatingWhatsApp';
@@ -16,6 +16,8 @@ const icon =
 export default function TabsLayout() {
   const { count } = useCart();
   const { t } = useT();
+  // Ижара бөлүмү дүкөндөн өзүнчө: ал жерде дүкөндүн менюсу жана WhatsApp баскычы көрүнбөйт
+  const inRent = usePathname() === '/rent';
   // Админ колдонмо дароо админ панелден ачылат
   if (APP_VARIANT === 'admin') return <Redirect href="/admin" />;
   return (
@@ -32,7 +34,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ title: t('tab.home'), headerShown: false, tabBarIcon: icon('home') }} />
       <Tabs.Screen name="catalog" options={{ title: t('tab.catalog'), tabBarIcon: icon('view-grid') }} />
-      <Tabs.Screen name="rent" options={{ title: t('tab.rent'), headerShown: false, tabBarIcon: icon('bicycle-electric') }} />
+      <Tabs.Screen name="rent" options={{ title: t('tab.rent'), headerShown: false, tabBarStyle: { display: 'none' }, tabBarIcon: icon('bicycle-electric') }} />
       <Tabs.Screen name="repair" options={{ title: t('tab.repair'), tabBarIcon: icon('wrench') }} />
       <Tabs.Screen
         name="cart"
@@ -46,7 +48,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="contacts" options={{ title: t('tab.contacts'), tabBarIcon: icon('phone') }} />
     </Tabs>
       {/* Ылдыйкы меню (болжол менен 50px) үстүндө */}
-      <FloatingWhatsApp bottomOffset={66} />
+      {!inRent && <FloatingWhatsApp bottomOffset={66} />}
     </View>
   );
 }
