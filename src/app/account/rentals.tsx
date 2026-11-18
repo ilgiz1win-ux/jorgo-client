@@ -7,6 +7,7 @@ import { useAccount } from '../../context/AccountContext';
 import type { RentPeriod } from '../../data/rentals';
 import { TKey, useT } from '../../i18n';
 import { formatPrice } from '../../lib/format';
+import { daysLeft, fmtDay } from '../../lib/notifications';
 import { fetchMyRentRequests, RentRequest, RentStatus } from '../../lib/rentRequests';
 
 const STATUS_COLOR: Record<RentStatus, string> = { new: '#2563EB', active: colors.primary, returned: colors.muted, rejected: colors.danger };
@@ -51,6 +52,12 @@ function List() {
             {r.total ? ` · ${formatPrice(r.total)}` : ''}
           </Text>
           <Text style={styles.muted}>{new Date(r.createdAt).toLocaleDateString()}</Text>
+          {r.status === 'active' && !!r.paidUntil && (
+            <View style={[styles.paid, (daysLeft(r.paidUntil) ?? 0) <= 1 && { backgroundColor: '#FEF3C7' }]}>
+              <MaterialCommunityIcons name="calendar-check" size={18} color={(daysLeft(r.paidUntil) ?? 0) <= 1 ? '#92400E' : colors.primary} />
+              <Text style={styles.paidText}>{t('acc.paidUntil', { d: fmtDay(r.paidUntil) })}</Text>
+            </View>
+          )}
         </View>
       ))}
     </ScrollView>
@@ -71,4 +78,6 @@ const styles = StyleSheet.create({
   badge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
   badgeText: { color: '#fff', fontWeight: '800', fontSize: 12 },
   muted: { color: colors.muted, fontSize: 14 },
+  paid: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.primarySoft, borderRadius: 14, padding: 10, marginTop: 4 },
+  paidText: { color: colors.text, fontWeight: '700', fontSize: 14 },
 });

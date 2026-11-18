@@ -324,4 +324,5 @@ export const ru: Record<TKey, string> = {
   'acc.relWho': "Кем приходится",
   'acc.relWhoPh': "Например: мама, брат, супруг(а)",
   'acc.relPhone': "Телефон",
+  'acc.paidUntil': "Оплачено до {d}",
 };

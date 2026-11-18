@@ -336,6 +336,7 @@ export const ky = {
   'acc.relWho': "Ким болот",
   'acc.relWhoPh': "Мисалы: апасы, агасы, жубайы",
   'acc.relPhone': "Телефону",
+  'acc.paidUntil': "Төлөнгөн: {d} чейин",
 };
 
 export type TKey = keyof typeof ky;

@@ -2,12 +2,16 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ComponentProps, useCallback, useEffect, useState } from 'react';
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { DocImage } from '../../components/account/DocImage';
-import { Card, Chip } from '../../components/ui';
+import { Button, Card, Chip, Field } from '../../components/ui';
 import { colors, radius } from '../../config/theme';
 import type { RentPeriod } from '../../data/rentals';
 import { formatPrice } from '../../lib/format';
 import { docUrl, fetchProfiles, Profile, setVerified } from '../../lib/account';
 import { Equipment, fetchEquipment } from '../../lib/contentApi';
+import { daysLeft, fetchPayments, fmtDay, PAY_METHODS, PayMethod, recordPayment, RentPayment } from '../../lib/notifications';
+import { setLocalPaidUntil } from '../../lib/rentRequests';
+import { priceFor } from '../../data/rentals';
+import { useContent } from '../../context/ContentContext';
 import { fetchRentRequests, mapLink, RentRequest, RentStatus, setRentStatus } from '../../lib/rentRequests';
 
 const STATUS: Record<RentStatus, { label: string; color: string }> = {
@@ -16,7 +20,10 @@ const STATUS: Record<RentStatus, { label: string; color: string }> = {
   returned: { label: 'Кайтарылды', color: '#64748B' },
   rejected: { label: 'Четке кагылды', color: '#DC2626' },
 };
-const FILTERS: (RentStatus | 'all')[] = ['new', 'active', 'returned', 'rejected', 'all'];
+type Filter = RentStatus | 'all' | 'due';
+const FILTERS: Filter[] = ['due', 'new', 'active', 'returned', 'rejected', 'all'];
+// Бүгүн/эртең төлөй тургандар жана кечиккендер
+const isDue = (r: RentRequest) => r.status === 'active' && (daysLeft(r.paidUntil) ?? -1) <= 1;
 const UNIT: Record<RentPeriod, string> = { day: 'күн', week: 'жума', month: 'ай' };
 
 const fmtDate = (iso: string) => {
@@ -82,14 +89,104 @@ function CustomerDocs({ p, onVerify }: { p: Profile; onVerify: (v: boolean) => v
   );
 }
 
+// Төлөм абалы: ✅ төлөнгөн / 🟡 эртең-бүгүн / 🔴 кечикти
+export function PayBadge({ paidUntil }: { paidUntil?: string }) {
+  const d = daysLeft(paidUntil);
+  if (d === null) return <Text style={[styles.pay, { backgroundColor: '#F1F5F9', color: colors.muted }]}>Төлөм жок</Text>;
+  if (d < 0) return <Text style={[styles.pay, { backgroundColor: '#FEE2E2', color: colors.danger }]}>🔴 {-d} күн кечикти</Text>;
+  if (d <= 1) return <Text style={[styles.pay, { backgroundColor: '#FEF3C7', color: '#92400E' }]}>🟡 {d === 0 ? 'Бүгүн' : 'Эртең'} төлөйт</Text>;
+  return <Text style={[styles.pay, { backgroundColor: '#DCFCE7', color: colors.success }]}>✅ {fmtDay(paidUntil)} чейин</Text>;
+}
+
+const METHOD_LABEL = Object.fromEntries(PAY_METHODS.map((m) => [m.id, m.label])) as Record<PayMethod, string>;
+
+// Төлөм кабыл алуу жана төлөмдөр тарыхы
+function Payments({ r, unitPrice, onPaid }: { r: RentRequest; unitPrice?: number; onPaid: (until: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [history, setHistory] = useState<RentPayment[] | null>(null);
+  const [units, setUnits] = useState('1');
+  const [amount, setAmount] = useState(unitPrice ? String(unitPrice) : '');
+  const [method, setMethod] = useState<PayMethod>('cash');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const loadHistory = () =>
+    fetchPayments(r.id)
+      .then(setHistory)
+      .catch(() => setHistory([]));
+
+  const save = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const u = Math.max(1, Number(units) || 1);
+      const until = await recordPayment(r.id, Number(amount.replace(/\D/g, '')) || 0, u, method, { period: r.period, paidUntil: r.paidUntil });
+      await setLocalPaidUntil(r.id, until);
+      onPaid(until);
+      setOpen(false);
+      loadHistory();
+    } catch (e) {
+      const m = e instanceof Error ? e.message : String(e);
+      setErr(m.includes('record_rent_payment') ? 'SQL иштетиле элек (010_notifications.sql).' : m);
+    }
+    setBusy(false);
+  };
+
+  return (
+    <View style={styles.payBox}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <PayBadge paidUntil={r.paidUntil} />
+        <Pressable onPress={() => (history ? setHistory(null) : loadHistory())} hitSlop={6}>
+          <Text style={styles.link}>{history ? 'Тарыхты жашыруу' : 'Төлөмдөр тарыхы'}</Text>
+        </Pressable>
+      </View>
+      {history && history.length === 0 && <Text style={styles.muted}>Азырынча төлөм жок</Text>}
+      {history?.map((p) => (
+        <Text key={p.id} style={styles.muted}>
+          {fmtDay(p.createdAt)} · {formatPrice(p.amount)} · {METHOD_LABEL[p.method] ?? p.method} → {fmtDay(p.paidUntil)} чейин
+        </Text>
+      ))}
+      {open ? (
+        <View style={{ gap: 10 }}>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <View style={{ flex: 1 }}>
+              <Field label={`Канча ${UNIT[r.period]}`} value={units} onChangeText={(v) => {
+                setUnits(v);
+                if (unitPrice) setAmount(String(unitPrice * Math.max(1, Number(v) || 1)));
+              }} keyboardType="number-pad" />
+            </View>
+            <View style={{ flex: 1.4 }}>
+              <Field label="Сумма, сом" value={amount} onChangeText={setAmount} keyboardType="number-pad" />
+            </View>
+          </View>
+          <Text style={styles.rowLabel}>Кайда төлөдү</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            {PAY_METHODS.map((m) => (
+              <Chip key={m.id} label={m.label} active={method === m.id} onPress={() => setMethod(m.id)} />
+            ))}
+          </View>
+          {err && <Text style={{ color: colors.danger }}>{err}</Text>}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Button title="Жокко чыгаруу" variant="outline" style={{ flex: 1 }} onPress={() => setOpen(false)} />
+            <Button title="Сактоо" icon="cash-check" style={{ flex: 1 }} disabled={busy} onPress={save} />
+          </View>
+        </View>
+      ) : (
+        <Button title="Төлөм кабыл алуу" icon="cash-plus" onPress={() => setOpen(true)} />
+      )}
+    </View>
+  );
+}
+
 // Ижарага келген өтүнмөлөр: паспорт, телефон, GPS — админ гана көрөт
 export default function AdminRentRequests() {
   const [list, setList] = useState<RentRequest[]>([]);
-  const [filter, setFilter] = useState<RentStatus | 'all'>('new');
+  const [filter, setFilter] = useState<Filter>('new');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [equipment, setEquipment] = useState<Record<string, Equipment>>({});
+  const { rentals } = useContent();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -132,14 +229,14 @@ export default function AdminRentRequests() {
     }
   };
 
-  const shown = filter === 'all' ? list : list.filter((r) => r.status === filter);
+  const shown = filter === 'all' ? list : filter === 'due' ? list.filter(isDue) : list.filter((r) => r.status === filter);
   const count = (s: RentStatus) => list.filter((r) => r.status === s).length;
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
         {FILTERS.map((f) => (
-          <Chip key={f} label={f === 'all' ? `Баары (${list.length})` : `${STATUS[f].label} (${count(f)})`} active={filter === f} onPress={() => setFilter(f)} />
+          <Chip key={f} label={f === 'all' ? `Баары (${list.length})` : f === 'due' ? `⚠️ Төлөм күнү / кечиккен (${list.filter(isDue).length})` : `${STATUS[f].label} (${count(f)})`} active={filter === f} onPress={() => setFilter(f)} />
         ))}
       </ScrollView>
 
@@ -177,6 +274,17 @@ export default function AdminRentRequests() {
 
           {r.userId && profiles[r.userId] && <CustomerDocs p={profiles[r.userId]} onVerify={(v) => verify(r.userId!, v)} />}
 
+          {(r.status === 'active' || r.status === 'new') && (
+            <Payments
+              r={r}
+              unitPrice={(() => {
+                const b = rentals.find((x) => x.id === r.bikeId);
+                return b ? priceFor(b, r.period) : undefined;
+              })()}
+              onPaid={(until) => setList((l) => l.map((x) => (x.id === r.id ? { ...x, paidUntil: until, status: x.status === 'new' ? 'active' : x.status } : x)))}
+            />
+          )}
+
           <View style={styles.actions}>
             {(['active', 'returned', 'rejected'] as RentStatus[])
               .filter((s) => s !== r.status)
@@ -197,6 +305,9 @@ export default function AdminRentRequests() {
 }
 
 const styles = StyleSheet.create({
+  pay: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, fontWeight: '800', fontSize: 13, overflow: 'hidden' },
+  payBox: { gap: 8, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 10 },
+  link: { color: colors.primary, fontWeight: '700', fontSize: 13 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   name: { fontSize: 17, fontWeight: '800', color: colors.text, flex: 1 },
   badge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },

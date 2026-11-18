@@ -10,11 +10,20 @@ import { useAdminAuth } from '../../context/AdminAuthContext';
 import { useCatalog } from '../../context/CatalogContext';
 import { CATEGORIES, CategoryId, IconName } from '../../data/products';
 import { formatPrice } from '../../lib/format';
+import { useUnread } from '../../lib/useUnread';
 
-const SECTIONS: { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery'; title: string; text: string; icon: IconName; color: string }[] = [
+type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery'; title: string; text: string; icon: IconName; color: string };
+
+// Ижара панели — дүкөндөн өзүнчө
+const RENT_SECTIONS: Tile[] = [
+  { href: '/admin/rent-requests', title: 'Ижаралар жана төлөмдөр', text: 'Өтүнмөлөр, ким төлөдү, ким кечиктирди', icon: 'clipboard-account', color: '#2563EB' },
+  { href: '/admin/rentals', title: 'Велосипеддер', text: 'Баалар, GPS жана батарея номерлери', icon: 'bicycle-electric', color: '#0F766E' },
+  { href: '/admin/notifications', title: 'Билдирмелер', text: 'Жаңы өтүнмөлөр, төлөм күнү', icon: 'bell-ring', color: '#D97706' },
+  { href: '/admin/admins', title: 'Админдер', text: 'Админ кошуу жана алып салуу', icon: 'shield-account', color: '#475569' },
+];
+
+const SECTIONS: Tile[] = [
   { href: '/admin/stats', title: 'Статистика', text: 'Канча адам кирди, буйрутмалар', icon: 'chart-bar', color: '#111827' },
-  { href: '/admin/rent-requests', title: 'Ижара өтүнмөлөрү', text: 'Паспорт, телефон, GPS', icon: 'clipboard-account', color: '#2563EB' },
-  { href: '/admin/rentals', title: 'Аренда', text: 'Ижарага велосипеддер жана шарттар', icon: 'bicycle-electric', color: '#0F766E' },
   { href: '/admin/home', title: 'Башкы бет', text: 'Чоң баннер жана сандар', icon: 'home-edit', color: '#2E7D32' },
   { href: '/admin/promos', title: 'Акциялар', text: 'Баннерлер жана слайдер', icon: 'bullhorn', color: '#7C3AED' },
   { href: '/admin/services', title: 'Оңдоо', text: 'Кызматтар жана баалар', icon: 'wrench', color: '#EA580C' },
@@ -25,6 +34,7 @@ const SECTIONS: { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rental
 export default function AdminHome() {
   const { products, promos, loading, refresh, saveProduct, seedProducts } = useCatalog();
   const { logout, email } = useAdminAuth();
+  const unread = useUnread(isRemote);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<CategoryId | 'all'>('all');
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +93,25 @@ export default function AdminHome() {
           <Stat icon="bullhorn" label="Акция" value={stats.promos} color="#7C3AED" />
         </View>
 
+        <Text style={styles.group}>🚲 ИЖАРА</Text>
+        <View style={styles.tiles}>
+          {RENT_SECTIONS.map((t) => (
+            <Pressable key={t.href} style={[styles.tile, { backgroundColor: t.color }]} onPress={() => router.push(t.href)}>
+              <MaterialCommunityIcons name={t.icon} size={26} color="#fff" />
+              <Text style={styles.tileTitle}>{t.title}</Text>
+              <Text style={styles.tileText} numberOfLines={2}>
+                {t.text}
+              </Text>
+              {t.href === '/admin/notifications' && unread > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{unread > 99 ? '99+' : unread}</Text>
+                </View>
+              )}
+            </Pressable>
+          ))}
+        </View>
+
+        <Text style={styles.group}>🛒 ДҮКӨН</Text>
         <View style={styles.tiles}>
           {SECTIONS.map((t) => (
             <Pressable key={t.href} style={[styles.tile, { backgroundColor: t.color }]} onPress={() => router.push(t.href)}>
@@ -170,6 +199,9 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 20, fontWeight: '900', color: colors.text, fontVariant: ['tabular-nums'] },
   statLabel: { fontSize: 11, color: colors.muted, fontWeight: '600' },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  group: { fontSize: 13, fontWeight: '900', color: colors.muted, letterSpacing: 1, marginTop: 4 },
+  badge: { position: 'absolute', top: 10, right: 10, minWidth: 24, height: 24, borderRadius: 12, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  badgeText: { color: '#D97706', fontWeight: '900', fontSize: 12 },
   tile: { flexBasis: '47%', flexGrow: 1, borderRadius: radius.lg, padding: 14, gap: 4 },
   tileTitle: { color: '#fff', fontSize: 16, fontWeight: '800', marginTop: 4 },
   tileText: { color: 'rgba(255,255,255,0.9)', fontSize: 12 },
