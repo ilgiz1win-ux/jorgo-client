@@ -3,11 +3,10 @@
 # Даяр APK бул жерден жүктөлөт:
 #   https://github.com/<логин>/<репозиторий>/releases/download/android-latest/jorgo.apk
 #
-# Керектүү жөндөөлөр (бир жолу):
-#   Settings → Secrets and variables → Actions
-#     Secrets:   EXPO_TOKEN      (expo.dev → Account settings → Access tokens)
-#     Variables: EAS_PROJECT_ID  (expo.dev → долбоор → Project ID)
-#                EXPO_OWNER      (expo.dev'деги колдонуучу атыңыз)
+# Керектүү жөндөө (бир жолу):
+#   Settings → Secrets and variables → Actions → New repository secret
+#     EXPO_TOKEN  (expo.dev → Account settings → Access tokens)
+# expo.dev долбоорунун ID'си жана ээси app.config.js файлында.
 name: Android APK
 
 on:
@@ -24,16 +23,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    env:
-      EAS_PROJECT_ID: ${{ vars.EAS_PROJECT_ID }}
-      EXPO_OWNER: ${{ vars.EXPO_OWNER }}
     steps:
       - name: Check settings
         env:
           HAS_TOKEN: ${{ secrets.EXPO_TOKEN != '' }}
         run: |
           if [ "$HAS_TOKEN" != "true" ]; then echo "::error::EXPO_TOKEN secret кошулган эмес"; exit 1; fi
-          if [ -z "$EAS_PROJECT_ID" ]; then echo "::error::EAS_PROJECT_ID variable кошулган эмес"; exit 1; fi
 
       - uses: actions/checkout@v4
 
