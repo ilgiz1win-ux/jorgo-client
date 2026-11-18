@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { LOCAL_ADMIN_PIN } from '../config/backend';
 import { supabase } from '../lib/supabase';
+import { markAdminDevice } from '../lib/analytics';
 
 type AdminAuth = {
   ready: boolean;
@@ -28,6 +29,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     const { data } = supabase.auth.onAuthStateChange((_e, session) => {
       setAuthed(!!session);
       setEmail(session?.user.email ?? null);
+      if (session) markAdminDevice();
     });
     return () => data.subscription.unsubscribe();
   }, []);
@@ -42,7 +44,10 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       return 'PIN-код туура эмес';
     }
     const { error } = await supabase.auth.signInWithPassword({ email: mail.trim().toLowerCase(), password });
-    if (!error) return null;
+    if (!error) {
+      markAdminDevice();
+      return null;
+    }
     const msg = error.message.toLowerCase();
     if (msg.includes('not confirmed')) return 'Email ырастала элек. Supabase → Authentication → Users бөлүмүндө колдонуучуну ырастаңыз.';
     if (msg.includes('invalid login')) return 'Email же сырсөз туура эмес';

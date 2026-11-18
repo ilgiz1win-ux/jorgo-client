@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PhotoGallery } from '../../components/PhotoGallery';
@@ -14,6 +14,7 @@ import { useToast } from '../../context/ToastContext';
 import { BADGES, getCategory, productPhotos } from '../../data/products';
 import { formatPrice, openWhatsApp } from '../../lib/format';
 import { useT } from '../../i18n';
+import { track } from '../../lib/analytics';
 
 export default function ProductScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -25,6 +26,10 @@ export default function ProductScreen() {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    if (id) track('product_view', id);
+  }, [id]);
 
   if (!product) {
     return (

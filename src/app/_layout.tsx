@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SplashIntro } from '../components/SplashIntro';
@@ -9,11 +9,17 @@ import { CatalogProvider } from '../context/CatalogContext';
 import { ContentProvider } from '../context/ContentContext';
 import { ToastProvider } from '../context/ToastContext';
 import { LanguageProvider, useT } from '../i18n';
+import { track } from '../lib/analytics';
 
 function RootStack() {
   const { t } = useT();
   // Логотип экраны кардарлар үчүн гана, админ панелде көрсөтүлбөйт
-  const showSplash = useRef(APP_VARIANT === 'client' && !usePathname().startsWith('/admin')).current;
+  const isClient = useRef(APP_VARIANT === 'client' && !usePathname().startsWith('/admin')).current;
+  const showSplash = isClient;
+  // Статистика: колдонмо ачылды (админ панелди эсептебейбиз)
+  useEffect(() => {
+    if (isClient) track('visit');
+  }, [isClient]);
   return (
     <>
       <StatusBar style="light" />

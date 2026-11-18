@@ -9,6 +9,7 @@ import { colors } from '../../config/theme';
 import { useCatalog } from '../../context/CatalogContext';
 import { callShop, openWhatsApp } from '../../lib/format';
 import { useT } from '../../i18n';
+import { track } from '../../lib/analytics';
 
 export default function Repair() {
   const { t } = useT();
@@ -38,6 +39,7 @@ export default function Repair() {
       .filter(Boolean)
       .join('\n');
     openWhatsApp(msg).catch(() => {});
+    track('repair');
     setSent(true);
   };
 
