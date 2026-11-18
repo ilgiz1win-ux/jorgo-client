@@ -95,6 +95,19 @@ export default function Home() {
           </Pressable>
         </Link>
 
+        <Link href="/rent" asChild>
+          <Pressable style={styles.rentCard}>
+            <View style={styles.repairIcon}>
+              <MaterialCommunityIcons name="bicycle-electric" size={28} color={colors.ink} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.repairTitle}>{t('rent.homeTitle')}</Text>
+              <Text style={[styles.repairText, { color: colors.primarySoft }]}>{t('rent.homeText')}</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={26} color="#fff" />
+          </Pressable>
+        </Link>
+
         <SectionTitle right={all}>{t('home.popular')}</SectionTitle>
         {showSkeleton ? <SkeletonGrid count={4} /> : <ProductGrid products={popular} />}
 
@@ -118,6 +131,7 @@ const styles = StyleSheet.create({
   body: { padding: 16, gap: 14 },
   link: { color: colors.primary, fontWeight: '700' },
   repair: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.ink, borderRadius: radius.lg, padding: 16 },
+  rentCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.primary, borderRadius: radius.lg, padding: 16 },
   repairIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.lime, alignItems: 'center', justifyContent: 'center' },
   repairTitle: { color: '#fff', fontSize: 17, fontWeight: '800' },
   repairText: { color: '#D1D5DB', fontSize: 13, marginTop: 2 },

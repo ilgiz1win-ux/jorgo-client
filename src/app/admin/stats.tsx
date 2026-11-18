@@ -163,6 +163,7 @@ export default function AdminStats() {
             <Tile icon="calendar-range" value={stats.period_visitors} label={`${days} күндө`} sub="ар бири бир жолу" />
             <Tile icon="whatsapp" value={stats.orders} label="Буйрутма" sub={`${days} күндө`} />
             <Tile icon="wrench" value={stats.repairs} label="Оңдоого өтүнмө" sub={`${days} күндө`} />
+            <Tile icon="bicycle-electric" value={stats.rents ?? 0} label="Ижарага өтүнмө" sub={`${days} күндө`} />
           </View>
 
           <Card style={{ gap: 10 }}>
