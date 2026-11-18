@@ -6,6 +6,7 @@ import { HeroBanner, ReviewsCarousel, StatsRow } from '../../components/HomeSect
 import { InstallBanner } from '../../components/InstallApp';
 import { ProductGrid } from '../../components/ProductGrid';
 import { PromoCarousel } from '../../components/PromoCarousel';
+import { RentStrip } from '../../components/RentStrip';
 import { SkeletonGrid } from '../../components/Skeleton';
 import { SectionTitle } from '../../components/ui';
 import { colors, radius } from '../../config/theme';
@@ -21,7 +22,7 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const { t } = useT();
   const { products, promos, loading, refresh } = useCatalog();
-  const { settings, reviews, refreshContent } = useContent();
+  const { settings, reviews, rentals, refreshContent } = useContent();
   const popular = products.filter((p) => p.popular);
   const onSale = products.filter((p) => p.oldPrice && p.oldPrice > p.price);
   const activePromos = promos.filter((p) => p.active);
@@ -59,6 +60,21 @@ export default function Home() {
         <InstallBanner />
         <HeroBanner settings={settings} />
         <StatsRow stats={settings.stats} />
+
+        {rentals.length > 0 && (
+          <>
+            <SectionTitle
+              right={
+                <Link href="/rent" style={styles.link}>
+                  {t('common.allArrow')}
+                </Link>
+              }
+            >
+              {t('rent.homeBikes')}
+            </SectionTitle>
+            <RentStrip bikes={rentals} />
+          </>
+        )}
         <PromoCarousel promos={activePromos} />
 
         <SectionTitle>{t('home.categories')}</SectionTitle>

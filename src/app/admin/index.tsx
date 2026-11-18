@@ -11,8 +11,9 @@ import { useCatalog } from '../../context/CatalogContext';
 import { CATEGORIES, CategoryId, IconName } from '../../data/products';
 import { formatPrice } from '../../lib/format';
 
-const SECTIONS: { href: '/admin/stats' | '/admin/rentals' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery'; title: string; text: string; icon: IconName; color: string }[] = [
+const SECTIONS: { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery'; title: string; text: string; icon: IconName; color: string }[] = [
   { href: '/admin/stats', title: 'Статистика', text: 'Канча адам кирди, буйрутмалар', icon: 'chart-bar', color: '#111827' },
+  { href: '/admin/rent-requests', title: 'Ижара өтүнмөлөрү', text: 'Паспорт, телефон, GPS', icon: 'clipboard-account', color: '#2563EB' },
   { href: '/admin/rentals', title: 'Аренда', text: 'Ижарага велосипеддер жана шарттар', icon: 'bicycle-electric', color: '#0F766E' },
   { href: '/admin/home', title: 'Башкы бет', text: 'Чоң баннер жана сандар', icon: 'home-edit', color: '#2E7D32' },
   { href: '/admin/promos', title: 'Акциялар', text: 'Баннерлер жана слайдер', icon: 'bullhorn', color: '#7C3AED' },

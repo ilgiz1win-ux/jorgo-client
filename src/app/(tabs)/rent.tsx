@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { ScrollViewInstance } from 'react-native';
 import { PopIn } from '../../components/anim';
 import { BIKE_IMAGE, BIKE_RATIO } from '../../components/BikeRide';
@@ -12,6 +13,7 @@ import { periodsOf, priceFor, RentalBike, RentPeriod } from '../../data/rentals'
 import { TKey, useT } from '../../i18n';
 import { track } from '../../lib/analytics';
 import { formatPrice, openWhatsApp } from '../../lib/format';
+import { getLocationOnce, mapLink, submitRentRequest } from '../../lib/rentRequests';
 
 const PER: Record<RentPeriod, TKey> = { day: 'rent.perDay', week: 'rent.perWeek', month: 'rent.perMonth' };
 const UNIT: Record<RentPeriod, TKey> = { day: 'rent.unit.day', week: 'rent.unit.week', month: 'rent.unit.month' };
@@ -73,9 +75,20 @@ export default function Rent() {
   const [start, setStart] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('+996 ');
+  const [passport, setPassport] = useState('');
+  const [consent, setConsent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [gpsOk, setGpsOk] = useState<boolean | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  const params = useLocalSearchParams<{ bike?: string }>();
   const scroll = useRef<ScrollViewInstance>(null);
   const formY = useRef(0);
+
+  // Башкы беттен велосипед тандалып келсе
+  useEffect(() => {
+    if (params.bike && available.some((b) => b.id === params.bike)) choose(params.bike);
+  }, [params.bike, available.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const bike = available.find((b) => b.id === bikeId) ?? available[0];
   const periods = bike ? periodsOf(bike) : [];
@@ -87,7 +100,7 @@ export default function Rent() {
 
   const unitPrice = bike ? priceFor(bike, period) : undefined;
   const total = unitPrice ? unitPrice * count : 0;
-  const valid = !!bike && name.trim().length > 1 && phone.replace(/\D/g, '').length >= 9;
+  const valid = !!bike && name.trim().length > 1 && phone.replace(/\D/g, '').length >= 9 && passport.trim().length >= 5 && consent;
   const terms = rentTerms.text
     .split('\n')
     .map((l) => l.trim())
@@ -98,9 +111,34 @@ export default function Rent() {
     setTimeout(() => scroll.current?.scrollTo({ y: formY.current, animated: true }), 50);
   };
 
-  const submit = () => {
-    if (!bike) return;
+  const submit = async () => {
+    if (!bike || sending) return;
+    setSending(true);
+    setError(null);
+    const loc = await getLocationOnce();
+    setGpsOk(!!loc);
+    try {
+      await submitRentRequest({
+        bikeId: bike.id,
+        bikeName: bike.name,
+        period,
+        count,
+        total: total || undefined,
+        startText: start.trim(),
+        name: name.trim(),
+        phone: phone.trim(),
+        passport: passport.trim().toUpperCase(),
+        lat: loc?.lat,
+        lng: loc?.lng,
+        accuracy: loc?.accuracy,
+      });
+    } catch {
+      setError(t('rent.error'));
+      setSending(false);
+      return;
+    }
     const periodText = `${count} ${t(UNIT[period])}${unitPrice ? ` × ${formatPrice(unitPrice)}` : ''}`;
+    // Паспорт WhatsApp'ка жиберилбейт — ал админ панелде гана
     const msg = [
       t('msg.rent'),
       '',
@@ -111,10 +149,13 @@ export default function Rent() {
       '',
       t('msg.name', { v: name.trim() }),
       t('msg.phone', { v: phone.trim() }),
+      t('msg.rentPassport'),
+      loc ? t('msg.rentGps', { v: mapLink(loc.lat, loc.lng) }) : null,
     ]
       .filter((x) => x !== null)
       .join('\n');
     track('rent');
+    setSending(false);
     setSent(true);
     setTimeout(() => openWhatsApp(msg, SHOP.rentWhatsapp).catch(() => {}), 300);
   };
@@ -161,6 +202,9 @@ export default function Rent() {
                   <MaterialCommunityIcons name="check-circle" size={48} color={colors.success} />
                 </PopIn>
                 <Text style={{ fontSize: 16, fontWeight: '700', textAlign: 'center' }}>{t('rent.sent')}</Text>
+                {gpsOk !== null && (
+                  <Text style={[styles.muted, { color: gpsOk ? colors.success : colors.muted }]}>{gpsOk ? t('rent.gpsOk') : t('rent.gpsNo')}</Text>
+                )}
               </Card>
             ) : (
               <Card style={{ gap: 14 }}>
@@ -191,6 +235,15 @@ export default function Rent() {
                 <Field label={t('rent.start')} value={start} onChangeText={setStart} placeholder={t('rent.startPh')} />
                 <Field label={t('common.name')} value={name} onChangeText={setName} placeholder={t('checkout.namePh')} />
                 <Field label={t('common.phone')} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+                <Field label={t('rent.passport')} value={passport} onChangeText={setPassport} placeholder={t('rent.passportPh')} autoCapitalize="characters" />
+                <Pressable style={styles.consent} onPress={() => setConsent(!consent)} accessibilityRole="checkbox" accessibilityState={{ checked: consent }}>
+                  <MaterialCommunityIcons name={consent ? 'checkbox-marked' : 'checkbox-blank-outline'} size={24} color={consent ? colors.primary : colors.muted} />
+                  <Text style={styles.consentText}>{t('rent.consent')}</Text>
+                </Pressable>
+                <View style={styles.gpsNote}>
+                  <MaterialCommunityIcons name="map-marker-radius" size={18} color={colors.primary} />
+                  <Text style={[styles.muted, { flex: 1 }]}>{t('rent.gpsNote')}</Text>
+                </View>
                 {!!total && (
                   <View style={styles.totalRow}>
                     <Text style={styles.h}>{t('rent.total')}</Text>
@@ -198,7 +251,9 @@ export default function Rent() {
                   </View>
                 )}
                 {!!bike.deposit && <Text style={styles.muted}>{t('rent.deposit', { sum: formatPrice(bike.deposit) })}</Text>}
-                <Button title={t('rent.send')} icon="whatsapp" variant="whatsapp" disabled={!valid} onPress={submit} />
+                {error && <Text style={{ color: colors.danger }}>{error}</Text>}
+                {sending && <ActivityIndicator color={colors.primary} />}
+                <Button title={sending ? t('rent.sending') : t('rent.send')} icon="whatsapp" variant="whatsapp" disabled={!valid || sending} onPress={submit} />
                 {!valid && <Text style={[styles.muted, { textAlign: 'center' }]}>{t('checkout.fill')}</Text>}
               </Card>
             )}
@@ -233,6 +288,9 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   term: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   termText: { flex: 1, color: colors.text, lineHeight: 20 },
+  consent: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  consentText: { flex: 1, color: colors.text, lineHeight: 20 },
+  gpsNote: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   countRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 10 },
 });
