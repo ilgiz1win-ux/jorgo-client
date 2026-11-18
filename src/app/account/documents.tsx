@@ -1,81 +1,12 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { DocImage } from '../../components/account/DocImage';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { DocCard } from '../../components/account/DocCard';
 import { RequireAccount } from '../../components/account/RequireAccount';
 import { colors, radius } from '../../config/theme';
 import { useAccount } from '../../context/AccountContext';
-import { useToast } from '../../context/ToastContext';
-import type { IconName } from '../../data/products';
-import { TKey, useT } from '../../i18n';
-import { DOC_KINDS, docPathKey, DocKind } from '../../lib/account';
-
-const ICON: Record<DocKind, IconName> = { selfie: 'face-man-outline', passport: 'card-account-details-outline', license: 'card-bulleted-outline' };
-const LABEL: Record<DocKind, TKey> = { selfie: 'acc.doc.selfie', passport: 'acc.doc.passport', license: 'acc.doc.license' };
-
-function DocCard({ kind }: { kind: DocKind }) {
-  const { t } = useT();
-  const { profile, uploadDoc } = useAccount();
-  const toast = useToast();
-  const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const path = profile?.[docPathKey(kind)];
-
-  const pick = async (source: 'camera' | 'library') => {
-    setOpen(false);
-    setBusy(true);
-    try {
-      await uploadDoc(kind, source);
-    } catch (e) {
-      toast.show(e instanceof Error && e.message === 'camera' ? t('acc.doc.cameraDenied') : t('acc.doc.error'));
-    }
-    setBusy(false);
-  };
-
-  return (
-    <View style={styles.card}>
-      <View style={styles.row}>
-        <View style={styles.thumb}>
-          {path ? <DocImage path={path} style={StyleSheet.absoluteFill} /> : <MaterialCommunityIcons name={ICON[kind]} size={28} color={colors.muted} />}
-        </View>
-        <View style={{ flex: 1, gap: 6 }}>
-          <Text style={styles.title}>
-            {t(LABEL[kind])}
-            {kind === 'license' ? <Text style={styles.optional}>{`  ${t('acc.doc.optional')}`}</Text> : null}
-          </Text>
-          <View style={[styles.status, path && { backgroundColor: colors.primarySoft }]}>
-            <MaterialCommunityIcons name={path ? 'check-circle' : 'upload'} size={14} color={path ? colors.primary : colors.muted} />
-            <Text style={[styles.statusText, path && { color: colors.primary }]}>{(path ? t('acc.doc.done') : t('acc.doc.none')).toUpperCase()}</Text>
-          </View>
-        </View>
-        {busy ? (
-          <ActivityIndicator color={colors.primary} />
-        ) : (
-          <Pressable
-            style={styles.plus}
-            onPress={() => (Platform.OS === 'web' ? pick('library') : setOpen(!open))}
-            accessibilityRole="button"
-            accessibilityLabel={t(LABEL[kind])}
-          >
-            <MaterialCommunityIcons name={path ? 'pencil' : 'plus'} size={24} color={colors.primary} />
-          </Pressable>
-        )}
-      </View>
-      {open && (
-        <View style={styles.choices}>
-          <Pressable style={styles.choice} onPress={() => pick('camera')}>
-            <MaterialCommunityIcons name="camera" size={20} color={colors.primary} />
-            <Text style={styles.choiceText}>{t('acc.doc.camera')}</Text>
-          </Pressable>
-          <Pressable style={styles.choice} onPress={() => pick('library')}>
-            <MaterialCommunityIcons name="image" size={20} color={colors.primary} />
-            <Text style={styles.choiceText}>{t('acc.doc.library')}</Text>
-          </Pressable>
-        </View>
-      )}
-    </View>
-  );
-}
+import { useT } from '../../i18n';
+import { DOC_KINDS } from '../../lib/account';
 
 function PassportNumber() {
   const { t } = useT();

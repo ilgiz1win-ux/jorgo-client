@@ -33,7 +33,7 @@ export default function Settings() {
     setBusy(true);
     try {
       await deleteAccount();
-      router.replace('/account');
+      router.dismissTo('/rent');
     } catch {
       toast.show(t('acc.err.unknown'));
     }
@@ -71,7 +71,7 @@ export default function Settings() {
             label={t('acc.logout')}
             onPress={async () => {
               await signOut();
-              router.replace('/account');
+              router.dismissTo('/rent');
             }}
           />
           <MenuRow icon="delete-outline" label={t('acc.delete')} danger onPress={busy ? undefined : remove} />

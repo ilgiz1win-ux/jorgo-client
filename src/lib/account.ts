@@ -9,6 +9,9 @@ import { supabase } from './supabase';
 export type DocKind = 'selfie' | 'passport' | 'license';
 export const DOC_KINDS: DocKind[] = ['selfie', 'passport', 'license'];
 
+export type Relative = { name: string; relation: string; phone: string };
+export const RELATIVES_REQUIRED = 2;
+
 export type Profile = {
   id: string;
   fullName: string;
@@ -19,6 +22,8 @@ export type Profile = {
   selfiePath?: string;
   passportPath?: string;
   licensePath?: string;
+  // Туугандары (ижара үчүн байланыш)
+  relatives: Relative[];
   verified: boolean;
 };
 
@@ -32,6 +37,7 @@ type Row = {
   selfie_path: string | null;
   passport_path: string | null;
   license_path: string | null;
+  relatives?: Relative[] | null;
   verified: boolean;
 };
 
@@ -49,20 +55,32 @@ const fromRow = (r: Row): Profile => ({
   selfiePath: r.selfie_path ?? undefined,
   passportPath: r.passport_path ?? undefined,
   licensePath: r.license_path ?? undefined,
+  relatives: Array.isArray(r.relatives) ? r.relatives : [],
   verified: r.verified,
 });
 
-const toRow = (p: Profile) => ({
-  id: p.id,
-  full_name: p.fullName.trim(),
-  phone: p.phone.trim(),
-  birth_date: p.birthDate.trim(),
-  address: p.address.trim(),
-  passport_no: p.passportNo.trim().toUpperCase(),
-  selfie_path: p.selfiePath ?? null,
-  passport_path: p.passportPath ?? null,
-  license_path: p.licensePath ?? null,
-});
+const toRow = (p: Profile) => {
+  const relatives = p.relatives
+    .map((x) => ({ name: x.name.trim(), relation: x.relation.trim(), phone: x.phone.trim() }))
+    .filter((x) => x.name || x.phone)
+    .slice(0, 3);
+  return {
+    id: p.id,
+    full_name: p.fullName.trim(),
+    phone: p.phone.trim(),
+    birth_date: p.birthDate.trim(),
+    address: p.address.trim(),
+    passport_no: p.passportNo.trim().toUpperCase(),
+    selfie_path: p.selfiePath ?? null,
+    passport_path: p.passportPath ?? null,
+    license_path: p.licensePath ?? null,
+    // Бош болсо жибербейбиз (009_relatives.sql иштетилбесе да катталуу иштесин)
+    ...(relatives.length ? { relatives } : {}),
+  };
+};
+
+export const relativeValid = (r?: Relative) => !!r && r.name.trim().length > 1 && r.phone.replace(/\D/g, '').length >= 9;
+export const relativesReady = (list: Relative[]) => list.filter(relativeValid).length >= RELATIVES_REQUIRED;
 
 export const docPathKey = (k: DocKind): 'selfiePath' | 'passportPath' | 'licensePath' => (k === 'selfie' ? 'selfiePath' : k === 'passport' ? 'passportPath' : 'licensePath');
 
@@ -83,6 +101,7 @@ export const emptyProfile = (id: string, phone = ''): Profile => ({
   birthDate: '',
   address: '',
   passportNo: '',
+  relatives: [],
   verified: false,
 });
 

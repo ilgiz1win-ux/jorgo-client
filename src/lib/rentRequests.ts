@@ -25,6 +25,8 @@ export type RentRequest = {
   status: RentStatus;
   // Аккаунт аркылуу жиберилсе
   userId?: string;
+  // Ижара ушул күнгө чейин төлөнгөн (YYYY-MM-DD)
+  paidUntil?: string;
 };
 
 type Row = {
@@ -44,6 +46,7 @@ type Row = {
   accuracy: number | null;
   status: RentStatus;
   user_id?: string | null;
+  paid_until?: string | null;
 };
 
 const LOCAL = 'jorgo.local.rentRequests';
@@ -65,6 +68,7 @@ const fromRow = (r: Row): RentRequest => ({
   accuracy: r.accuracy ?? undefined,
   status: r.status,
   userId: r.user_id ?? undefined,
+  paidUntil: r.paid_until ?? undefined,
 });
 
 async function readLocal(): Promise<RentRequest[]> {
@@ -140,6 +144,13 @@ export async function setRentStatus(id: string, status: RentStatus): Promise<voi
   }
   const { error } = await supabase.from('rental_requests').update({ status }).eq('id', id);
   if (error) throw error;
+}
+
+// Демо режим үчүн: төлөнгөн мөөнөттү жергиликтүү жаңыртуу
+export async function setLocalPaidUntil(id: string, paidUntil: string): Promise<void> {
+  if (supabase) return;
+  const list = (await readLocal()).map((x) => (x.id === id ? { ...x, paidUntil, status: x.status === 'new' ? ('active' as const) : x.status } : x));
+  await AsyncStorage.setItem(LOCAL, JSON.stringify(list)).catch(() => {});
 }
 
 export const mapLink = (lat: number, lng: number) => `https://maps.google.com/?q=${lat},${lng}`;

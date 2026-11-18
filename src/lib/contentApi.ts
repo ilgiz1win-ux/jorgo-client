@@ -199,3 +199,34 @@ export async function saveRentTerms(t: RentTerms): Promise<RentTerms> {
   }
   return t;
 }
+
+// Велосипеддин GPS жана батарея номерлери — админ гана (rental_equipment таблицасы, RLS)
+export type Equipment = { gpsNo: string; battery1No: string; battery2No: string };
+export const EMPTY_EQUIPMENT: Equipment = { gpsNo: '', battery1No: '', battery2No: '' };
+const EQUIP_LOCAL = 'jorgo.local.equipment';
+
+export async function fetchEquipment(): Promise<Record<string, Equipment>> {
+  if (!supabase) return (await readJson<Record<string, Equipment>>(EQUIP_LOCAL)) ?? {};
+  const { data, error } = await supabase.from('rental_equipment').select('*');
+  if (error) throw error;
+  return Object.fromEntries(
+    (data as { rental_id: string; gps_no: string; battery1_no: string; battery2_no: string }[]).map((r) => [
+      r.rental_id,
+      { gpsNo: r.gps_no, battery1No: r.battery1_no, battery2No: r.battery2_no },
+    ]),
+  );
+}
+
+export async function saveEquipment(rentalId: string, e: Equipment): Promise<void> {
+  const clean = { gpsNo: e.gpsNo.trim(), battery1No: e.battery1No.trim(), battery2No: e.battery2No.trim() };
+  if (!supabase) {
+    const all = (await readJson<Record<string, Equipment>>(EQUIP_LOCAL)) ?? {};
+    all[rentalId] = clean;
+    await writeJson(EQUIP_LOCAL, all);
+    return;
+  }
+  const { error } = await supabase
+    .from('rental_equipment')
+    .upsert({ rental_id: rentalId, gps_no: clean.gpsNo, battery1_no: clean.battery1No, battery2_no: clean.battery2No, updated_at: new Date().toISOString() });
+  if (error) throw error;
+}

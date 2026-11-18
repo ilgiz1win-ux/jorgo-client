@@ -6,6 +6,7 @@ import { colors, radius } from '../../config/theme';
 import { useContent } from '../../context/ContentContext';
 import { periodsOf, priceFor, RentalBike } from '../../data/rentals';
 import { newId } from '../../lib/catalogApi';
+import { EMPTY_EQUIPMENT, Equipment, fetchEquipment, saveEquipment } from '../../lib/contentApi';
 import { formatPrice } from '../../lib/format';
 import { pickAndUploadImage } from '../../lib/pickImage';
 
@@ -20,6 +21,10 @@ type Draft = {
   priceMonth: string;
   deposit: string;
   available: boolean;
+  // Админ гана көрөт
+  gpsNo: string;
+  battery1No: string;
+  battery2No: string;
 };
 
 const toNum = (s: string) => {
@@ -27,7 +32,7 @@ const toNum = (s: string) => {
   return n > 0 ? n : undefined;
 };
 
-const toDraft = (b?: RentalBike): Draft => ({
+const toDraft = (b?: RentalBike, e: Equipment = EMPTY_EQUIPMENT): Draft => ({
   id: b?.id ?? '',
   name: b?.name ?? '',
   imageUrl: b?.imageUrl,
@@ -38,6 +43,9 @@ const toDraft = (b?: RentalBike): Draft => ({
   priceMonth: b?.priceMonth ? String(b.priceMonth) : '',
   deposit: b?.deposit ? String(b.deposit) : '',
   available: b?.available ?? true,
+  gpsNo: e.gpsNo,
+  battery1No: e.battery1No,
+  battery2No: e.battery2No,
 });
 
 const fromDraft = (d: Draft): RentalBike => ({
@@ -68,6 +76,13 @@ export default function AdminRentals() {
   const [error, setError] = useState<string | null>(null);
   const [terms, setTerms] = useState(rentTerms.text);
   const [termsMsg, setTermsMsg] = useState<string | null>(null);
+  const [equipment, setEquipment] = useState<Record<string, Equipment>>({});
+
+  useEffect(() => {
+    fetchEquipment()
+      .then(setEquipment)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => setTerms(rentTerms.text), [rentTerms.text]);
 
@@ -97,7 +112,14 @@ export default function AdminRentals() {
 
   const save = async () => {
     if (!draft) return;
-    if (await run(() => saveRental(fromDraft(draft)))) setDraft(null);
+    const bike = fromDraft(draft);
+    const eq = { gpsNo: draft.gpsNo, battery1No: draft.battery1No, battery2No: draft.battery2No };
+    const ok = await run(async () => {
+      await saveRental(bike);
+      await saveEquipment(bike.id, eq);
+      setEquipment((m) => ({ ...m, [bike.id]: eq }));
+    });
+    if (ok) setDraft(null);
   };
 
   const hasPrice = draft && (toNum(draft.priceDay) || toNum(draft.priceWeek) || toNum(draft.priceMonth));
@@ -130,6 +152,15 @@ export default function AdminRentals() {
         </View>
       </View>
       <Field label="Күрөө (залог), сом" value={draft.deposit} onChangeText={(t) => setDraft({ ...draft, deposit: t })} keyboardType="number-pad" placeholder="5000" />
+      <View style={styles.secret}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <MaterialCommunityIcons name="eye-off-outline" size={18} color="#B45309" />
+          <Text style={{ fontWeight: '800', color: colors.text }}>GPS жана батареялар (кардарга көрүнбөйт)</Text>
+        </View>
+        <Field label="Велосипеддеги GPS номери" value={draft.gpsNo} onChangeText={(t) => setDraft({ ...draft, gpsNo: t })} placeholder="Мисалы: 865432101234567" autoCapitalize="characters" />
+        <Field label="1-батареянын номери" value={draft.battery1No} onChangeText={(t) => setDraft({ ...draft, battery1No: t })} placeholder="Мисалы: B-001" autoCapitalize="characters" />
+        <Field label="2-батареянын номери" value={draft.battery2No} onChangeText={(t) => setDraft({ ...draft, battery2No: t })} placeholder="Мисалы: B-002" autoCapitalize="characters" />
+      </View>
       <Field label="Сүрөттөмө" value={draft.description} onChangeText={(t) => setDraft({ ...draft, description: t })} multiline />
       <Field label="Мүнөздөмөлөр (ар бири жаңы саптан)" value={draft.specs} onChangeText={(t) => setDraft({ ...draft, specs: t })} multiline placeholder={'Мотор: 500 Вт\nЖүрүш: 60 км'} />
       <View style={styles.toggle}>
@@ -176,6 +207,13 @@ export default function AdminRentals() {
                     .map((p) => `${formatPrice(priceFor(b, p)!)} ${PERIOD_LABEL[p]}`)
                     .join(' • ')}
                 </Text>
+                {!!equipment[b.id] && (equipment[b.id].gpsNo || equipment[b.id].battery1No || equipment[b.id].battery2No) ? (
+                  <Text style={styles.equip} numberOfLines={2}>
+                    {[equipment[b.id].gpsNo && `GPS: ${equipment[b.id].gpsNo}`, equipment[b.id].battery1No && `Бат.1: ${equipment[b.id].battery1No}`, equipment[b.id].battery2No && `Бат.2: ${equipment[b.id].battery2No}`]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </Text>
+                ) : null}
                 <Text style={{ fontSize: 12, fontWeight: '700', color: b.available ? colors.success : colors.muted }}>
                   {b.available ? 'Бош' : 'Ижарада'}
                 </Text>
@@ -190,7 +228,7 @@ export default function AdminRentals() {
                   accessibilityLabel="Бош"
                 />
                 <View style={{ flexDirection: 'row', gap: 16 }}>
-                  <Pressable hitSlop={8} onPress={() => setDraft(toDraft(b))} accessibilityLabel="Өзгөртүү">
+                  <Pressable hitSlop={8} onPress={() => setDraft(toDraft(b, equipment[b.id]))} accessibilityLabel="Өзгөртүү">
                     <MaterialCommunityIcons name="pencil" size={22} color={colors.primary} />
                   </Pressable>
                   {confirmId === b.id ? (
@@ -234,6 +272,8 @@ export default function AdminRentals() {
 }
 
 const styles = StyleSheet.create({
+  secret: { gap: 10, backgroundColor: '#FFFBEB', borderRadius: radius.md, padding: 12, borderWidth: 1, borderColor: '#FDE68A' },
+  equip: { fontSize: 12, color: '#92400E', fontWeight: '600' },
   h: { fontSize: 16, fontWeight: '800', color: colors.text },
   label: { fontSize: 13, fontWeight: '600', color: colors.muted },
   hint: { color: colors.muted, fontSize: 13, lineHeight: 18 },

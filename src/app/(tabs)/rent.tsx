@@ -1,13 +1,16 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { LoginForm } from '../../components/account/LoginForm';
+import { RentOnboarding, RentSteps } from '../../components/account/RentOnboarding';
 import { FadeIn } from '../../components/anim';
 import { BIKE_IMAGE, BIKE_RATIO } from '../../components/BikeRide';
 import { RentHeader } from '../../components/RentHeader';
 import { Button } from '../../components/ui';
 import { SHOP } from '../../config/shop';
 import { colors, radius } from '../../config/theme';
+import { docsReady, useAccount } from '../../context/AccountContext';
 import { useContent } from '../../context/ContentContext';
 import { periodsOf, priceFor, RentalBike } from '../../data/rentals';
 import { useT } from '../../i18n';
@@ -52,8 +55,32 @@ function ModelCard({ bike, index }: { bike: RentalBike; index: number }) {
   );
 }
 
-// Ижара: моделдер тизмеси → тарифтер → тариздөө
+// Ижара — дүкөндөн өзүнчө бөлүм: 1) кирүү 2) паспорт жана туугандар 3) моделдер → тарифтер → тариздөө
 export default function Rent() {
+  const { ready, profile } = useAccount();
+  const { t } = useT();
+  let body;
+  if (!ready) body = <ActivityIndicator color={colors.primary} style={{ marginTop: 60 }} />;
+  else if (!profile)
+    body = (
+      <View style={{ flex: 1 }}>
+        <View style={{ paddingHorizontal: 16 }}>
+          <RentSteps step={1} />
+        </View>
+        <LoginForm onDone={() => {}} subtitle={t('rent.loginSub')} />
+      </View>
+    );
+  else if (!docsReady(profile)) body = <RentOnboarding />;
+  else body = <RentModels />;
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <RentHeader />
+      {body}
+    </View>
+  );
+}
+
+function RentModels() {
   const { t } = useT();
   const { rentals } = useContent();
   const params = useLocalSearchParams<{ bike?: string }>();
@@ -69,9 +96,7 @@ export default function Rent() {
   const list = [...rentals].sort((a, b) => Number(b.available) - Number(a.available));
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <RentHeader />
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 110 }}>
+    <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}>
         <View style={styles.head}>
           <View style={styles.headIcon}>
             <MaterialCommunityIcons name="bicycle-electric" size={30} color={colors.primary} />
@@ -97,8 +122,7 @@ export default function Rent() {
           <Text style={{ flex: 1, color: colors.text, fontWeight: '700' }}>{t('rent.terms')}</Text>
           <MaterialCommunityIcons name="chevron-right" size={22} color={colors.muted} />
         </Pressable>
-      </ScrollView>
-    </View>
+    </ScrollView>
   );
 }
 
