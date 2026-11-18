@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { InstallRow } from '../../components/InstallApp';
 import { Card } from '../../components/ui';
 import { isRemote } from '../../config/backend';
 import { SHOP } from '../../config/shop';
@@ -49,6 +50,8 @@ export default function Contacts() {
         <Text style={styles.p}>🛡 Электровелосипеддерге жана батареяларга кепилдик берилет.</Text>
         <Text style={styles.p}>💳 Накталай, карта менен же бөлүп төлөө мүмкүн.</Text>
       </Card>
+
+      <InstallRow />
 
       {/* Сервер туташканда гана көрсөтүлөт; демо режимде /admin дареги аркылуу кирсе болот */}
       {isRemote && (

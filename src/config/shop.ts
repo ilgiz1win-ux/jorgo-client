@@ -11,6 +11,8 @@ export const SHOP = {
   hours: 'Күн сайын 09:00–21:00, дем алышсыз',
   instagram: 'jorgo.ecoservice',
   currency: 'сом',
+  // Android үчүн APK файлдын шилтемеси (GitHub Releases). Бош болсо, баскыч көрүнбөйт.
+  apkUrl: '' as string | undefined,
   deliveryFee: 300,
   freeDeliveryFrom: 20000,
 };

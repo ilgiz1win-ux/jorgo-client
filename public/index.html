@@ -17,6 +17,20 @@
     <meta property="og:description" content="Электровелосипеддер, батареялар, запчасттар жана оңдоо. Онлайн буйрутма WhatsApp аркылуу." />
     <meta property="og:image" content="%SITE_URL%/icon-512.png" />
     <meta property="og:type" content="website" />
+    <script>
+      // «Колдонмону орнотуу» баскычы үчүн: Android/Chrome сунушун эрте кармап калабыз
+      window.__jorgoInstall = null;
+      window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        window.__jorgoInstall = e;
+        window.dispatchEvent(new Event('jorgo-install-ready'));
+      });
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('%BASE_URL%/sw.js', { scope: '%BASE_URL%/' }).catch(function () {});
+        });
+      }
+    </script>
     <style id="expo-reset">
       html, body { height: 100%; }
       body { overflow: hidden; background: #F5F7F8; }

@@ -3,6 +3,7 @@ import { Link, router } from 'expo-router';
 import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HeroBanner, ReviewsCarousel, StatsRow } from '../../components/HomeSections';
+import { InstallBanner } from '../../components/InstallApp';
 import { ProductGrid } from '../../components/ProductGrid';
 import { PromoCarousel } from '../../components/PromoCarousel';
 import { SkeletonGrid } from '../../components/Skeleton';
@@ -47,6 +48,7 @@ export default function Home() {
       </View>
 
       <View style={styles.body}>
+        <InstallBanner />
         <HeroBanner settings={settings} />
         <StatsRow stats={settings.stats} />
         <PromoCarousel promos={activePromos} />
