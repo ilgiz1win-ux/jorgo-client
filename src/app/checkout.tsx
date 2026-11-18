@@ -9,6 +9,7 @@ import { colors } from '../config/theme';
 import { useCart } from '../context/CartContext';
 import { formatPrice, openWhatsApp } from '../lib/format';
 import { TKey, useT } from '../i18n';
+import { track } from '../lib/analytics';
 
 type Delivery = 'pickup' | 'courier';
 type Payment = 'cash' | 'transfer' | 'installment';
@@ -85,6 +86,7 @@ export default function Checkout() {
       customer: name.trim(),
       phone: phone.trim(),
     });
+    track('order');
     clear();
     setDone(id);
     // Буйрутма сакталгандан кийин WhatsApp'ты ачабыз
