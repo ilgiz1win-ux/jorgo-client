@@ -2,10 +2,13 @@ import { createContext, ReactNode, useContext, useEffect, useState } from 'react
 import { LOCAL_ADMIN_PIN } from '../config/backend';
 import { supabase } from '../lib/supabase';
 import { markAdminDevice } from '../lib/analytics';
+import { checkIsAdmin } from '../lib/account';
 
 type AdminAuth = {
   ready: boolean;
   authed: boolean;
+  // Кирген, бирок админ эмес (кардар аккаунту)
+  notAdmin: boolean;
   email: string | null;
   // Supabase: email + сырсөз. Жергиликтүү режим: password = PIN.
   login: (email: string, password: string) => Promise<string | null>;
@@ -18,18 +21,22 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(!supabase);
   const [email, setEmail] = useState<string | null>(null);
   const [authed, setAuthed] = useState(false);
+  const [notAdmin, setNotAdmin] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => {
-      setAuthed(!!data.session);
-      setEmail(data.session?.user.email ?? null);
+    // Сессия бар болсо да, админдер тизмесинде барбы — текшеребиз
+    const apply = async (hasSession: boolean, mail: string | null) => {
+      const admin = hasSession ? await checkIsAdmin() : false;
+      setAuthed(hasSession && admin);
+      setNotAdmin(hasSession && !admin);
+      setEmail(mail);
+      if (hasSession && admin) markAdminDevice();
       setReady(true);
-    });
-    const { data } = supabase.auth.onAuthStateChange((_e, session) => {
-      setAuthed(!!session);
-      setEmail(session?.user.email ?? null);
-      if (session) markAdminDevice();
+    };
+    supabase.auth.getSession().then(({ data }) => apply(!!data.session, data.session?.user.email ?? null));
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') apply(!!session, session?.user.email ?? null);
     });
     return () => data.subscription.unsubscribe();
   }, []);
@@ -45,7 +52,10 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     }
     const { error } = await supabase.auth.signInWithPassword({ email: mail.trim().toLowerCase(), password });
     if (!error) {
-      markAdminDevice();
+      if (!(await checkIsAdmin())) {
+        await supabase.auth.signOut();
+        return 'Бул аккаунт админ эмес. Админдин email жана сырсөзүн жазыңыз.';
+      }
       return null;
     }
     const msg = error.message.toLowerCase();
@@ -58,10 +68,11 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     if (supabase) await supabase.auth.signOut();
     setAuthed(false);
+    setNotAdmin(false);
     setEmail(null);
   };
 
-  return <Ctx.Provider value={{ ready, authed, email, login, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ ready, authed, notAdmin, email, login, logout }}>{children}</Ctx.Provider>;
 }
 
 export function useAdminAuth() {
