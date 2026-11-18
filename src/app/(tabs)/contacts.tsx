@@ -25,7 +25,7 @@ function Row({ icon, title, value, onPress, color = colors.primary }: { icon: Ic
 
 export default function Contacts() {
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+    <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 96 }}>
       <Card style={{ gap: 4, padding: 4 }}>
         <Row icon="phone" title="Телефон" value={SHOP.phone} onPress={callShop} />
         <Row icon="whatsapp" title="WhatsApp" value={`+${SHOP.whatsapp}`} color={colors.whatsapp} onPress={() => openWhatsApp('Саламатсызбы!')} />

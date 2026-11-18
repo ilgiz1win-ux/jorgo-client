@@ -38,7 +38,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         style={[
           styles.toast,
           {
-            bottom: insets.bottom + 72,
+            bottom: insets.bottom + 140,
             opacity: v,
             transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }],
           },

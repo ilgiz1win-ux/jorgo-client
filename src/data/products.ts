@@ -8,6 +8,13 @@ export type CategoryId = 'ebike' | 'battery' | 'motor' | 'parts' | 'charger' | '
 
 export type Category = { id: CategoryId; title: string; icon: IconName; color: string };
 
+export type ProductBadge = 'hit' | 'new';
+
+export const BADGES: Record<ProductBadge, { label: string; color: string; icon: IconName }> = {
+  hit: { label: 'Хит', color: '#EA580C', icon: 'fire' },
+  new: { label: 'Жаңы', color: '#65A30D', icon: 'star-four-points' },
+};
+
 export type Product = {
   id: string;
   name: string;
@@ -15,8 +22,12 @@ export type Product = {
   price: number;
   oldPrice?: number;
   icon: IconName;
-  // Админ колдонмодон жүктөлгөн сүрөттүн шилтемеси.
+  // Админ колдонмодон жүктөлгөн негизги сүрөттүн шилтемеси.
   imageUrl?: string;
+  // Кошумча сүрөттөр (товар барагында сүрүп көрсөтүлөт)
+  images?: string[];
+  // Карточкадагы белги: «Хит» же «Жаңы»
+  badge?: ProductBadge | null;
   // Колдонмонун ичине салынган сүрөт (милдеттүү эмес):
   // require('../../assets/products/fat-bike.jpg'). Сүрөт жок болсо иконка көрүнөт.
   image?: ImageSourcePropType;
@@ -27,7 +38,7 @@ export type Product = {
 };
 
 export const CATEGORIES: Category[] = [
-  { id: 'ebike', title: 'Электровелосипеддер', icon: 'bicycle-electric', color: '#0F766E' },
+  { id: 'ebike', title: 'Электровелосипеддер', icon: 'bicycle-electric', color: '#2E7D32' },
   { id: 'battery', title: 'Батареялар', icon: 'battery-charging-high', color: '#16A34A' },
   { id: 'motor', title: 'Мотор-дөңгөлөктөр', icon: 'engine', color: '#7C3AED' },
   { id: 'parts', title: 'Запчасттар', icon: 'cog', color: '#EA580C' },
@@ -220,5 +231,8 @@ export const PROMO_COLORS = ['#F59E0B', '#DC2626', '#7C3AED', '#0284C7', '#16A34
 export const DEFAULT_PROMOS: Promo[] = [
   { id: 'promo-city', title: 'City 350W −10%', text: 'Шаардык электровелосипедге арзандатуу', color: '#DC2626', active: true },
 ];
+
+// Товардын бардык сүрөттөрү (негизгиси биринчи)
+export const productPhotos = (p: Product) => [p.imageUrl, ...(p.images ?? [])].filter((u, i, a): u is string => !!u && a.indexOf(u) === i);
 
 export const getCategory = (id: CategoryId) => CATEGORIES.find((c) => c.id === id)!;

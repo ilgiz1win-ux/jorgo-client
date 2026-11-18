@@ -3,6 +3,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ProductGrid } from '../../components/ProductGrid';
+import { SkeletonGrid } from '../../components/Skeleton';
 import { Chip } from '../../components/ui';
 import { colors, radius } from '../../config/theme';
 import { useCatalog } from '../../context/CatalogContext';
@@ -33,7 +34,7 @@ export default function Catalog() {
 
   return (
     <ScrollView
-      contentContainerStyle={styles.container}
+      contentContainerStyle={[styles.container, { paddingBottom: 96 }]}
       keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
     >
@@ -66,7 +67,9 @@ export default function Catalog() {
         </View>
       </View>
 
-      {list.length ? (
+      {loading && products.length === 0 ? (
+        <SkeletonGrid count={6} />
+      ) : list.length ? (
         <ProductGrid products={list} />
       ) : (
         <View style={styles.empty}>

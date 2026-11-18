@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Product, PRODUCTS, Promo } from '../data/products';
 import { RepairService, SERVICES } from '../data/services';
+import { isRemote } from '../config/backend';
 import * as api from '../lib/catalogApi';
 
 type CatalogContextValue = {
@@ -23,7 +24,9 @@ type CatalogContextValue = {
 const CatalogContext = createContext<CatalogContextValue | null>(null);
 
 export function CatalogProvider({ children }: { children: ReactNode }) {
-  const [products, setProducts] = useState<Product[]>(PRODUCTS);
+  // Сервер туташкан болсо мисал товарларды көрсөтпөйбүз: адегенде акыркы сакталган
+  // тизме (же скелет), анан серверден жаңысы
+  const [products, setProducts] = useState<Product[]>(isRemote ? [] : PRODUCTS);
   const [promos, setPromos] = useState<Promo[]>([]);
   const [services, setServices] = useState<RepairService[]>(SERVICES);
   const [loading, setLoading] = useState(true);
@@ -38,6 +41,11 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (isRemote) {
+      api.readCachedProducts().then((cached) => {
+        if (cached?.length) setProducts((cur) => (cur.length ? cur : cached));
+      });
+    }
     refresh();
   }, [refresh]);
 
