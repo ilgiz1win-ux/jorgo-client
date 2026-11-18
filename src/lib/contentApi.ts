@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DEFAULT_SETTINGS, GalleryItem, Review, SiteSettings } from '../data/content';
+import { DEFAULT_RENT_TERMS, DEMO_RENTALS, RentalBike, RentTerms } from '../data/rentals';
 import { supabase } from './supabase';
 
 // Башкы беттин жөндөөлөрү, пикирлер жана галерея.
@@ -56,7 +57,7 @@ export async function saveSettings(s: SiteSettings): Promise<SiteSettings> {
 
 // ---------- Жөнөкөй тизмелер (пикирлер, галерея) ----------
 
-function listTable<T extends { id: string }, Row extends { id: string }>(opts: {
+export function listTable<T extends { id: string }, Row extends { id: string }>(opts: {
   table: string;
   localKey: string;
   cacheKey: string;
@@ -118,3 +119,83 @@ export const galleryApi = listTable<GalleryItem, GalleryRow>({
   fromRow: (r) => ({ id: r.id, title: r.title ?? '', beforeUrl: r.before_url ?? undefined, afterUrl: r.after_url ?? undefined }),
   toRow: (g, sort) => ({ id: g.id, title: g.title, before_url: g.beforeUrl ?? null, after_url: g.afterUrl ?? null, sort }),
 });
+
+// ---------- Ижара (аренда) ----------
+
+type RentalRow = {
+  id: string;
+  name: string;
+  image_url: string | null;
+  description: string;
+  specs: [string, string][] | null;
+  price_day: number | null;
+  price_week: number | null;
+  price_month: number | null;
+  deposit: number | null;
+  available: boolean;
+  sort: number;
+};
+export const rentalsApi = listTable<RentalBike, RentalRow>({
+  table: 'rentals',
+  localKey: 'jorgo.local.rentals',
+  cacheKey: 'jorgo.cache.rentals',
+  fromRow: (r) => ({
+    id: r.id,
+    name: r.name,
+    imageUrl: r.image_url ?? undefined,
+    description: r.description ?? '',
+    specs: r.specs ?? [],
+    priceDay: r.price_day ?? undefined,
+    priceWeek: r.price_week ?? undefined,
+    priceMonth: r.price_month ?? undefined,
+    deposit: r.deposit ?? undefined,
+    available: r.available,
+  }),
+  toRow: (b, sort) => ({
+    id: b.id,
+    name: b.name,
+    image_url: b.imageUrl ?? null,
+    description: b.description,
+    specs: b.specs,
+    price_day: b.priceDay ?? null,
+    price_week: b.priceWeek ?? null,
+    price_month: b.priceMonth ?? null,
+    deposit: b.deposit ?? null,
+    available: b.available,
+    sort,
+  }),
+});
+
+// Демо режимде (сервер жок) бош болсо мисалды көрсөтөбүз
+export async function fetchRentals(): Promise<RentalBike[]> {
+  const list = await rentalsApi.fetch();
+  if (!supabase && list.length === 0 && (await readJson<RentalBike[]>('jorgo.local.rentals')) === null) return DEMO_RENTALS;
+  return list;
+}
+
+// Ижаранын шарттары: settings таблицасында key = 'rent'
+const RENT_LOCAL = 'jorgo.local.rentTerms';
+const RENT_CACHE = 'jorgo.cache.rentTerms';
+
+export async function fetchRentTerms(): Promise<RentTerms> {
+  if (!supabase) return (await readJson<RentTerms>(RENT_LOCAL)) ?? DEFAULT_RENT_TERMS;
+  try {
+    const { data, error } = await supabase.from('settings').select('value').eq('key', 'rent').maybeSingle();
+    if (error) throw error;
+    const t = { ...DEFAULT_RENT_TERMS, ...((data?.value as RentTerms) ?? {}) };
+    writeJson(RENT_CACHE, t);
+    return t;
+  } catch {
+    return (await readJson<RentTerms>(RENT_CACHE)) ?? DEFAULT_RENT_TERMS;
+  }
+}
+
+export async function saveRentTerms(t: RentTerms): Promise<RentTerms> {
+  if (supabase) {
+    const { error } = await supabase.from('settings').upsert({ key: 'rent', value: t });
+    if (error) throw error;
+  } else {
+    await writeJson(RENT_LOCAL, t);
+  }
+  return t;
+}

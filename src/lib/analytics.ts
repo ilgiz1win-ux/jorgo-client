@@ -5,7 +5,7 @@ import { supabase } from './supabase';
 // Жөнөкөй анонимдүү статистика: канча адам кирди, эмнени карады, канча буйрутма жөнөттү.
 // Аты, телефону же башка жеке маалымат жазылбайт — ар бир түзмөккө кокус ID гана берилет.
 
-export type EventType = 'visit' | 'product_view' | 'order' | 'repair';
+export type EventType = 'visit' | 'product_view' | 'order' | 'repair' | 'rent';
 type PlatformName = 'web' | 'pwa' | 'android' | 'ios';
 
 const VISITOR_KEY = 'jorgo.vid';
@@ -86,6 +86,7 @@ export type Stats = {
   period_visitors: number;
   orders: number;
   repairs: number;
+  rents?: number;
   daily: { day: string; visitors: number }[];
   top_products: { id: string; views: number }[];
   platforms: Partial<Record<PlatformName, number>>;

@@ -4,10 +4,10 @@ import { SHOP } from '../config/shop';
 export const formatPrice = (n: number) =>
   `${Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} ${SHOP.currency}`;
 
-export const whatsAppUrl = (text: string) => `https://wa.me/${SHOP.whatsapp}?text=${encodeURIComponent(text)}`;
+export const whatsAppUrl = (text: string, phone: string = SHOP.whatsapp) => `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
 
-export const openWhatsApp = async (text: string) => {
-  const url = whatsAppUrl(text);
+export const openWhatsApp = async (text: string, phone?: string) => {
+  const url = whatsAppUrl(text, phone);
   // Вебде (Instagram'дын ичиндеги браузерди кошо) жаңы терезе бөгөттөлүшү мүмкүн,
   // ошондуктан ошол эле барактан WhatsApp'ка өтөбүз.
   if (Platform.OS === 'web' && typeof window !== 'undefined') {

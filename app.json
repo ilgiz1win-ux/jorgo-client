@@ -37,6 +37,13 @@
           "cameraPermission": false,
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Ижарага өтүнмө бергенде жайгашкан жериңизди дүкөнгө жөнөтүү үчүн.",
+          "isAndroidBackgroundLocationEnabled": false
+        }
       ]
     ]
   }

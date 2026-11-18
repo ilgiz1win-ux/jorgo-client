@@ -6,6 +6,7 @@ import { HeroBanner, ReviewsCarousel, StatsRow } from '../../components/HomeSect
 import { InstallBanner } from '../../components/InstallApp';
 import { ProductGrid } from '../../components/ProductGrid';
 import { PromoCarousel } from '../../components/PromoCarousel';
+import { RentStrip } from '../../components/RentStrip';
 import { SkeletonGrid } from '../../components/Skeleton';
 import { SectionTitle } from '../../components/ui';
 import { colors, radius } from '../../config/theme';
@@ -21,7 +22,7 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const { t } = useT();
   const { products, promos, loading, refresh } = useCatalog();
-  const { settings, reviews, refreshContent } = useContent();
+  const { settings, reviews, rentals, refreshContent } = useContent();
   const popular = products.filter((p) => p.popular);
   const onSale = products.filter((p) => p.oldPrice && p.oldPrice > p.price);
   const activePromos = promos.filter((p) => p.active);
@@ -59,6 +60,21 @@ export default function Home() {
         <InstallBanner />
         <HeroBanner settings={settings} />
         <StatsRow stats={settings.stats} />
+
+        {rentals.length > 0 && (
+          <>
+            <SectionTitle
+              right={
+                <Link href="/rent" style={styles.link}>
+                  {t('common.allArrow')}
+                </Link>
+              }
+            >
+              {t('rent.homeBikes')}
+            </SectionTitle>
+            <RentStrip bikes={rentals} />
+          </>
+        )}
         <PromoCarousel promos={activePromos} />
 
         <SectionTitle>{t('home.categories')}</SectionTitle>
@@ -95,6 +111,19 @@ export default function Home() {
           </Pressable>
         </Link>
 
+        <Link href="/rent" asChild>
+          <Pressable style={styles.rentCard}>
+            <View style={styles.repairIcon}>
+              <MaterialCommunityIcons name="bicycle-electric" size={28} color={colors.ink} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.repairTitle}>{t('rent.homeTitle')}</Text>
+              <Text style={[styles.repairText, { color: colors.primarySoft }]}>{t('rent.homeText')}</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={26} color="#fff" />
+          </Pressable>
+        </Link>
+
         <SectionTitle right={all}>{t('home.popular')}</SectionTitle>
         {showSkeleton ? <SkeletonGrid count={4} /> : <ProductGrid products={popular} />}
 
@@ -118,6 +147,7 @@ const styles = StyleSheet.create({
   body: { padding: 16, gap: 14 },
   link: { color: colors.primary, fontWeight: '700' },
   repair: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.ink, borderRadius: radius.lg, padding: 16 },
+  rentCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.primary, borderRadius: radius.lg, padding: 16 },
   repairIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.lime, alignItems: 'center', justifyContent: 'center' },
   repairTitle: { color: '#fff', fontSize: 17, fontWeight: '800' },
   repairText: { color: '#D1D5DB', fontSize: 13, marginTop: 2 },

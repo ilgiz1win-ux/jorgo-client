@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, TextInputProps, View, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, Text, TextInput, TextInputProps, View, ViewStyle } from 'react-native';
 import { colors, radius } from '../config/theme';
 import type { IconName } from '../data/products';
 
@@ -47,7 +47,7 @@ export function Field({ label, ...props }: TextInputProps & { label: string }) {
   );
 }
 
-export function Card({ children, style }: { children: ReactNode; style?: ViewStyle }) {
+export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
