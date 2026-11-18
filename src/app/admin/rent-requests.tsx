@@ -1,10 +1,12 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ComponentProps, useCallback, useEffect, useState } from 'react';
-import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { DocImage } from '../../components/account/DocImage';
 import { Card, Chip } from '../../components/ui';
 import { colors, radius } from '../../config/theme';
 import type { RentPeriod } from '../../data/rentals';
 import { formatPrice } from '../../lib/format';
+import { docUrl, fetchProfiles, Profile, setVerified } from '../../lib/account';
 import { fetchRentRequests, mapLink, RentRequest, RentStatus, setRentStatus } from '../../lib/rentRequests';
 
 const STATUS: Record<RentStatus, { label: string; color: string }> = {
@@ -33,18 +35,60 @@ function Row({ icon, label, value, onPress }: { icon: ComponentProps<typeof Mate
   );
 }
 
+// Кардардын аккаунтундагы документтер (басса, толук сүрөт ачылат)
+function CustomerDocs({ p, onVerify }: { p: Profile; onVerify: (v: boolean) => void }) {
+  const docs: [string, string | undefined][] = [
+    ['Селфи', p.selfiePath],
+    ['Паспорт', p.passportPath],
+    ['Айд. күбөлүк', p.licensePath],
+  ];
+  const open = async (path?: string) => {
+    const u = await docUrl(path);
+    if (u) Linking.openURL(u);
+  };
+  return (
+    <View style={styles.docsBox}>
+      <View style={styles.docs}>
+        {docs.map(([label, path]) => (
+          <Pressable key={label} style={styles.doc} onPress={() => open(path)} disabled={!path}>
+            <View style={styles.docImg}>
+              {path ? <DocImage path={path} style={StyleSheet.absoluteFill} /> : <MaterialCommunityIcons name="image-off-outline" size={22} color={colors.muted} />}
+            </View>
+            <Text style={styles.docLabel}>{label}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <View style={styles.verifyRow}>
+        <MaterialCommunityIcons name={p.verified ? 'shield-check' : 'shield-outline'} size={18} color={p.verified ? colors.success : colors.muted} />
+        <Text style={{ flex: 1, color: colors.text, fontWeight: '600' }}>{p.verified ? 'Документтер текшерилди' : 'Документтерди текшерүү'}</Text>
+        <Switch value={p.verified} onValueChange={onVerify} trackColor={{ true: colors.primary, false: colors.border }} />
+      </View>
+      {(!!p.address || !!p.birthDate) && (
+        <Text style={styles.muted}>
+          {[p.birthDate && `Туулган: ${p.birthDate}`, p.address && `Дареги: ${p.address}`].filter(Boolean).join(' · ')}
+        </Text>
+      )}
+    </View>
+  );
+}
+
 // Ижарага келген өтүнмөлөр: паспорт, телефон, GPS — админ гана көрөт
 export default function AdminRentRequests() {
   const [list, setList] = useState<RentRequest[]>([]);
   const [filter, setFilter] = useState<RentStatus | 'all'>('new');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [profiles, setProfiles] = useState<Record<string, Profile>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      setList(await fetchRentRequests());
+      const rows = await fetchRentRequests();
+      setList(rows);
+      fetchProfiles(rows.map((r) => r.userId ?? ''))
+        .then(setProfiles)
+        .catch(() => {});
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setError(msg.includes('rental_requests') ? 'SQL иштетиле элек (007_rental_requests.sql).' : 'Жүктөлгөн жок: ' + msg);
@@ -60,6 +104,15 @@ export default function AdminRentRequests() {
     try {
       await setRentStatus(id, status);
       setList((l) => l.map((x) => (x.id === id ? { ...x, status } : x)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Ката кетти');
+    }
+  };
+
+  const verify = async (id: string, v: boolean) => {
+    try {
+      await setVerified(id, v);
+      setProfiles((m) => ({ ...m, [id]: { ...m[id], verified: v } }));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ката кетти');
     }
@@ -105,6 +158,8 @@ export default function AdminRentRequests() {
             <Row icon="map-marker-off" label="GPS" value="Берилген жок" />
           )}
 
+          {r.userId && profiles[r.userId] && <CustomerDocs p={profiles[r.userId]} onVerify={(v) => verify(r.userId!, v)} />}
+
           <View style={styles.actions}>
             {(['active', 'returned', 'rejected'] as RentStatus[])
               .filter((s) => s !== r.status)
@@ -134,6 +189,12 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 2 },
   rowLabel: { color: colors.muted, width: 84, fontSize: 13 },
   rowValue: { flex: 1, color: colors.text, fontWeight: '600', fontSize: 14 },
+  docsBox: { gap: 10, backgroundColor: colors.bg, borderRadius: radius.md, padding: 10 },
+  docs: { flexDirection: 'row', gap: 8 },
+  doc: { flex: 1, gap: 4, alignItems: 'center' },
+  docImg: { width: '100%', aspectRatio: 1, borderRadius: radius.sm, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
+  docLabel: { fontSize: 11, color: colors.muted, fontWeight: '600' },
+  verifyRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
   action: { borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 7 },
 });

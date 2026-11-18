@@ -23,6 +23,8 @@ export type RentRequest = {
   lng?: number;
   accuracy?: number;
   status: RentStatus;
+  // Аккаунт аркылуу жиберилсе
+  userId?: string;
 };
 
 type Row = {
@@ -41,6 +43,7 @@ type Row = {
   lng: number | null;
   accuracy: number | null;
   status: RentStatus;
+  user_id?: string | null;
 };
 
 const LOCAL = 'jorgo.local.rentRequests';
@@ -61,6 +64,7 @@ const fromRow = (r: Row): RentRequest => ({
   lng: r.lng ?? undefined,
   accuracy: r.accuracy ?? undefined,
   status: r.status,
+  userId: r.user_id ?? undefined,
 });
 
 async function readLocal(): Promise<RentRequest[]> {
@@ -108,6 +112,7 @@ export async function submitRentRequest(r: Omit<RentRequest, 'id' | 'createdAt' 
     lat: r.lat ?? null,
     lng: r.lng ?? null,
     accuracy: r.accuracy ?? null,
+    // user_id серверде auth.uid() менен автоматтык коюлат
   });
   if (error) throw error;
 }
@@ -115,6 +120,14 @@ export async function submitRentRequest(r: Omit<RentRequest, 'id' | 'createdAt' 
 export async function fetchRentRequests(): Promise<RentRequest[]> {
   if (!supabase) return readLocal();
   const { data, error } = await supabase.from('rental_requests').select('*').order('created_at', { ascending: false }).limit(200);
+  if (error) throw error;
+  return (data as Row[]).map(fromRow);
+}
+
+// Кардардын өз өтүнмөлөрү (RLS башка кардардыкын бербейт)
+export async function fetchMyRentRequests(userId: string): Promise<RentRequest[]> {
+  if (!supabase) return (await readLocal()).filter((r) => r.userId === userId);
+  const { data, error } = await supabase.from('rental_requests').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
   if (error) throw error;
   return (data as Row[]).map(fromRow);
 }
