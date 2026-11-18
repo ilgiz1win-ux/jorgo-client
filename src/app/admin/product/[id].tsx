@@ -5,7 +5,7 @@ import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, Sc
 import { Button, Card, Chip, Field } from '../../../components/ui';
 import { colors, radius } from '../../../config/theme';
 import { useCatalog } from '../../../context/CatalogContext';
-import { CATEGORIES, CategoryId, getCategory, Product } from '../../../data/products';
+import { BADGES, CATEGORIES, CategoryId, getCategory, Product, ProductBadge } from '../../../data/products';
 import { newId } from '../../../lib/catalogApi';
 import { pickAndUploadImage } from '../../../lib/pickImage';
 import { formatPrice } from '../../../lib/format';
@@ -26,6 +26,9 @@ export default function ProductEditor() {
   const [inStock, setInStock] = useState(existing?.inStock ?? true);
   const [popular, setPopular] = useState(existing?.popular ?? false);
   const [imageUrl, setImageUrl] = useState(existing?.imageUrl);
+  const [images, setImages] = useState<string[]>(existing?.images ?? []);
+  const [badge, setBadge] = useState<ProductBadge | null>(existing?.badge ?? null);
+  const [uploadingExtra, setUploadingExtra] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -48,6 +51,19 @@ export default function ProductEditor() {
     setUploading(false);
   };
 
+  const MAX_EXTRA = 5;
+  const addExtraImage = async () => {
+    setError(null);
+    setUploadingExtra(true);
+    try {
+      const url = await pickAndUploadImage([1, 1]);
+      if (url) setImages((cur) => [...cur, url].slice(0, MAX_EXTRA));
+    } catch (e) {
+      setError('Сүрөт жүктөлгөн жок: ' + (e instanceof Error ? e.message : ''));
+    }
+    setUploadingExtra(false);
+  };
+
   const save = async () => {
     setSaving(true);
     setError(null);
@@ -59,6 +75,8 @@ export default function ProductEditor() {
       oldPrice: oldN > priceN ? oldN : undefined,
       icon: existing?.icon ?? getCategory(category).icon,
       imageUrl,
+      images,
+      badge,
       image: existing?.image,
       description: description.trim(),
       specs: specs
@@ -119,6 +137,31 @@ export default function ProductEditor() {
           </Pressable>
         )}
 
+        <Card style={{ gap: 10 }}>
+          <Text style={styles.h}>Кошумча сүрөттөр ({images.length}/{MAX_EXTRA})</Text>
+          <Text style={styles.hint}>Кардар товар барагында сүрөттөрдү солго-оңго сүрүп көрөт.</Text>
+          <View style={styles.thumbs}>
+            {images.map((uri) => (
+              <View key={uri}>
+                <Image source={{ uri }} style={styles.thumb} />
+                <Pressable
+                  style={styles.thumbX}
+                  hitSlop={6}
+                  onPress={() => setImages((cur) => cur.filter((u) => u !== uri))}
+                  accessibilityLabel="Сүрөттү алып салуу"
+                >
+                  <MaterialCommunityIcons name="close" size={14} color="#fff" />
+                </Pressable>
+              </View>
+            ))}
+            {images.length < MAX_EXTRA && (
+              <Pressable style={[styles.thumb, styles.thumbAdd]} onPress={addExtraImage} disabled={uploadingExtra} accessibilityLabel="Сүрөт кошуу">
+                {uploadingExtra ? <ActivityIndicator color={colors.primary} /> : <MaterialCommunityIcons name="image-plus" size={26} color={colors.primary} />}
+              </Pressable>
+            )}
+          </View>
+        </Card>
+
         <Card style={{ gap: 14 }}>
           <Field label="Аталышы *" value={name} onChangeText={setName} placeholder="Мисалы: Fat-bike 750W" />
           <View style={{ gap: 6 }}>
@@ -161,10 +204,19 @@ export default function ProductEditor() {
         <Card style={{ gap: 4, paddingVertical: 8 }}>
           <ToggleRow label="Сатыкта бар" value={inStock} onChange={setInStock} />
           <ToggleRow label="Популярдуу (башкы бетте көрсөтүү)" value={popular} onChange={setPopular} />
+          <View style={{ gap: 6, paddingVertical: 8 }}>
+            <Text style={styles.label}>Белги (карточканын бурчунда)</Text>
+            <View style={styles.chips}>
+              <Chip label="Жок" active={!badge} onPress={() => setBadge(null)} />
+              {(Object.keys(BADGES) as ProductBadge[]).map((b) => (
+                <Chip key={b} label={BADGES[b].label} active={badge === b} onPress={() => setBadge(b)} />
+              ))}
+            </View>
+          </View>
         </Card>
 
         {error && <Text style={{ color: colors.danger }}>{error}</Text>}
-        <Button title={saving ? 'Сакталууда…' : 'Сактоо'} icon="content-save" onPress={save} disabled={!valid || saving || uploading} />
+        <Button title={saving ? 'Сакталууда…' : 'Сактоо'} icon="content-save" onPress={save} disabled={!valid || saving || uploading || uploadingExtra} />
 
         {existing &&
           (confirmDelete ? (
@@ -194,6 +246,10 @@ function ToggleRow({ label, value, onChange }: { label: string; value: boolean; 
 
 const styles = StyleSheet.create({
   photo: { height: 220, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  thumbs: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  thumb: { width: 72, height: 72, borderRadius: radius.md },
+  thumbAdd: { borderWidth: 2, borderStyle: 'dashed', borderColor: colors.primary, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primarySoft },
+  thumbX: { position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: 10, backgroundColor: 'rgba(17,24,39,0.75)', alignItems: 'center', justifyContent: 'center' },
   photoBtn: {
     position: 'absolute',
     bottom: 12,

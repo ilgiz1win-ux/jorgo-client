@@ -6,6 +6,7 @@ import { colors } from '../config/theme';
 import { APP_VARIANT } from '../config/variant';
 import { CartProvider } from '../context/CartContext';
 import { CatalogProvider } from '../context/CatalogContext';
+import { ContentProvider } from '../context/ContentContext';
 import { ToastProvider } from '../context/ToastContext';
 
 export default function RootLayout() {
@@ -13,6 +14,7 @@ export default function RootLayout() {
   const showSplash = useRef(APP_VARIANT === 'client' && !usePathname().startsWith('/admin')).current;
   return (
     <CatalogProvider>
+    <ContentProvider>
     <CartProvider>
     <ToastProvider>
       <StatusBar style="light" />
@@ -34,6 +36,7 @@ export default function RootLayout() {
       {showSplash && <SplashIntro />}
     </ToastProvider>
     </CartProvider>
+    </ContentProvider>
     </CatalogProvider>
   );
 }

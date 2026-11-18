@@ -11,6 +11,14 @@ import { useCatalog } from '../../context/CatalogContext';
 import { CATEGORIES, CategoryId, IconName } from '../../data/products';
 import { formatPrice } from '../../lib/format';
 
+const SECTIONS: { href: '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery'; title: string; text: string; icon: IconName; color: string }[] = [
+  { href: '/admin/home', title: 'Башкы бет', text: 'Чоң баннер жана сандар', icon: 'home-edit', color: '#2E7D32' },
+  { href: '/admin/promos', title: 'Акциялар', text: 'Баннерлер жана слайдер', icon: 'bullhorn', color: '#7C3AED' },
+  { href: '/admin/services', title: 'Оңдоо', text: 'Кызматтар жана баалар', icon: 'wrench', color: '#EA580C' },
+  { href: '/admin/reviews', title: 'Пикирлер', text: 'Кардарлардын сөздөрү', icon: 'star', color: '#CA8A04' },
+  { href: '/admin/gallery', title: 'Галерея', text: 'Чейин / кийин сүрөттөр', icon: 'image-multiple', color: '#0284C7' },
+];
+
 export default function AdminHome() {
   const { products, promos, loading, refresh, saveProduct, seedProducts } = useCatalog();
   const { logout, email } = useAdminAuth();
@@ -72,23 +80,17 @@ export default function AdminHome() {
           <Stat icon="bullhorn" label="Акция" value={stats.promos} color="#7C3AED" />
         </View>
 
-        <Pressable style={styles.promoLink} onPress={() => router.push('/admin/promos')}>
-          <MaterialCommunityIcons name="bullhorn" size={24} color="#fff" />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.promoLinkTitle}>Акциялар жана баннерлер</Text>
-            <Text style={{ color: '#EDE9FE', fontSize: 13 }}>Башкы беттеги жарнамаларды башкаруу</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={24} color="#fff" />
-        </Pressable>
-
-        <Pressable style={[styles.promoLink, { backgroundColor: colors.accent }]} onPress={() => router.push('/admin/services')}>
-          <MaterialCommunityIcons name="wrench" size={24} color="#fff" />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.promoLinkTitle}>Оңдоо кызматтары</Text>
-            <Text style={{ color: '#FFFBEB', fontSize: 13 }}>Кызматтарды жана бааларды өзгөртүү</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={24} color="#fff" />
-        </Pressable>
+        <View style={styles.tiles}>
+          {SECTIONS.map((t) => (
+            <Pressable key={t.href} style={[styles.tile, { backgroundColor: t.color }]} onPress={() => router.push(t.href)}>
+              <MaterialCommunityIcons name={t.icon} size={26} color="#fff" />
+              <Text style={styles.tileTitle}>{t.title}</Text>
+              <Text style={styles.tileText} numberOfLines={2}>
+                {t.text}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
 
         {error && <Text style={{ color: colors.danger }}>{error}</Text>}
 
@@ -164,8 +166,10 @@ const styles = StyleSheet.create({
   stat: { flex: 1, backgroundColor: colors.card, borderRadius: radius.md, padding: 10, alignItems: 'center', gap: 2, borderWidth: 1, borderColor: colors.border },
   statValue: { fontSize: 20, fontWeight: '900', color: colors.text, fontVariant: ['tabular-nums'] },
   statLabel: { fontSize: 11, color: colors.muted, fontWeight: '600' },
-  promoLink: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#7C3AED', borderRadius: radius.lg, padding: 16 },
-  promoLinkTitle: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  tile: { flexBasis: '47%', flexGrow: 1, borderRadius: radius.lg, padding: 14, gap: 4 },
+  tileTitle: { color: '#fff', fontSize: 16, fontWeight: '800', marginTop: 4 },
+  tileText: { color: 'rgba(255,255,255,0.9)', fontSize: 12 },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.card, borderRadius: radius.md, paddingHorizontal: 14, borderWidth: 1, borderColor: colors.border },
   input: { flex: 1, paddingVertical: 12, fontSize: 15, color: colors.text },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10 },

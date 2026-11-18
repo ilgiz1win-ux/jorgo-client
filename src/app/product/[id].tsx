@@ -3,6 +3,7 @@ import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { PhotoGallery } from '../../components/PhotoGallery';
 import { ProductImage } from '../../components/ProductCard';
 import { ProductGrid } from '../../components/ProductGrid';
 import { Button, Card, QtyStepper, SectionTitle } from '../../components/ui';
@@ -10,7 +11,7 @@ import { colors } from '../../config/theme';
 import { useCart } from '../../context/CartContext';
 import { useCatalog } from '../../context/CatalogContext';
 import { useToast } from '../../context/ToastContext';
-import { getCategory } from '../../data/products';
+import { BADGES, getCategory, productPhotos } from '../../data/products';
 import { formatPrice, openWhatsApp } from '../../lib/format';
 
 export default function ProductScreen() {
@@ -38,7 +39,17 @@ export default function ProductScreen() {
     <View style={{ flex: 1 }}>
       <Stack.Screen options={{ title: cat.title }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}>
-        <ProductImage product={product} size={120} height={220} />
+        {productPhotos(product).length > 1 ? (
+          <PhotoGallery photos={productPhotos(product)} label={product.name} />
+        ) : (
+          <ProductImage product={product} size={120} height={300} />
+        )}
+        {product.badge && (
+          <View style={[styles.badge, { backgroundColor: BADGES[product.badge].color }]}>
+            <MaterialCommunityIcons name={BADGES[product.badge].icon} size={14} color="#fff" />
+            <Text style={styles.badgeText}>{BADGES[product.badge].label}</Text>
+          </View>
+        )}
         <View style={{ gap: 6 }}>
           <Text style={styles.name}>{product.name}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
@@ -102,6 +113,8 @@ export default function ProductScreen() {
 }
 
 const styles = StyleSheet.create({
+  badge: { flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  badgeText: { color: '#fff', fontWeight: '800', fontSize: 13 },
   name: { fontSize: 22, fontWeight: '800', color: colors.text },
   price: { fontSize: 24, fontWeight: '900', color: colors.primary },
   old: { fontSize: 16, color: colors.muted, textDecorationLine: 'line-through' },

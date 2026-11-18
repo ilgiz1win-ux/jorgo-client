@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Redirect, Tabs } from 'expo-router';
-import type { ColorValue } from 'react-native';
+import { View, type ColorValue } from 'react-native';
 import { CartTabIcon } from '../../components/CartTabIcon';
+import { FloatingWhatsApp } from '../../components/FloatingWhatsApp';
 import { colors } from '../../config/theme';
 import { APP_VARIANT } from '../../config/variant';
 import { useCart } from '../../context/CartContext';
@@ -16,6 +17,7 @@ export default function TabsLayout() {
   // Админ колдонмо дароо админ панелден ачылат
   if (APP_VARIANT === 'admin') return <Redirect href="/admin" />;
   return (
+    <View style={{ flex: 1 }}>
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
@@ -40,5 +42,8 @@ export default function TabsLayout() {
       />
       <Tabs.Screen name="contacts" options={{ title: 'Байланыш', tabBarIcon: icon('phone') }} />
     </Tabs>
+      {/* Ылдыйкы меню (болжол менен 50px) үстүндө */}
+      <FloatingWhatsApp bottomOffset={66} />
+    </View>
   );
 }

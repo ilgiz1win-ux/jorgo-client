@@ -1,7 +1,10 @@
+// Түстөр Jorgo Eco Service логотибинен алынды: жашыл, ачык жашыл жана кара
 export const colors = {
-  primary: '#0F766E',
-  primaryDark: '#115E59',
-  primarySoft: '#CCFBF1',
+  primary: '#2E7D32',
+  primaryDark: '#1B5E20',
+  primarySoft: '#E8F5E9',
+  lime: '#7CB518',
+  ink: '#111827',
   accent: '#F59E0B',
   bg: '#F5F7F8',
   card: '#FFFFFF',

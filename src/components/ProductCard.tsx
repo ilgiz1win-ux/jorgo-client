@@ -5,15 +5,16 @@ import { colors, radius } from '../config/theme';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 import { PressScale } from './anim';
-import { getCategory, Product } from '../data/products';
+import { BADGES, getCategory, Product, productPhotos } from '../data/products';
 import { formatPrice } from '../lib/format';
 
 export function ProductImage({ product, size = 64, height = 110 }: { product: Product; size?: number; height?: number }) {
   const cat = getCategory(product.category);
+  const photo = productPhotos(product)[0];
   return (
     <View style={[styles.image, { height, backgroundColor: cat.color + '18' }]}>
-      {product.imageUrl || product.image ? (
-        <Image source={product.imageUrl ? { uri: product.imageUrl } : product.image!} style={styles.photo} resizeMode="cover" accessibilityLabel={product.name} />
+      {photo || product.image ? (
+        <Image source={photo ? { uri: photo } : product.image!} style={styles.photo} resizeMode="cover" accessibilityLabel={product.name} />
       ) : (
         <MaterialCommunityIcons name={product.icon} size={size} color={cat.color} />
       )}
@@ -33,6 +34,12 @@ export function ProductCard({ product }: { product: Product }) {
           {discount > 0 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>-{discount}%</Text>
+            </View>
+          )}
+          {product.badge && (
+            <View style={[styles.tag, { backgroundColor: BADGES[product.badge].color }]}>
+              <MaterialCommunityIcons name={BADGES[product.badge].icon} size={12} color="#fff" />
+              <Text style={styles.badgeText}>{BADGES[product.badge].label}</Text>
             </View>
           )}
         </View>
@@ -79,6 +86,7 @@ const styles = StyleSheet.create({
   image: { borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   photo: { width: '100%', height: '100%' },
   badge: { position: 'absolute', top: 8, left: 8, backgroundColor: colors.danger, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  tag: { position: 'absolute', top: 8, right: 8, flexDirection: 'row', alignItems: 'center', gap: 3, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
   badgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   name: { fontSize: 14, fontWeight: '600', color: colors.text, minHeight: 36 },
   bottom: { flexDirection: 'row', alignItems: 'flex-end' },

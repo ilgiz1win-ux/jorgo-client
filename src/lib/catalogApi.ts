@@ -22,6 +22,8 @@ type ProductRow = {
   old_price: number | null;
   icon: string;
   image_url: string | null;
+  images?: string[] | null;
+  badge?: string | null;
   description: string;
   specs: [string, string][] | null;
   in_stock: boolean;
@@ -57,6 +59,8 @@ const fromRow = (r: ProductRow): Product => ({
   oldPrice: r.old_price ?? undefined,
   icon: (r.icon || 'package-variant') as IconName,
   imageUrl: r.image_url ?? undefined,
+  images: r.images ?? [],
+  badge: r.badge === 'hit' || r.badge === 'new' ? r.badge : null,
   description: r.description ?? '',
   specs: r.specs ?? [],
   inStock: r.in_stock,
@@ -72,6 +76,8 @@ const toRow = (p: Product, sort?: number): ProductRow => ({
   old_price: p.oldPrice ?? null,
   icon: p.icon,
   image_url: p.imageUrl ?? null,
+  images: p.images ?? [],
+  badge: p.badge ?? null,
   description: p.description,
   specs: p.specs,
   in_stock: p.inStock,
@@ -95,6 +101,9 @@ async function writeJson(key: string, value: unknown) {
 }
 
 // ---------- Товарлар ----------
+
+// Тармак жооп бергенче көрсөтүү үчүн акыркы жүктөлгөн тизме
+export const readCachedProducts = () => readJson<Product[]>(CACHE_PRODUCTS);
 
 export async function fetchProducts(): Promise<Product[]> {
   if (!supabase) return (await readJson<Product[]>(LOCAL_PRODUCTS)) ?? PRODUCTS;

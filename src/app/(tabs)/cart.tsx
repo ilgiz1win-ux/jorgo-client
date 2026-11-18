@@ -30,7 +30,7 @@ export default function Cart() {
   const left = SHOP.freeDeliveryFrom - subtotal;
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }}>
+    <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 96 }}>
       {lines.map(({ product, qty }) => (
         <Card key={product.id} style={styles.line}>
           <Pressable style={{ width: 72 }} onPress={() => router.push(`/product/${product.id}`)}>

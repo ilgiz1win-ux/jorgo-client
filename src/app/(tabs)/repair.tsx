@@ -2,13 +2,16 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PopIn } from '../../components/anim';
+import { BeforeAfter } from '../../components/HomeSections';
 import { Button, Card, Field, SectionTitle } from '../../components/ui';
+import { useContent } from '../../context/ContentContext';
 import { colors } from '../../config/theme';
 import { useCatalog } from '../../context/CatalogContext';
 import { callShop, openWhatsApp } from '../../lib/format';
 
 export default function Repair() {
   const { services: SERVICES } = useCatalog();
+  const { gallery } = useContent();
   const [selected, setSelected] = useState<string[]>([]);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('+996 ');
@@ -38,7 +41,7 @@ export default function Repair() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 96 }} keyboardShouldPersistTaps="handled">
         <Card style={styles.banner}>
           <MaterialCommunityIcons name="tools" size={32} color="#fff" />
           <View style={{ flex: 1 }}>
@@ -65,6 +68,15 @@ export default function Repair() {
             </Pressable>
           );
         })}
+
+        {gallery.length > 0 && (
+          <>
+            <SectionTitle>Биздин иштер: чейин / кийин</SectionTitle>
+            {gallery.map((g) => (
+              <BeforeAfter key={g.id} title={g.title} beforeUrl={g.beforeUrl} afterUrl={g.afterUrl} />
+            ))}
+          </>
+        )}
 
         <SectionTitle>Жазылуу</SectionTitle>
         {sent ? (
