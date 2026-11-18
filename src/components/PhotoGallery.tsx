@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Image, NativeScrollEvent, NativeSyntheticEvent, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, radius } from '../config/theme';
+import { useT } from '../i18n';
 
 // Товардын сүрөттөрү: солго-оңго сүрүп көрүү, астында чекиттер
 export function PhotoGallery({ photos, height = 300, label }: { photos: string[]; height?: number; label: string }) {
   const [width, setWidth] = useState(0);
+  const { t } = useT();
   const [index, setIndex] = useState(0);
 
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -18,7 +20,7 @@ export function PhotoGallery({ photos, height = 300, label }: { photos: string[]
       <View style={[styles.frame, { height }]}>
         <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} onScroll={onScroll} scrollEventThrottle={32}>
           {photos.map((uri, i) => (
-            <Image key={uri} source={{ uri }} style={{ width, height }} resizeMode="cover" accessibilityLabel={`${label}, сүрөт ${i + 1}`} />
+            <Image key={uri} source={{ uri }} style={{ width, height }} resizeMode="cover" accessibilityLabel={t('common.photoN', { label, n: i + 1 })} />
           ))}
         </ScrollView>
         <View style={styles.counter}>

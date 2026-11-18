@@ -7,20 +7,22 @@ import { SHOP } from '../../config/shop';
 import { colors } from '../../config/theme';
 import { useCart } from '../../context/CartContext';
 import { formatPrice } from '../../lib/format';
+import { useT } from '../../i18n';
 
 export default function Cart() {
   const { lines, subtotal, setQty, remove, orders } = useCart();
+  const { t } = useT();
 
   if (!lines.length) {
     return (
       <View style={styles.empty}>
         <MaterialCommunityIcons name="cart-outline" size={72} color={colors.muted} />
-        <Text style={styles.emptyTitle}>Себет бош</Text>
-        <Text style={{ color: colors.muted, textAlign: 'center' }}>Каталогдон керектүү товарларды тандаңыз</Text>
-        <Button title="Каталогго өтүү" icon="view-grid" onPress={() => router.push('/catalog')} />
+        <Text style={styles.emptyTitle}>{t('cart.empty')}</Text>
+        <Text style={{ color: colors.muted, textAlign: 'center' }}>{t('cart.emptyText')}</Text>
+        <Button title={t('common.goCatalog')} icon="view-grid" onPress={() => router.push('/catalog')} />
         {orders.length > 0 && (
           <Link href="/orders" style={styles.link}>
-            Менин буйрутмаларым ({orders.length})
+            {t('cart.myOrders', { n: orders.length })}
           </Link>
         )}
       </View>
@@ -43,7 +45,7 @@ export default function Cart() {
             <Text style={styles.price}>{formatPrice(product.price * qty)}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <QtyStepper value={qty} onChange={(v) => setQty(product.id, v)} />
-              <Pressable hitSlop={8} onPress={() => remove(product.id)} accessibilityLabel="Өчүрүү">
+              <Pressable hitSlop={8} onPress={() => remove(product.id)} accessibilityLabel={t('common.delete')}>
                 <MaterialCommunityIcons name="trash-can-outline" size={22} color={colors.danger} />
               </Pressable>
             </View>
@@ -53,22 +55,22 @@ export default function Cart() {
 
       <Card style={{ gap: 8 }}>
         <View style={styles.row}>
-          <Text style={{ color: colors.muted }}>Товарлар</Text>
+          <Text style={{ color: colors.muted }}>{t('cart.items')}</Text>
           <Text style={{ fontWeight: '600' }}>{formatPrice(subtotal)}</Text>
         </View>
         {left > 0 ? (
           <Text style={{ color: colors.muted, fontSize: 13 }}>
-            Акысыз жеткирүүгө чейин дагы {formatPrice(left)} калды
+            {t('cart.toFree', { sum: formatPrice(left) })}
           </Text>
         ) : (
-          <Text style={{ color: colors.success, fontSize: 13, fontWeight: '600' }}>Жеткирүү акысыз!</Text>
+          <Text style={{ color: colors.success, fontSize: 13, fontWeight: '600' }}>{t('cart.freeDelivery')}</Text>
         )}
       </Card>
 
-      <Button title="Буйрутма берүү" icon="check-circle" onPress={() => router.push('/checkout')} />
+      <Button title={t('cart.checkout')} icon="check-circle" onPress={() => router.push('/checkout')} />
       {orders.length > 0 && (
         <Link href="/orders" style={[styles.link, { textAlign: 'center' }]}>
-          Менин буйрутмаларым ({orders.length})
+          {t('cart.myOrders', { n: orders.length })}
         </Link>
       )}
     </ScrollView>

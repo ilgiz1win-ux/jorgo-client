@@ -13,9 +13,11 @@ import { useCatalog } from '../../context/CatalogContext';
 import { useToast } from '../../context/ToastContext';
 import { BADGES, getCategory, productPhotos } from '../../data/products';
 import { formatPrice, openWhatsApp } from '../../lib/format';
+import { useT } from '../../i18n';
 
 export default function ProductScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { t } = useT();
   const { getProduct, products } = useCatalog();
   const product = getProduct(id);
   const { add } = useCart();
@@ -27,7 +29,7 @@ export default function ProductScreen() {
   if (!product) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <Text>Товар табылган жок</Text>
+        <Text>{t('product.notFound')}</Text>
       </View>
     );
   }
@@ -37,7 +39,7 @@ export default function ProductScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: cat.title }} />
+      <Stack.Screen options={{ title: t(`cat.${cat.id}`) }} />
       <ScrollView contentContainerStyle={{ padding: 16, gap: 14 }}>
         {productPhotos(product).length > 1 ? (
           <PhotoGallery photos={productPhotos(product)} label={product.name} />
@@ -47,7 +49,7 @@ export default function ProductScreen() {
         {product.badge && (
           <View style={[styles.badge, { backgroundColor: BADGES[product.badge].color }]}>
             <MaterialCommunityIcons name={BADGES[product.badge].icon} size={14} color="#fff" />
-            <Text style={styles.badgeText}>{BADGES[product.badge].label}</Text>
+            <Text style={styles.badgeText}>{t(`badge.${product.badge}`)}</Text>
           </View>
         )}
         <View style={{ gap: 6 }}>
@@ -63,7 +65,7 @@ export default function ProductScreen() {
               color={product.inStock ? colors.success : colors.accent}
             />
             <Text style={{ color: product.inStock ? colors.success : colors.accent, fontWeight: '600' }}>
-              {product.inStock ? 'Сатыкта бар' : 'Буйрутма менен'}
+              {product.inStock ? t('product.inStock') : t('product.preorder')}
             </Text>
           </View>
         </View>
@@ -80,15 +82,15 @@ export default function ProductScreen() {
         </Card>
 
         <Button
-          title="WhatsApp аркылуу суроо"
+          title={t('product.ask')}
           icon="whatsapp"
           variant="outline"
-          onPress={() => openWhatsApp(`Саламатсызбы! "${product.name}" (${formatPrice(product.price)}) боюнча суроом бар.`)}
+          onPress={() => openWhatsApp(t('product.askMsg', { name: product.name, price: formatPrice(product.price) }))}
         />
 
         {related.length > 0 && (
           <>
-            <SectionTitle>Окшош товарлар</SectionTitle>
+            <SectionTitle>{t('product.similar')}</SectionTitle>
             <ProductGrid products={related} />
           </>
         )}
@@ -98,13 +100,13 @@ export default function ProductScreen() {
         <QtyStepper value={qty} onChange={setQty} />
         <Button
           style={{ flex: 1 }}
-          title={added ? 'Себетке өтүү' : product.inStock ? 'Себетке кошуу' : 'Буйрутма берүү'}
+          title={added ? t('product.goCart') : product.inStock ? t('product.addCart') : t('product.order')}
           icon={added ? 'cart-arrow-right' : 'cart-plus'}
           onPress={() => {
             if (added) return router.push('/cart');
             add(product.id, qty);
             setAdded(true);
-            toast.show(`Себетке кошулду: ${qty} даана`);
+            toast.show(t('product.addedQty', { n: qty }));
           }}
         />
       </View>

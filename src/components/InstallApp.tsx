@@ -5,6 +5,7 @@ import { SHOP } from '../config/shop';
 import { colors, radius } from '../config/theme';
 import type { IconName } from '../data/products';
 import { Button } from './ui';
+import { useT } from '../i18n';
 
 const ICON = require('../../assets/icon.png');
 const DISMISS_KEY = 'jorgo.installDismissed';
@@ -77,41 +78,42 @@ function Step({ n, icon, children }: { n: number; icon: IconName; children: stri
 
 // Кадамдарды көрсөткөн терезе
 function InstallSheet({ mode, onClose }: { mode: Exclude<Mode, null>; onClose: () => void }) {
+  const { t } = useT();
   return (
     <Modal transparent animationType="fade" visible onRequestClose={onClose}>
-      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel="Жабуу">
+      <Pressable style={styles.backdrop} onPress={onClose} accessibilityLabel={t('common.close')}>
         <Pressable style={styles.sheet} onPress={() => {}}>
           <View style={styles.sheetHead}>
             <Image source={ICON} style={styles.sheetIcon} />
             <View style={{ flex: 1 }}>
-              <Text style={styles.sheetTitle}>Jorgo колдонмосун орнотуу</Text>
-              <Text style={styles.sheetSub}>Акысыз, 1 мүнөт</Text>
+              <Text style={styles.sheetTitle}>{t('install.title')}</Text>
+              <Text style={styles.sheetSub}>{t('install.sub')}</Text>
             </View>
           </View>
 
           {mode === 'ios' && (
             <>
-              <Step n={1} icon="export-variant">Ылдыйдагы «Поделиться» баскычын басыңыз</Step>
-              <Step n={2} icon="plus-box-outline">«На экран Домой» тандаңыз</Step>
-              <Step n={3} icon="check-circle-outline">Жогору жактагы «Добавить» басыңыз</Step>
+              <Step n={1} icon="export-variant">{t('install.ios1')}</Step>
+              <Step n={2} icon="plus-box-outline">{t('install.ios2')}</Step>
+              <Step n={3} icon="check-circle-outline">{t('install.ios3')}</Step>
             </>
           )}
           {mode === 'ios-inapp' && (
             <>
-              <Text style={styles.note}>Бул браузерден колдонмо орнотулбайт. Адегенде сайтты Safari'де ачыңыз:</Text>
-              <Step n={1} icon="dots-horizontal">Жогорку бурчтагы «⋯» баскычын басыңыз</Step>
-              <Step n={2} icon="apple-safari">«Открыть в Safari» (же «Открыть в браузере») тандаңыз</Step>
-              <Step n={3} icon="export-variant">Safari'де «Поделиться» → «На экран Домой»</Step>
+              <Text style={styles.note}>{t('install.inappNote')}</Text>
+              <Step n={1} icon="dots-horizontal">{t('install.inapp1')}</Step>
+              <Step n={2} icon="apple-safari">{t('install.inapp2')}</Step>
+              <Step n={3} icon="export-variant">{t('install.inapp3')}</Step>
             </>
           )}
           {mode === 'android' && (
             <>
-              <Step n={1} icon="google-chrome">Сайтты Chrome'до ачыңыз</Step>
-              <Step n={2} icon="dots-vertical">Жогорку бурчтагы «⋮» менюну басыңыз</Step>
-              <Step n={3} icon="cellphone-arrow-down">«Установить приложение» же «Добавить на главный экран»</Step>
+              <Step n={1} icon="google-chrome">{t('install.and1')}</Step>
+              <Step n={2} icon="dots-vertical">{t('install.and2')}</Step>
+              <Step n={3} icon="cellphone-arrow-down">{t('install.and3')}</Step>
               {!!SHOP.apkUrl && (
                 <Button
-                  title="Же APK файлды жүктөп алуу"
+                  title={t('install.apk')}
                   icon="android"
                   variant="outline"
                   onPress={() => Linking.openURL(SHOP.apkUrl!).catch(() => {})}
@@ -119,7 +121,7 @@ function InstallSheet({ mode, onClose }: { mode: Exclude<Mode, null>; onClose: (
               )}
             </>
           )}
-          <Button title="Түшүндүм" onPress={onClose} />
+          <Button title={t('install.ok')} onPress={onClose} />
         </Pressable>
       </Pressable>
     </Modal>
@@ -138,6 +140,7 @@ function wasDismissed() {
 // Башкы беттеги баннер: «Колдонмону орнотуу». Колдонмо орнотулган болсо же
 // кардар жапса (7 күнгө), көрүнбөйт. Телефондогу колдонмодо (APK) эч качан көрүнбөйт.
 export function InstallBanner() {
+  const { t } = useT();
   const mode = useInstallMode();
   const [hidden, setHidden] = useState(true);
   const [sheet, setSheet] = useState(false);
@@ -166,13 +169,13 @@ export function InstallBanner() {
     <View style={styles.banner}>
       <Image source={ICON} style={styles.bannerIcon} />
       <View style={{ flex: 1 }}>
-        <Text style={styles.bannerTitle}>Колдонмону орнотуңуз</Text>
-        <Text style={styles.bannerText}>Телефонуңуздан бир басуу менен ачылат</Text>
+        <Text style={styles.bannerTitle}>{t('install.bannerTitle')}</Text>
+        <Text style={styles.bannerText}>{t('install.bannerText')}</Text>
       </View>
       <Pressable onPress={install} style={styles.bannerBtn} accessibilityRole="button">
-        <Text style={styles.bannerBtnText}>Орнотуу</Text>
+        <Text style={styles.bannerBtnText}>{t('install.bannerBtn')}</Text>
       </Pressable>
-      <Pressable onPress={dismiss} hitSlop={10} accessibilityLabel="Жабуу">
+      <Pressable onPress={dismiss} hitSlop={10} accessibilityLabel={t('common.close')}>
         <MaterialCommunityIcons name="close" size={20} color={colors.muted} />
       </Pressable>
       {sheet && mode !== 'prompt' && <InstallSheet mode={mode} onClose={() => setSheet(false)} />}
@@ -182,13 +185,14 @@ export function InstallBanner() {
 
 // «Байланыш» барагындагы туруктуу баскыч (жабылбайт)
 export function InstallRow() {
+  const { t } = useT();
   const mode = useInstallMode();
   const [sheet, setSheet] = useState(false);
   if (!mode) return null;
   return (
     <>
       <Button
-        title="Колдонмону телефонго орнотуу"
+        title={t('install.row')}
         icon="cellphone-arrow-down"
         variant="outline"
         onPress={async () => {

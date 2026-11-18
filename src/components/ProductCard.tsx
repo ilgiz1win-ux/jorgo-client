@@ -7,6 +7,7 @@ import { useToast } from '../context/ToastContext';
 import { PressScale } from './anim';
 import { BADGES, getCategory, Product, productPhotos } from '../data/products';
 import { formatPrice } from '../lib/format';
+import { useT } from '../i18n';
 
 export function ProductImage({ product, size = 64, height = 110 }: { product: Product; size?: number; height?: number }) {
   const cat = getCategory(product.category);
@@ -25,6 +26,7 @@ export function ProductImage({ product, size = 64, height = 110 }: { product: Pr
 export function ProductCard({ product }: { product: Product }) {
   const { add } = useCart();
   const toast = useToast();
+  const { t } = useT();
   const discount = product.oldPrice ? Math.round((1 - product.price / product.oldPrice) * 100) : 0;
   return (
     <Link href={`/product/${product.id}`} asChild>
@@ -39,7 +41,7 @@ export function ProductCard({ product }: { product: Product }) {
           {product.badge && (
             <View style={[styles.tag, { backgroundColor: BADGES[product.badge].color }]}>
               <MaterialCommunityIcons name={BADGES[product.badge].icon} size={12} color="#fff" />
-              <Text style={styles.badgeText}>{BADGES[product.badge].label}</Text>
+              <Text style={styles.badgeText}>{t(`badge.${product.badge}`)}</Text>
             </View>
           )}
         </View>
@@ -58,14 +60,14 @@ export function ProductCard({ product }: { product: Product }) {
               onPress={(e) => {
                 e.preventDefault();
                 add(product.id);
-                toast.show('Себетке кошулду');
+                toast.show(t('product.added'));
               }}
-              accessibilityLabel="Себетке кошуу"
+              accessibilityLabel={t('product.addCart')}
             >
               <MaterialCommunityIcons name="cart-plus" size={20} color="#fff" />
             </Pressable>
           ) : (
-            <Text style={styles.out}>Жок</Text>
+            <Text style={styles.out}>{t('product.outShort')}</Text>
           )}
         </View>
       </PressScale>

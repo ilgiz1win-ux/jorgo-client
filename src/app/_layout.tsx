@@ -8,15 +8,14 @@ import { CartProvider } from '../context/CartContext';
 import { CatalogProvider } from '../context/CatalogContext';
 import { ContentProvider } from '../context/ContentContext';
 import { ToastProvider } from '../context/ToastContext';
+import { LanguageProvider, useT } from '../i18n';
 
-export default function RootLayout() {
+function RootStack() {
+  const { t } = useT();
   // Логотип экраны кардарлар үчүн гана, админ панелде көрсөтүлбөйт
   const showSplash = useRef(APP_VARIANT === 'client' && !usePathname().startsWith('/admin')).current;
   return (
-    <CatalogProvider>
-    <ContentProvider>
-    <CartProvider>
-    <ToastProvider>
+    <>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -24,19 +23,32 @@ export default function RootLayout() {
           headerTintColor: '#fff',
           headerTitleStyle: { fontWeight: '700' },
           contentStyle: { backgroundColor: colors.bg },
-          headerBackTitle: 'Артка',
+          headerBackTitle: t('nav.back'),
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="product/[id]" options={{ title: 'Товар' }} />
-        <Stack.Screen name="checkout" options={{ title: 'Буйрутма берүү' }} />
-        <Stack.Screen name="orders" options={{ title: 'Менин буйрутмаларым' }} />
+        <Stack.Screen name="product/[id]" options={{ title: t('nav.product') }} />
+        <Stack.Screen name="checkout" options={{ title: t('nav.checkout') }} />
+        <Stack.Screen name="orders" options={{ title: t('nav.orders') }} />
         <Stack.Screen name="admin" options={{ headerShown: false }} />
       </Stack>
       {showSplash && <SplashIntro />}
-    </ToastProvider>
-    </CartProvider>
-    </ContentProvider>
-    </CatalogProvider>
+    </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <LanguageProvider>
+      <CatalogProvider>
+        <ContentProvider>
+          <CartProvider>
+            <ToastProvider>
+              <RootStack />
+            </ToastProvider>
+          </CartProvider>
+        </ContentProvider>
+      </CatalogProvider>
+    </LanguageProvider>
   );
 }

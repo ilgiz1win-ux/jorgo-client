@@ -8,8 +8,10 @@ import { useContent } from '../../context/ContentContext';
 import { colors } from '../../config/theme';
 import { useCatalog } from '../../context/CatalogContext';
 import { callShop, openWhatsApp } from '../../lib/format';
+import { useT } from '../../i18n';
 
 export default function Repair() {
+  const { t } = useT();
   const { services: SERVICES } = useCatalog();
   const { gallery } = useContent();
   const [selected, setSelected] = useState<string[]>([]);
@@ -25,13 +27,13 @@ export default function Repair() {
   const submit = () => {
     const services = SERVICES.filter((s) => selected.includes(s.id)).map((s) => `• ${s.title}`);
     const msg = [
-      '🔧 Оңдоого жазылуу',
+      t('msg.repair'),
       '',
-      `Аты: ${name.trim()}`,
-      `Тел: ${phone.trim()}`,
-      bike.trim() ? `Велосипед: ${bike.trim()}` : null,
-      services.length ? `Кызматтар:\n${services.join('\n')}` : null,
-      problem.trim() ? `Көйгөй: ${problem.trim()}` : null,
+      t('msg.name', { v: name.trim() }),
+      t('msg.phone', { v: phone.trim() }),
+      bike.trim() ? t('msg.bike', { v: bike.trim() }) : null,
+      services.length ? `${t('msg.services')}\n${services.join('\n')}` : null,
+      problem.trim() ? t('msg.problem', { v: problem.trim() }) : null,
     ]
       .filter(Boolean)
       .join('\n');
@@ -45,12 +47,12 @@ export default function Repair() {
         <Card style={styles.banner}>
           <MaterialCommunityIcons name="tools" size={32} color="#fff" />
           <View style={{ flex: 1 }}>
-            <Text style={styles.bannerTitle}>Электровелосипед оңдоо</Text>
-            <Text style={{ color: colors.primarySoft }}>Кызматтарды тандап, онлайн жазылыңыз</Text>
+            <Text style={styles.bannerTitle}>{t('repair.title')}</Text>
+            <Text style={{ color: colors.primarySoft }}>{t('repair.subtitle')}</Text>
           </View>
         </Card>
 
-        <SectionTitle>Кызматтар жана баалар</SectionTitle>
+        <SectionTitle>{t('repair.services')}</SectionTitle>
         {SERVICES.map((s) => {
           const on = selected.includes(s.id);
           return (
@@ -71,22 +73,22 @@ export default function Repair() {
 
         {gallery.length > 0 && (
           <>
-            <SectionTitle>Биздин иштер: чейин / кийин</SectionTitle>
+            <SectionTitle>{t('repair.works')}</SectionTitle>
             {gallery.map((g) => (
               <BeforeAfter key={g.id} title={g.title} beforeUrl={g.beforeUrl} afterUrl={g.afterUrl} />
             ))}
           </>
         )}
 
-        <SectionTitle>Жазылуу</SectionTitle>
+        <SectionTitle>{t('repair.book')}</SectionTitle>
         {sent ? (
           <Card style={{ alignItems: 'center', gap: 10 }}>
             <PopIn>
               <MaterialCommunityIcons name="check-circle" size={48} color={colors.success} />
             </PopIn>
-            <Text style={{ fontSize: 16, fontWeight: '700', textAlign: 'center' }}>Өтүнмө жөнөтүлдү! Сиз менен жакында байланышабыз.</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700', textAlign: 'center' }}>{t('repair.sent')}</Text>
             <Button
-              title="Жаңы өтүнмө"
+              title={t('repair.new')}
               variant="outline"
               onPress={() => {
                 setSent(false);
@@ -97,12 +99,12 @@ export default function Repair() {
           </Card>
         ) : (
           <Card style={{ gap: 12 }}>
-            <Field label="Атыңыз *" value={name} onChangeText={setName} placeholder="Атыңыз" />
-            <Field label="Телефон *" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-            <Field label="Велосипед модели" value={bike} onChangeText={setBike} placeholder="Мисалы: Fat-bike 750W" />
-            <Field label="Көйгөйдү сүрөттөңүз" value={problem} onChangeText={setProblem} multiline placeholder="Эмне болду?" />
-            <Button title="WhatsApp аркылуу жазылуу" icon="whatsapp" variant="whatsapp" disabled={!valid} onPress={submit} />
-            <Button title="Чалуу" icon="phone" variant="outline" onPress={callShop} />
+            <Field label={t('common.name')} value={name} onChangeText={setName} placeholder={t('repair.namePh')} />
+            <Field label={t('common.phone')} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+            <Field label={t('repair.bike')} value={bike} onChangeText={setBike} placeholder={t('repair.bikePh')} />
+            <Field label={t('repair.problem')} value={problem} onChangeText={setProblem} multiline placeholder={t('repair.problemPh')} />
+            <Button title={t('repair.send')} icon="whatsapp" variant="whatsapp" disabled={!valid} onPress={submit} />
+            <Button title={t('repair.call')} icon="phone" variant="outline" onPress={callShop} />
           </Card>
         )}
       </ScrollView>

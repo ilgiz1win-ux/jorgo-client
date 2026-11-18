@@ -12,11 +12,14 @@ import { colors, radius } from '../../config/theme';
 import { useCatalog } from '../../context/CatalogContext';
 import { useContent } from '../../context/ContentContext';
 import { CATEGORIES } from '../../data/products';
+import { useT } from '../../i18n';
+import { LangSwitch } from '../../components/LangSwitch';
 
 const LOGO = require('../../../assets/brand/logo.png');
 
 export default function Home() {
   const insets = useSafeAreaInsets();
+  const { t } = useT();
   const { products, promos, loading, refresh } = useCatalog();
   const { settings, reviews, refreshContent } = useContent();
   const popular = products.filter((p) => p.popular);
@@ -26,7 +29,7 @@ export default function Home() {
 
   const all = (
     <Link href="/catalog" style={styles.link}>
-      Баары →
+      {t('common.allArrow')}
     </Link>
   );
 
@@ -40,10 +43,15 @@ export default function Home() {
     >
       {/* Логотип жана издөө */}
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-        <Image source={LOGO} style={styles.logo} resizeMode="contain" accessibilityLabel="Jorgo Eco Service" />
+        <View style={styles.headerRow}>
+          <Image source={LOGO} style={styles.logo} resizeMode="contain" accessibilityLabel="Jorgo Eco Service" />
+          <View style={styles.langPos}>
+            <LangSwitch />
+          </View>
+        </View>
         <Pressable style={styles.search} onPress={() => router.push('/catalog')} accessibilityRole="search">
           <MaterialCommunityIcons name="magnify" size={20} color={colors.muted} />
-          <Text style={{ color: colors.muted, fontSize: 15 }}>Товар издөө…</Text>
+          <Text style={{ color: colors.muted, fontSize: 15, flex: 1 }}>{t('common.search')}</Text>
         </Pressable>
       </View>
 
@@ -53,7 +61,7 @@ export default function Home() {
         <StatsRow stats={settings.stats} />
         <PromoCarousel promos={activePromos} />
 
-        <SectionTitle>Категориялар</SectionTitle>
+        <SectionTitle>{t('home.categories')}</SectionTitle>
         <View style={styles.cats}>
           {CATEGORIES.map((c) => (
             <Pressable key={c.id} style={styles.cat} onPress={() => router.push({ pathname: '/catalog', params: { category: c.id } })}>
@@ -61,7 +69,7 @@ export default function Home() {
                 <MaterialCommunityIcons name={c.icon} size={28} color={c.color} />
               </View>
               <Text style={styles.catText} numberOfLines={2}>
-                {c.title}
+                {t(`cat.${c.id}`)}
               </Text>
             </Pressable>
           ))}
@@ -69,7 +77,7 @@ export default function Home() {
 
         {onSale.length > 0 && (
           <>
-            <SectionTitle right={all}>🔥 Акциядагы товарлар</SectionTitle>
+            <SectionTitle right={all}>{t('home.onSale')}</SectionTitle>
             <ProductGrid products={onSale.slice(0, 6)} />
           </>
         )}
@@ -80,19 +88,19 @@ export default function Home() {
               <MaterialCommunityIcons name="tools" size={28} color={colors.ink} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.repairTitle}>Электровелосипед оңдоо</Text>
-              <Text style={styles.repairText}>Диагностика, батарея, мотор — тез жана кепилдик менен</Text>
+              <Text style={styles.repairTitle}>{t('home.repairTitle')}</Text>
+              <Text style={styles.repairText}>{t('home.repairText')}</Text>
             </View>
             <MaterialCommunityIcons name="chevron-right" size={26} color={colors.lime} />
           </Pressable>
         </Link>
 
-        <SectionTitle right={all}>Популярдуу товарлар</SectionTitle>
+        <SectionTitle right={all}>{t('home.popular')}</SectionTitle>
         {showSkeleton ? <SkeletonGrid count={4} /> : <ProductGrid products={popular} />}
 
         {reviews.length > 0 && (
           <>
-            <SectionTitle>Кардарлардын пикирлери</SectionTitle>
+            <SectionTitle>{t('home.reviews')}</SectionTitle>
             <ReviewsCarousel reviews={reviews} />
           </>
         )}
@@ -103,7 +111,9 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   header: { backgroundColor: colors.card, paddingHorizontal: 16, paddingBottom: 14, gap: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
-  logo: { width: 150, height: 84, alignSelf: 'center' },
+  headerRow: { alignItems: 'center', justifyContent: 'center' },
+  logo: { width: 150, height: 84 },
+  langPos: { position: 'absolute', right: 0, top: 0 },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.bg, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: colors.border },
   body: { padding: 16, gap: 14 },
   link: { color: colors.primary, fontWeight: '700' },

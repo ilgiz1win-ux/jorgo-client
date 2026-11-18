@@ -1,3 +1,5 @@
+import { translate, type Lang } from '../i18n';
+
 // Башкы беттин жөндөөлөрү, кардарлардын пикирлери жана «чейин / кийин» галереясы.
 // Баарын админ панелден өзгөртсө болот.
 
@@ -34,3 +36,24 @@ export type GalleryItem = {
   beforeUrl?: string;
   afterUrl?: string;
 };
+
+// Админ өзгөртө элек болсо, баштапкы тексттерди тандалган тилде көрсөтөбүз.
+// Админ жазган тексттер жазылган бойдон калат.
+
+export function localizeSettings(s: SiteSettings, lang: Lang): SiteSettings {
+  if (lang === 'ky') return s;
+  return {
+    ...s,
+    heroTitle: s.heroTitle === DEFAULT_SETTINGS.heroTitle ? translate(lang, 'home.defaultHeroTitle') : s.heroTitle,
+    heroText: s.heroText === DEFAULT_SETTINGS.heroText ? translate(lang, 'home.defaultHeroText') : s.heroText,
+  };
+}
+
+const DEFAULT_STAT_KEYS = ['home.statFollowers', 'home.statBranches', 'home.statWarranty', 'home.statDaily'] as const;
+
+export function localizeStats(stats: Stat[], lang: Lang): Stat[] {
+  if (lang === 'ky') return stats;
+  return stats.map((st, i) =>
+    DEFAULT_SETTINGS.stats[i] && st.label === DEFAULT_SETTINGS.stats[i].label ? { ...st, label: translate(lang, DEFAULT_STAT_KEYS[i]) } : st,
+  );
+}

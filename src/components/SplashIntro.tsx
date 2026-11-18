@@ -3,6 +3,7 @@ import { Animated, Easing, StyleSheet, useWindowDimensions, View } from 'react-n
 import { SHOP } from '../config/shop';
 import { nativeDriver, useReduceMotion } from './anim';
 import { BIKE_IMAGE, BIKE_RATIO, SpeedLines, useBob } from './BikeRide';
+import { useT } from '../i18n';
 
 const TEXT_IMAGE = require('../../assets/brand/logo-text.png');
 const TEXT_RATIO = 640 / 198;
@@ -12,6 +13,7 @@ const TEXT_RATIO = 640 / 198;
 // Болжол менен 2 секунд. Экранга басууларды бөгөбөйт.
 export function SplashIntro() {
   const reduce = useReduceMotion();
+  const { t } = useT();
   const { width } = useWindowDimensions();
   const [visible, setVisible] = useState(true);
   const [riding, setRiding] = useState(!reduce);
@@ -60,7 +62,7 @@ export function SplashIntro() {
   const rotate = tilt.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '6deg'] });
 
   return (
-    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.wrap, { opacity: fade }]} accessibilityLabel={`${SHOP.name} жүктөлүүдө`}>
+    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.wrap, { opacity: fade }]} accessibilityLabel={`${SHOP.name} — ${t('common.loading')}`}>
       <Animated.View style={{ width: bikeW, height: bikeH, transform: [{ translateX: bikeX }, { translateY: bob }, { rotate }] }}>
         <View style={{ position: 'absolute', left: -70, top: bikeH * 0.4 }}>
           <SpeedLines opacity={linesOpacity} />
