@@ -11,6 +11,11 @@ name: Android APK
 
 on:
   workflow_dispatch:
+    inputs:
+      publish_only:
+        description: "Жаңы чогултпай, Expo'до акыркы даяр болгон APK'ны жарыялоо"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -22,7 +27,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # Expo'нун акысыз кезеги кээде узак болот
+    timeout-minutes: 180
     steps:
       - name: Check settings
         env:
@@ -45,7 +51,12 @@ jobs:
       - run: npm ci
 
       - name: Build APK on EAS
+        if: ${{ !inputs.publish_only }}
         run: eas build --platform android --profile preview --non-interactive --wait --json > build.json
+
+      - name: Find latest finished APK on EAS
+        if: ${{ inputs.publish_only }}
+        run: eas build:list --platform android --status finished --limit 1 --json --non-interactive > build.json
 
       - name: Download APK
         run: |
