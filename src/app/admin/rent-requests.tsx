@@ -7,6 +7,7 @@ import { colors, radius } from '../../config/theme';
 import type { RentPeriod } from '../../data/rentals';
 import { formatPrice } from '../../lib/format';
 import { docUrl, fetchProfiles, Profile, setVerified } from '../../lib/account';
+import { Equipment, fetchEquipment } from '../../lib/contentApi';
 import { fetchRentRequests, mapLink, RentRequest, RentStatus, setRentStatus } from '../../lib/rentRequests';
 
 const STATUS: Record<RentStatus, { label: string; color: string }> = {
@@ -88,6 +89,7 @@ export default function AdminRentRequests() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
+  const [equipment, setEquipment] = useState<Record<string, Equipment>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -97,6 +99,9 @@ export default function AdminRentRequests() {
       setList(rows);
       fetchProfiles(rows.map((r) => r.userId ?? ''))
         .then(setProfiles)
+        .catch(() => {});
+      fetchEquipment()
+        .then(setEquipment)
         .catch(() => {});
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -155,6 +160,9 @@ export default function AdminRentRequests() {
           <Row icon="card-account-details-outline" label="Паспорт" value={r.passport} />
           <Row icon="bicycle-electric" label="Велосипед" value={r.bikeName} />
           <Row icon="calendar-range" label="Мөөнөт" value={`${r.count} ${UNIT[r.period]}${r.total ? ` · ${formatPrice(r.total)}` : ''}`} />
+          {!!equipment[r.bikeId]?.gpsNo && <Row icon="crosshairs-gps" label="GPS номери" value={equipment[r.bikeId].gpsNo} />}
+          {!!equipment[r.bikeId]?.battery1No && <Row icon="battery-50" label="Батарея 1" value={equipment[r.bikeId].battery1No} />}
+          {!!equipment[r.bikeId]?.battery2No && <Row icon="battery-50" label="Батарея 2" value={equipment[r.bikeId].battery2No} />}
           {!!r.startText && <Row icon="calendar-start" label="Башталышы" value={r.startText} />}
           {r.lat != null && r.lng != null ? (
             <Row
