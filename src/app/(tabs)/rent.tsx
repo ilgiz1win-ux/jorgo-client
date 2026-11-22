@@ -19,7 +19,9 @@ import { formatPrice, openWhatsApp } from '../../lib/format';
 function ModelCard({ bike, index }: { bike: RentalBike; index: number }) {
   const { t } = useT();
   const periods = periodsOf(bike);
-  const from = periods.length ? Math.min(...periods.map((p) => priceFor(bike, p)! / (p === 'day' ? 1 : p === 'week' ? 7 : 30))) : 0;
+  // Картада: жумалык баа, жок болсо — айлык
+  const shown = periods.includes('week') ? 'week' : periods[0];
+  const shownPrice = shown ? priceFor(bike, shown) : undefined;
   return (
     <FadeIn delay={index * 70}>
       <Pressable
@@ -40,7 +42,9 @@ function ModelCard({ bike, index }: { bike: RentalBike; index: number }) {
           <Text style={styles.modelName} numberOfLines={2}>
             {bike.name}
           </Text>
-          {from > 0 && <Text style={styles.from}>{t('rent.perDayShort', { sum: formatPrice(Math.round(from)) })}</Text>}
+          {!!shownPrice && (
+            <Text style={styles.from}>{t(shown === 'week' ? 'rent.perWeekShort' : 'rent.perMonthShort', { sum: formatPrice(shownPrice) })}</Text>
+          )}
           <View style={styles.modelFoot}>
             <View style={styles.kind}>
               <Text style={styles.kindText}>{t('rent.kind')}</Text>

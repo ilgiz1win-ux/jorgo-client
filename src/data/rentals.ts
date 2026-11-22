@@ -1,7 +1,8 @@
 // Электровелосипед ижарасы (аренда). Админ панелден башкарылат.
 
 export type RentPeriod = 'day' | 'week' | 'month';
-export const RENT_PERIODS: RentPeriod[] = ['day', 'week', 'month'];
+// Ижара күнгө берилбейт — жумага же айга гана. ('day' эски өтүнмөлөр үчүн гана калды)
+export const RENT_PERIODS: RentPeriod[] = ['week', 'month'];
 
 export type RentalBike = {
   id: string;
@@ -35,7 +36,6 @@ export const DEMO_RENTALS: RentalBike[] = [
       ['Мотор', '500 Вт'],
       ['Жүрүш', '60 км'],
     ],
-    priceDay: 600,
     priceWeek: 3500,
     priceMonth: 12000,
     deposit: 5000,

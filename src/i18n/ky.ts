@@ -177,7 +177,7 @@ export const ky = {
   // Ижара (аренда)
   'tab.rent': 'Аренда',
   'rent.title': 'Электровелосипед ижарасы',
-  'rent.subtitle': 'Курьерлер жана күнүмдүк сапар үчүн — күнгө, жумага же айга',
+  'rent.subtitle': 'Курьерлер жана күнүмдүк сапар үчүн — жумага же айга',
   'rent.bikes': 'Ижарага велосипеддер',
   'rent.empty': 'Азыр ижарага бош велосипед жок. WhatsApp аркылуу сураңыз — бошогондо кабарлайбыз.',
   'rent.ask': 'WhatsApp аркылуу суроо',
@@ -203,7 +203,7 @@ export const ky = {
   'rent.send': "Өтүнмөнү WhatsApp'ка жөнөтүү",
   'rent.sent': 'Өтүнмө жөнөтүлдү! Жакында байланышабыз.',
   'rent.homeTitle': 'Электровелосипед ижарасы',
-  'rent.homeText': 'Курьерлерге ыңгайлуу — күнгө, жумага, айга',
+  'rent.homeText': 'Курьерлерге ыңгайлуу — жумага же айга',
   'rent.passport': 'Паспорт номери *',
   'rent.passportPh': 'Мисалы: ID1234567',
   'rent.consent': 'Паспорт маалыматымды жана жайгашкан жеримди (GPS) ижара үчүн берүүгө макулмун',
@@ -351,6 +351,8 @@ export const ky = {
   'news.empty': "Азырынча жаңылык жок",
   'news.promos': "Акциялар",
   'news.open': "Карап чыгуу",
+  'rent.perWeekShort': '{sum}/жума',
+  'rent.perMonthShort': "{sum}/ай",
 };
 
 export type TKey = keyof typeof ky;
