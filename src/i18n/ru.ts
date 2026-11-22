@@ -382,7 +382,7 @@ export const ru: Record<TKey, string> = {
   'order.total': "Итого",
   'order.express': "Мои заказы через экспресс",
   'order.local': "Прошлые заказы",
-  'order.loginForExpress': "Чтобы отслеживать заказ через экспресс, войдите в аккаунт (код на Gmail или телефон)",
+  'order.loginForExpress': 'Войдите по коду на Gmail (чтобы отслеживать заказ через экспресс)',
   'order.loginBtn': "Войти и продолжить",
   'msg.expressTrack': "Статус смотрите в приложении в разделе «Мои заказы»",
   'msg.goodsHead': "Товары:",
