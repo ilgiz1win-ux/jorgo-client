@@ -393,7 +393,7 @@ export const ky = {
   'order.total': "Жалпы",
   'order.express': "Экспресс заказдарым",
   'order.local': "Мурунку буйрутмалар",
-  'order.loginForExpress': 'Аккаунтка Gmail коду менен кириңиз (экспресс заказынын абалын көрүү үчүн)',
+  'order.loginForExpress': 'Экспресс заказынын абалын көрүү үчүн аккаунтка кириңиз',
   'order.loginBtn': "Кирүү жана улантуу",
   'msg.expressTrack': "Абалын колдонмодо «Менин буйрутмаларым» бөлүмүнөн көрөсүз",
   'msg.goodsHead': "Товарлар:",

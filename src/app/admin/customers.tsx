@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { router } from 'expo-router';
 import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Button, Card, Chip, Field } from '../../components/ui';
 import { colors, radius } from '../../config/theme';
@@ -73,11 +74,12 @@ export default function AdminCustomers() {
           {!loading && shown.length === 0 && <Text style={styles.empty}>Кардар табылган жок</Text>}
           {shown.map((c) => (
             <Card key={c.id} style={[{ gap: 6 }, c.blacklisted && { borderColor: colors.danger }]}>
-              <View style={styles.row}>
+              <Pressable style={styles.row} onPress={() => router.push({ pathname: '/admin/customer/[id]', params: { id: c.id } })} accessibilityRole="button">
                 <Text style={styles.name}>{c.fullName || 'Аты жазыла элек'}</Text>
                 {c.verified && <MaterialCommunityIcons name="shield-check" size={18} color={colors.success} />}
                 {c.blacklisted && <Text style={styles.blackBadge}>⚫ Кара тизмеде</Text>}
-              </View>
+                <Text style={styles.open}>Аккаунтту ачуу ›</Text>
+              </Pressable>
               {!!c.phone && (
                 <Pressable onPress={() => Linking.openURL(`tel:${c.phone.replace(/[^\d+]/g, '')}`)} style={styles.row}>
                   <MaterialCommunityIcons name="phone" size={16} color={colors.primary} />
@@ -161,6 +163,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   name: { fontSize: 16, fontWeight: '800', color: colors.text },
   muted: { color: colors.muted, fontSize: 13 },
+  open: { marginLeft: 'auto', color: colors.primary, fontWeight: '700', fontSize: 13 },
   empty: { color: colors.muted, textAlign: 'center', paddingVertical: 24 },
   blackBadge: { color: '#fff', backgroundColor: colors.ink, fontWeight: '800', fontSize: 12, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
   blockBox: { gap: 8, backgroundColor: '#FEF2F2', borderRadius: radius.md, padding: 10 },

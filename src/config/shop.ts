@@ -15,4 +15,7 @@ export const SHOP = {
   currency: 'сом',
   // Android үчүн APK файлдын шилтемеси (GitHub Releases). Бош болсо, баскыч көрүнбөйт.
   apkUrl: '' as string | undefined,
+  // Кирүү ыкмалары. Gmail коду үчүн Supabase'те SMTP жана email шаблону жөндөлүшү керек —
+  // жөндөлгөндө ['email', 'phone'] же ['email'] деп өзгөртүңүз.
+  authMethods: ['phone'] as ('email' | 'phone')[],
 };
