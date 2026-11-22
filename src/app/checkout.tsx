@@ -39,6 +39,8 @@ export default function Checkout() {
     setPhone((v) => (v.replace(/\D/g, '').length > 3 ? v : profile.phone || v));
   }, [profile]);
   const [sentMsg, setSentMsg] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const branch = branches[Math.min(branchIdx, branches.length - 1)] ?? branches[0];
   const branchName = (i: number) => (branches[i] ? branchLabel(branches[i], t) : '');
   const [payment, setPayment] = useState<Payment>('cash');
@@ -87,6 +89,7 @@ export default function Checkout() {
       isExpress ? `№${id}` : null,
       isExpress ? t('msg.expressTrack') : null,
       '',
+      t('msg.goodsHead'),
       itemsText,
       '',
       t('msg.total', { sum: formatPrice(total) }),
@@ -103,6 +106,27 @@ export default function Checkout() {
       .filter((x) => x !== null)
       .join('\n');
 
+    // Бардык заказдар админге түшөт (базага). Кара тизмедеги номерден заказ өтпөйт.
+    setSending(true);
+    setError(null);
+    const res = await createOrder({
+      number: id,
+      userId: profile?.id,
+      delivery: isExpress ? 'express' : 'pickup',
+      branch: branch?.name ?? '',
+      items: lines.map((l) => ({ name: l.product.name, qty: l.qty, price: l.product.price })),
+      goodsTotal: total,
+      name: name.trim(),
+      phone: phone.trim(),
+      address: isExpress ? address.trim() : '',
+      payment: t(`pay.${payment}`),
+      comment: comment.trim(),
+    }).catch(() => 'error' as const);
+    setSending(false);
+    if (res === 'blocked') {
+      setError(t('checkout.blocked'));
+      return;
+    }
     addOrder({
       id,
       date: new Date().toISOString(),
@@ -112,24 +136,6 @@ export default function Checkout() {
       phone: phone.trim(),
     });
     track('order', undefined, branch?.name);
-    if (isExpress) {
-      try {
-        await createOrder({
-          number: id,
-          userId: profile?.id,
-          branch: branch?.name ?? '',
-          items: lines.map((l) => ({ name: l.product.name, qty: l.qty, price: l.product.price })),
-          goodsTotal: total,
-          name: name.trim(),
-          phone: phone.trim(),
-          address: address.trim(),
-          payment: t(`pay.${payment}`),
-          comment: comment.trim(),
-        });
-      } catch {
-        // Базага жазылбаса да заказ WhatsApp аркылуу кете берет
-      }
-    }
     clear();
     setDone(id);
     // Буйрутма сакталгандан кийин WhatsApp'ты ачабыз
@@ -211,7 +217,10 @@ export default function Checkout() {
             <Button title={t('order.loginBtn')} icon="login" onPress={() => router.push({ pathname: '/account/login', params: { next: '/checkout' } })} />
           </View>
         ) : (
-          <Button title={t('checkout.send')} icon="whatsapp" variant="whatsapp" disabled={!valid} onPress={submit} />
+          <>
+            {error && <Text style={{ color: colors.danger, textAlign: 'center', fontWeight: '600' }}>{error}</Text>}
+            <Button title={sending ? '…' : t('checkout.send')} icon="whatsapp" variant="whatsapp" disabled={!valid || sending} onPress={submit} />
+          </>
         )}
         {!valid && <Text style={{ color: colors.muted, textAlign: 'center', fontSize: 13 }}>{t('checkout.fill')}</Text>}
       </ScrollView>

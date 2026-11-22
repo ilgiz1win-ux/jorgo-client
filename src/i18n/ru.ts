@@ -375,7 +375,7 @@ export const ru: Record<TKey, string> = {
   'order.status.new': "Принят",
   'order.status.picked_up': "Экспресс забрал",
   'order.status.delivered': "Доставлен",
-  'order.status.cancelled': "Отменён",
+  'order.status.cancelled': 'Отказ',
   'order.goods': "Товар",
   'order.fee': "Доставка",
   'order.feeUnknown': "экспресс ещё не назвал",
@@ -385,4 +385,8 @@ export const ru: Record<TKey, string> = {
   'order.loginForExpress': "Чтобы отслеживать заказ через экспресс, войдите в аккаунт (код на Gmail или телефон)",
   'order.loginBtn': "Войти и продолжить",
   'msg.expressTrack': "Статус смотрите в приложении в разделе «Мои заказы»",
+  'msg.goodsHead': "Товары:",
+  'checkout.blocked': "Извините, с этого номера заказы не принимаются. Обратитесь в магазин по телефону.",
+  'order.status.pickedSelf': "Клиент забрал",
+  'order.cancelReason': "Причина: {v}",
 };

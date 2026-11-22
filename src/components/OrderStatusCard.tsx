@@ -18,7 +18,9 @@ const fmt = (iso?: string) => {
 export function OrderStatusCard({ order, children }: { order: ServerOrder; children?: ReactNode }) {
   const { t } = useT();
   const cancelled = order.status === 'cancelled';
-  const at = ORDER_STEPS.indexOf(order.status);
+  // Өзү алса: кабыл алынды → кардар алып кетти; экспресс: … → экспресс алып кетти → жеткирилди
+  const steps = order.delivery === 'pickup' ? (['new', 'picked_up'] as const) : ORDER_STEPS;
+  const at = (steps as readonly string[]).indexOf(order.status);
   const times: Record<string, string | undefined> = { new: order.createdAt, picked_up: order.pickedUpAt, delivered: order.deliveredAt };
   return (
     <View style={styles.card}>
@@ -28,12 +30,15 @@ export function OrderStatusCard({ order, children }: { order: ServerOrder; child
       </View>
 
       {cancelled ? (
-        <View style={[styles.badge, { backgroundColor: '#FEE2E2' }]}>
-          <Text style={{ color: colors.danger, fontWeight: '800' }}>{t('order.status.cancelled')}</Text>
+        <View style={{ gap: 4 }}>
+          <View style={[styles.badge, { backgroundColor: '#FEE2E2' }]}>
+            <Text style={{ color: colors.danger, fontWeight: '800' }}>✖ {t('order.status.cancelled')}</Text>
+          </View>
+          {!!order.cancelReason && <Text style={styles.date}>{t('order.cancelReason', { v: order.cancelReason })}</Text>}
         </View>
       ) : (
         <View style={{ gap: 0 }}>
-          {ORDER_STEPS.map((s, i) => {
+          {steps.map((s, i) => {
             const done = i <= at;
             return (
               <View key={s} style={styles.step}>
@@ -41,10 +46,10 @@ export function OrderStatusCard({ order, children }: { order: ServerOrder; child
                   <View style={[styles.dot, done && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
                     <MaterialCommunityIcons name={ICON[s]} size={14} color={done ? '#fff' : colors.muted} />
                   </View>
-                  {i < ORDER_STEPS.length - 1 && <View style={[styles.bar, i < at && { backgroundColor: colors.primary }]} />}
+                  {i < steps.length - 1 && <View style={[styles.bar, i < at && { backgroundColor: colors.primary }]} />}
                 </View>
                 <View style={{ flex: 1, paddingBottom: 10 }}>
-                  <Text style={[styles.stepText, done && { color: colors.text }]}>{t(`order.status.${s}` as TKey)}</Text>
+                  <Text style={[styles.stepText, done && { color: colors.text }]}>{order.delivery === 'pickup' && s === 'picked_up' ? t('order.status.pickedSelf') : t(`order.status.${s}` as TKey)}</Text>
                   {done && !!times[s] && <Text style={styles.date}>{fmt(times[s])}</Text>}
                 </View>
               </View>
@@ -67,12 +72,14 @@ export function OrderStatusCard({ order, children }: { order: ServerOrder; child
           <Text style={styles.muted}>{t('order.goods')}</Text>
           <Text style={styles.val}>{formatPrice(order.goodsTotal)}</Text>
         </View>
+        {order.delivery === 'express' && (
         <View style={styles.row}>
           <Text style={styles.muted}>{t('order.fee')}</Text>
           <Text style={[styles.val, order.expressFee == null && { color: '#B45309' }]}>
             {order.expressFee == null ? t('order.feeUnknown') : formatPrice(order.expressFee)}
           </Text>
         </View>
+        )}
         <View style={[styles.row, styles.totalRow]}>
           <Text style={styles.total}>{t('order.total')}</Text>
           <Text style={[styles.total, { color: colors.primary }]}>{formatPrice(order.goodsTotal + (order.expressFee ?? 0))}</Text>

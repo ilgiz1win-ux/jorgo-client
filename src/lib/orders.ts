@@ -11,6 +11,7 @@ export type ServerOrder = {
   createdAt: string;
   number: string;
   userId?: string;
+  delivery: 'pickup' | 'express';
   branch: string;
   items: OrderItem[];
   goodsTotal: number;
@@ -21,6 +22,7 @@ export type ServerOrder = {
   payment: string;
   comment: string;
   status: OrderStatus;
+  cancelReason?: string;
   pickedUpAt?: string;
   deliveredAt?: string;
 };
@@ -30,6 +32,7 @@ type Row = {
   created_at: string;
   number: string;
   user_id: string | null;
+  delivery: 'pickup' | 'express';
   branch: string;
   items: OrderItem[];
   goods_total: number;
@@ -40,6 +43,7 @@ type Row = {
   payment: string;
   comment: string;
   status: OrderStatus;
+  cancel_reason: string | null;
   picked_up_at: string | null;
   delivered_at: string | null;
 };
@@ -51,6 +55,7 @@ const fromRow = (r: Row): ServerOrder => ({
   createdAt: r.created_at,
   number: r.number,
   userId: r.user_id ?? undefined,
+  delivery: r.delivery ?? 'express',
   branch: r.branch,
   items: Array.isArray(r.items) ? r.items : [],
   goodsTotal: r.goods_total,
@@ -61,6 +66,7 @@ const fromRow = (r: Row): ServerOrder => ({
   payment: r.payment,
   comment: r.comment,
   status: r.status,
+  cancelReason: r.cancel_reason || undefined,
   pickedUpAt: r.picked_up_at ?? undefined,
   deliveredAt: r.delivered_at ?? undefined,
 });
@@ -74,16 +80,18 @@ async function readLocal(): Promise<ServerOrder[]> {
 }
 const writeLocal = (l: ServerOrder[]) => AsyncStorage.setItem(LOCAL, JSON.stringify(l)).catch(() => {});
 
-export async function createOrder(o: Omit<ServerOrder, 'id' | 'createdAt' | 'status' | 'expressFee' | 'pickedUpAt' | 'deliveredAt'>): Promise<void> {
+// Кара тизмедеги номерден заказ өтпөйт — 'blocked' кайтарат
+export async function createOrder(o: Omit<ServerOrder, 'id' | 'createdAt' | 'status' | 'expressFee' | 'pickedUpAt' | 'deliveredAt' | 'cancelReason'>): Promise<'ok' | 'blocked' | 'error'> {
   if (!supabase) {
+    if ((await fetchBlacklist()).some((b) => b.phone === phone9(o.phone))) return 'blocked';
     const l = await readLocal();
     l.unshift({ ...o, id: String(Date.now()), createdAt: new Date().toISOString(), status: 'new' });
     await writeLocal(l);
-    return;
+    return 'ok';
   }
   const { error } = await supabase.from('orders').insert({
     number: o.number,
-    delivery: 'express',
+    delivery: o.delivery,
     branch: o.branch,
     items: o.items,
     goods_total: o.goodsTotal,
@@ -92,8 +100,11 @@ export async function createOrder(o: Omit<ServerOrder, 'id' | 'createdAt' | 'sta
     address: o.address,
     payment: o.payment,
     comment: o.comment,
+    ...(o.userId ? {} : { user_id: null }),
   });
-  if (error) throw error;
+  if (!error) return 'ok';
+  if (error.code === '42501' || /row-level security/i.test(error.message)) return 'blocked';
+  return 'error';
 }
 
 export async function fetchOrders(userId?: string): Promise<ServerOrder[]> {
@@ -109,7 +120,7 @@ export async function fetchOrders(userId?: string): Promise<ServerOrder[]> {
 }
 
 // Админ: абалды жана/же жол акысын өзгөртүү
-export async function updateOrder(id: string, patch: { status?: OrderStatus; expressFee?: number | null }): Promise<ServerOrder | null> {
+export async function updateOrder(id: string, patch: { status?: OrderStatus; expressFee?: number | null; cancelReason?: string }): Promise<ServerOrder | null> {
   if (!supabase) {
     const now = new Date().toISOString();
     const l = (await readLocal()).map((o) => {
@@ -119,6 +130,7 @@ export async function updateOrder(id: string, patch: { status?: OrderStatus; exp
         ...o,
         status,
         expressFee: patch.expressFee === undefined ? o.expressFee : patch.expressFee ?? undefined,
+        cancelReason: patch.cancelReason ?? o.cancelReason,
         pickedUpAt: status === 'picked_up' && !o.pickedUpAt ? now : o.pickedUpAt,
         deliveredAt: status === 'delivered' && !o.deliveredAt ? now : o.deliveredAt,
       };
@@ -129,7 +141,101 @@ export async function updateOrder(id: string, patch: { status?: OrderStatus; exp
   const row: Record<string, unknown> = {};
   if (patch.status) row.status = patch.status;
   if (patch.expressFee !== undefined) row.express_fee = patch.expressFee;
+  if (patch.cancelReason !== undefined) row.cancel_reason = patch.cancelReason;
   const { data, error } = await supabase.from('orders').update(row).eq('id', id).select('*').single();
   if (error) throw error;
   return fromRow(data as Row);
+}
+
+// ---------- Кара тизме жана кардарлар (админ гана) ----------
+export const phone9 = (p: string) => p.replace(/\D/g, '').slice(-9);
+export type BlackItem = { phone: string; reason: string; createdAt: string };
+const LOCAL_BL = 'jorgo.local.blacklist';
+
+export async function fetchBlacklist(): Promise<BlackItem[]> {
+  if (!supabase) {
+    try {
+      return JSON.parse((await AsyncStorage.getItem(LOCAL_BL)) ?? '[]');
+    } catch {
+      return [];
+    }
+  }
+  const { data, error } = await supabase.from('blacklist').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data as { phone: string; reason: string; created_at: string }[]).map((r) => ({ phone: r.phone, reason: r.reason, createdAt: r.created_at }));
+}
+
+export async function addToBlacklist(phone: string, reason: string): Promise<void> {
+  const p = phone9(phone);
+  if (p.length !== 9) throw new Error('Номерди туура жазыңыз');
+  if (!supabase) {
+    const l = (await fetchBlacklist()).filter((x) => x.phone !== p);
+    l.unshift({ phone: p, reason: reason.trim(), createdAt: new Date().toISOString() });
+    await AsyncStorage.setItem(LOCAL_BL, JSON.stringify(l));
+    return;
+  }
+  const { error } = await supabase.from('blacklist').upsert({ phone: p, reason: reason.trim().slice(0, 200) });
+  if (error) throw error;
+}
+
+export async function removeFromBlacklist(phone: string): Promise<void> {
+  const p = phone9(phone);
+  if (!supabase) {
+    await AsyncStorage.setItem(LOCAL_BL, JSON.stringify((await fetchBlacklist()).filter((x) => x.phone !== p)));
+    return;
+  }
+  const { error } = await supabase.from('blacklist').delete().eq('phone', p);
+  if (error) throw error;
+}
+
+export type Customer = {
+  id: string;
+  createdAt: string;
+  login: string;
+  fullName: string;
+  phone: string;
+  verified: boolean;
+  orders: number;
+  rents: number;
+  blacklisted: boolean;
+  blacklistReason: string;
+};
+
+export async function fetchCustomers(): Promise<Customer[]> {
+  if (!supabase) {
+    const bl = await fetchBlacklist();
+    const all = JSON.parse((await AsyncStorage.getItem('jorgo.local.profiles')) ?? '{}') as Record<string, { id: string; fullName: string; phone: string; verified: boolean; email?: string }>;
+    const orders = await readLocal();
+    return Object.values(all).map((p) => {
+      const b = p.phone ? bl.find((x) => x.phone === phone9(p.phone)) : undefined;
+      return {
+        id: p.id,
+        createdAt: new Date().toISOString(),
+        login: p.email ?? p.phone,
+        fullName: p.fullName,
+        phone: p.phone,
+        verified: p.verified,
+        orders: orders.filter((o) => o.userId === p.id).length,
+        rents: 0,
+        blacklisted: !!b,
+        blacklistReason: b?.reason ?? '',
+      };
+    });
+  }
+  const { data, error } = await supabase.rpc('admin_customers');
+  if (error) throw error;
+  return (
+    data as { id: string; created_at: string; login: string; full_name: string; phone: string; verified: boolean; orders: number; rents: number; blacklisted: boolean; blacklist_reason: string }[]
+  ).map((r) => ({
+    id: r.id,
+    createdAt: r.created_at,
+    login: r.login.endsWith('@phone.jorgo.app') ? '' : r.login,
+    fullName: r.full_name,
+    phone: r.phone,
+    verified: r.verified,
+    orders: Number(r.orders),
+    rents: Number(r.rents),
+    blacklisted: r.blacklisted,
+    blacklistReason: r.blacklist_reason,
+  }));
 }

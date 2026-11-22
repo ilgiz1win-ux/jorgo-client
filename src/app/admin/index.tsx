@@ -12,7 +12,7 @@ import { CATEGORIES, CategoryId, IconName } from '../../data/products';
 import { formatPrice } from '../../lib/format';
 import { useUnread } from '../../lib/useUnread';
 
-type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/masters' | '/admin/broadcast' | '/admin/branches' | '/admin/orders' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery'; title: string; text: string; icon: IconName; color: string };
+type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/masters' | '/admin/broadcast' | '/admin/branches' | '/admin/orders' | '/admin/customers' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery'; title: string; text: string; icon: IconName; color: string };
 
 // Ижара панели — дүкөндөн өзүнчө
 const RENT_SECTIONS: Tile[] = [
@@ -23,7 +23,8 @@ const RENT_SECTIONS: Tile[] = [
 ];
 
 const SECTIONS: Tile[] = [
-  { href: '/admin/orders', title: 'Экспресс заказдар', text: 'Абалы, жол акысы, сумма', icon: 'truck-fast', color: '#D97706' },
+  { href: '/admin/orders', title: 'Заказдар', text: 'Алып кетти / отказ, экспресс жол акысы', icon: 'truck-fast', color: '#D97706' },
+  { href: '/admin/customers', title: 'Кардарлар', text: 'Катталгандар жана кара тизме', icon: 'account-group', color: '#334155' },
   { href: '/admin/broadcast', title: 'Билдирме жөнөтүү', text: 'Акция, арзандатуу — бардык кардарларга', icon: 'send', color: '#DB2777' },
   { href: '/admin/stats', title: 'Статистика', text: 'Канча адам кирди, кайсы точкага канча заказ', icon: 'chart-bar', color: '#111827' },
   { href: '/admin/branches', title: 'Точкалар', text: 'Точкалардын жана экспресстин номерлери', icon: 'store-marker', color: '#0D9488' },

@@ -386,7 +386,7 @@ export const ky = {
   'order.status.new': "Кабыл алынды",
   'order.status.picked_up': "Экспресс алып кетти",
   'order.status.delivered': "Жеткирилди",
-  'order.status.cancelled': "Жокко чыгарылды",
+  'order.status.cancelled': 'Отказ кылды',
   'order.goods': "Товар",
   'order.fee': "Жол акысы",
   'order.feeUnknown': "экспресс айта элек",
@@ -396,6 +396,10 @@ export const ky = {
   'order.loginForExpress': "Экспресс заказынын абалын көрүү үчүн аккаунтка кириңиз (Gmail коду же телефон)",
   'order.loginBtn': "Кирүү жана улантуу",
   'msg.expressTrack': "Абалын колдонмодо «Менин буйрутмаларым» бөлүмүнөн көрөсүз",
+  'msg.goodsHead': "Товарлар:",
+  'checkout.blocked': "Кечиресиз, бул номерден буйрутма кабыл алынбайт. Дүкөнгө телефон аркылуу кайрылыңыз.",
+  'order.status.pickedSelf': "Кардар алып кетти",
+  'order.cancelReason': "Себеби: {v}",
 };
 
 export type TKey = keyof typeof ky;
