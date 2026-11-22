@@ -346,7 +346,7 @@ export const ru: Record<TKey, string> = {
   'branch.repair': "В какую точку приедете",
   'msg.branch': "Точка: {v}",
   'express.pickupFrom': "Из какой точки курьер экспресса заберёт заказ",
-  'express.priceNote': '⚠️ Внимание: к цене товара добавится оплата экспресса (курьера). Сколько она стоит, мы не знаем — уточните в WhatsApp.',
+  'express.priceNote': '⚠️ Внимание: к цене товара добавится оплата экспресса (курьера). После отправки заказа экспресс сообщит стоимость доставки в WhatsApp.',
   'express.notifyShop': "Сообщить и в точку",
   'express.doneText': 'Заказ отправлен в экспресс. Стоимость доставки уточните в WhatsApp. Чтобы точка тоже знала о заказе, нажмите кнопку ниже.',
   'msg.expressHead': "📦 Доставка экспрессом: {shop}",
@@ -356,7 +356,7 @@ export const ru: Record<TKey, string> = {
   'msg.expressPay': 'Доставка: клиент уточняет стоимость у экспресса (не входит в цену товара)',
   'cart.pickupNote': "Товар забираете сами в точке. В другие области отправляем через экспресс.",
 
-  'express.feeRow': '+ оплата экспресса (уточните в WhatsApp)',
+  'express.feeRow': '+ оплата экспресса (экспресс сообщит в WhatsApp)',
   'express.goodsTotal': 'Цена товара',
   'express.ask': 'Узнать стоимость в WhatsApp',
   'msg.expressAsk': 'Здравствуйте! Сколько стоит доставка из Бишкека (Jorgo) до: {v}?',
@@ -389,4 +389,8 @@ export const ru: Record<TKey, string> = {
   'checkout.blocked': "Извините, с этого номера заказы не принимаются. Обратитесь в магазин по телефону.",
   'order.status.pickedSelf': "Клиент забрал",
   'order.cancelReason': "Причина: {v}",
+  'checkout.missing': "Заполните: {v}",
+  'checkout.missName': "имя",
+  'checkout.missPhone': "телефон (полный номер)",
+  'checkout.missAddress': "область, город и адрес",
 };
