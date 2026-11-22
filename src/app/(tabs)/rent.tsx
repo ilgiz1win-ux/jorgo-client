@@ -59,27 +59,13 @@ function ModelCard({ bike, index }: { bike: RentalBike; index: number }) {
   );
 }
 
-// Ижара — дүкөндөн өзүнчө бөлүм: 1) кирүү 2) паспорт жана туугандар 3) моделдер → тарифтер → тариздөө
+// Ижара — дүкөндөн өзүнчө бөлүм. Велосипеддерди ким болсо да көрөт;
+// катталуу жана паспорт «Ижараны тариздөө» басканда гана суралат.
 export default function Rent() {
-  const { ready, profile } = useAccount();
-  const { t } = useT();
-  let body;
-  if (!ready) body = <ActivityIndicator color={colors.primary} style={{ marginTop: 60 }} />;
-  else if (!profile)
-    body = (
-      <View style={{ flex: 1 }}>
-        <View style={{ paddingHorizontal: 16 }}>
-          <RentSteps step={1} />
-        </View>
-        <LoginForm onDone={() => {}} subtitle={t('rent.loginSub')} />
-      </View>
-    );
-  else if (!docsReady(profile)) body = <RentOnboarding />;
-  else body = <RentModels />;
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <RentHeader />
-      {body}
+      <RentModels />
     </View>
   );
 }

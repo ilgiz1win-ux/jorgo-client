@@ -2,7 +2,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { RequireAccount } from '../../components/account/RequireAccount';
+import { LoginForm } from '../../components/account/LoginForm';
+import { RentOnboarding, RentSteps } from '../../components/account/RentOnboarding';
 import { PopIn } from '../../components/anim';
 import { BIKE_IMAGE, BIKE_RATIO } from '../../components/BikeRide';
 import { Button, Field, QtyStepper } from '../../components/ui';
@@ -177,15 +178,31 @@ function Checkout() {
   );
 }
 
+// Ижараны тариздөө: 1) катталуу/кирүү 2) паспорт, документтер, туугандар 3) тариздөө
+function Gate() {
+  const { t } = useT();
+  const { ready, profile } = useAccount();
+  if (!ready) return <ActivityIndicator color={colors.primary} style={{ marginTop: 60 }} />;
+  if (!profile)
+    return (
+      <View style={{ flex: 1 }}>
+        <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+          <RentSteps step={1} />
+        </View>
+        <LoginForm onDone={() => {}} subtitle={t('rent.loginSub')} />
+      </View>
+    );
+  if (!docsReady(profile)) return <RentOnboarding />;
+  return <Checkout />;
+}
+
 export default function RentCheckout() {
   const { t } = useT();
   const params = useLocalSearchParams<{ bike: string; period?: string }>();
   return (
     <>
       <Stack.Screen options={{ title: t('rent.checkout') }} />
-      <RequireAccount next={`/rental/checkout?bike=${encodeURIComponent(params.bike ?? '')}&period=${params.period ?? ''}`}>
-        <Checkout />
-      </RequireAccount>
+      <Gate />
     </>
   );
 }
