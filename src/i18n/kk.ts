@@ -379,4 +379,5 @@ export const kk: Record<TKey, string> = {
   'checkout.missName': 'атыңыз',
   'checkout.missPhone': 'телефон (толық нөмір)',
   'checkout.missAddress': 'облыс, қала және мекенжай',
+  'home.slogan': "Бізбен бәрі жеңілірек",
 };

@@ -48,10 +48,9 @@ export default function Home() {
     >
       {/* Логотип жана издөө */}
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-        {/* YouTube сыяктуу: логотип солдо, 🔔 🔍 жана тил оңдо */}
+        {/* Логотип ортодо + ураан; солдо 🔔 🔍, оңдо тил */}
         <View style={styles.headerRow}>
-          <Image source={LOGO} style={styles.logo} resizeMode="contain" accessibilityLabel="Jorgo Eco Service" />
-          <View style={styles.actions}>
+          <View style={styles.side}>
             <Pressable style={styles.iconBtn} onPress={() => router.push('/news')} hitSlop={6} accessibilityRole="button" accessibilityLabel={t('news.title')}>
               <MaterialCommunityIcons name="bell-outline" size={23} color={colors.text} />
               {unread > 0 && (
@@ -69,6 +68,14 @@ export default function Home() {
             >
               <MaterialCommunityIcons name="magnify" size={24} color={colors.text} />
             </Pressable>
+          </View>
+          <View style={styles.brand}>
+            <Image source={LOGO} style={styles.logo} resizeMode="contain" accessibilityLabel="Jorgo Eco Service" />
+            <Text style={styles.slogan} numberOfLines={2}>
+              {t('home.slogan')}
+            </Text>
+          </View>
+          <View style={[styles.side, { justifyContent: 'flex-end', zIndex: 20 }]}>
             <LangSwitch />
           </View>
         </View>
@@ -174,9 +181,11 @@ export default function Home() {
 
 const styles = StyleSheet.create({
   header: { zIndex: 10, backgroundColor: colors.card, paddingHorizontal: 16, paddingBottom: 8, gap: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 },
-  logo: { width: 112, height: 62 },
-  actions: { flexDirection: 'row', alignItems: 'center', gap: 6, zIndex: 20 },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', zIndex: 10 },
+  side: { width: 96, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  brand: { flex: 1, alignItems: 'center' },
+  logo: { width: 120, height: 64 },
+  slogan: { fontSize: 12, fontWeight: '700', color: colors.primary, textAlign: 'center', marginTop: 2 },
   iconBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   bellBadge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   bellBadgeText: { color: '#fff', fontSize: 10, fontWeight: '900' },
