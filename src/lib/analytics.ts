@@ -70,12 +70,13 @@ async function adminDevice() {
 }
 
 // Окуяны жазат. Ката болсо (интернет жок ж.б.) колдонмого таасир этпейт.
-export async function track(type: EventType, productId?: string) {
+// branch — заказ/оңдоо кайсы точкага кетти (точкалар боюнча статистика үчүн)
+export async function track(type: EventType, productId?: string, branch?: string) {
   if (!supabase) return;
   try {
     if (await adminDevice()) return;
     const visitor = await visitorId();
-    await supabase.from('events').insert({ type, visitor, product_id: productId ?? null, platform: platform() });
+    await supabase.from('events').insert({ type, visitor, product_id: productId ?? null, platform: platform(), ...(branch ? { branch: branch.slice(0, 80) } : {}) });
   } catch {}
 }
 
@@ -87,6 +88,7 @@ export type Stats = {
   orders: number;
   repairs: number;
   rents?: number;
+  branches?: { branch: string; orders: number; repairs: number }[];
   daily: { day: string; visitors: number }[];
   top_products: { id: string; views: number }[];
   platforms: Partial<Record<PlatformName, number>>;

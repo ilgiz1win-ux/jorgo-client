@@ -8,6 +8,8 @@ import { SHOP } from '../config/shop';
 import { colors } from '../config/theme';
 import { useCart } from '../context/CartContext';
 import { formatPrice, openWhatsApp } from '../lib/format';
+import { useContent } from '../context/ContentContext';
+import { branchLabel } from '../lib/branches';
 import { TKey, useT } from '../i18n';
 import { track } from '../lib/analytics';
 
@@ -24,7 +26,9 @@ export default function Checkout() {
   const [delivery, setDelivery] = useState<Delivery>('pickup');
   const [address, setAddress] = useState('');
   const [branchIdx, setBranchIdx] = useState(0);
-  const branchName = (i: number) => t(`shop.branch.${i}` as TKey);
+  const { branches } = useContent();
+  const branch = branches[Math.min(branchIdx, branches.length - 1)] ?? branches[0];
+  const branchName = (i: number) => (branches[i] ? branchLabel(branches[i], t) : '');
   const [payment, setPayment] = useState<Payment>('cash');
   const [comment, setComment] = useState('');
   const [done, setDone] = useState<string | null>(null);
@@ -72,6 +76,7 @@ export default function Checkout() {
       t('msg.name', { v: name.trim() }),
       t('msg.phone', { v: phone.trim() }),
       delivery === 'pickup' ? t('msg.pickup', { v: branchName(branchIdx) }) : t('msg.courier', { v: address.trim() }),
+      delivery === 'courier' ? t('msg.branch', { v: branchName(branchIdx) }) : null,
       t('msg.payment', { v: t(`pay.${payment}`) }),
       comment.trim() ? t('msg.comment', { v: comment.trim() }) : null,
     ]
@@ -86,11 +91,12 @@ export default function Checkout() {
       customer: name.trim(),
       phone: phone.trim(),
     });
-    track('order');
+    track('order', undefined, branch?.name);
     clear();
     setDone(id);
     // Буйрутма сакталгандан кийин WhatsApp'ты ачабыз
-    setTimeout(() => openWhatsApp(msg).catch(() => {}), 400);
+    // Заказ тандалган точканын өз номерине кетет
+    setTimeout(() => openWhatsApp(msg, branch?.whatsapp).catch(() => {}), 400);
   };
 
   return (
@@ -108,16 +114,17 @@ export default function Checkout() {
             <Chip label={t('checkout.pickup')} active={delivery === 'pickup'} onPress={() => setDelivery('pickup')} />
             <Chip label={t('checkout.courier')} active={delivery === 'courier'} onPress={() => setDelivery('courier')} />
           </View>
-          {delivery === 'pickup' ? (
-            <View style={{ gap: 8 }}>
-              <Text style={{ color: colors.muted, fontSize: 13 }}>{t('checkout.whichBranch', { city: SHOP.city })}</Text>
-              <View style={styles.chips}>
-                {SHOP.branches.map((b, i) => (
-                  <Chip key={b} label={`📍 ${branchName(i)}`} active={branchIdx === i} onPress={() => setBranchIdx(i)} />
-                ))}
-              </View>
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: colors.muted, fontSize: 13 }}>
+              {delivery === 'pickup' ? t('checkout.whichBranch', { city: SHOP.city }) : t('branch.courier')}
+            </Text>
+            <View style={styles.chips}>
+              {branches.map((b, i) => (
+                <Chip key={b.name + i} label={`📍 ${branchName(i)}`} active={branchIdx === i} onPress={() => setBranchIdx(i)} />
+              ))}
             </View>
-          ) : (
+          </View>
+          {delivery === 'courier' && (
             <Field label={t('checkout.address')} value={address} onChangeText={setAddress} placeholder={t('checkout.addressPh')} />
           )}
         </Card>

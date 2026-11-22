@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DEFAULT_SETTINGS, GalleryItem, Master, Review, SiteSettings } from '../data/content';
+import { Branch, DEFAULT_SETTINGS, GalleryItem, Master, Review, SiteSettings } from '../data/content';
+import { SHOP } from '../config/shop';
 import { DEFAULT_RENT_TERMS, DEMO_RENTALS, RentalBike, RentTerms } from '../data/rentals';
 import { supabase } from './supabase';
 
@@ -299,4 +300,50 @@ export async function saveEquipment(rentalId: string, e: Equipment): Promise<voi
     .from('rental_equipment')
     .upsert({ rental_id: rentalId, gps_no: clean.gpsNo, battery1_no: clean.battery1No, battery2_no: clean.battery2No, updated_at: new Date().toISOString() });
   if (error) throw error;
+}
+
+// ---------- Точкалар (settings, key = 'branches') ----------
+const BRANCHES_LOCAL = 'jorgo.local.branches';
+const BRANCHES_CACHE = 'jorgo.cache.branches';
+export const DEFAULT_BRANCHES: Branch[] = SHOP.branches.map((name) => ({ name, whatsapp: SHOP.whatsapp }));
+
+// "0700 123 456" / "+996 700 123 456" → "996700123456"
+export function normalizeWhatsapp(input: string): string {
+  let d = input.replace(/\D/g, '');
+  if (d.startsWith('0')) d = d.slice(1);
+  if (d.length === 9) d = '996' + d;
+  return d;
+}
+
+const cleanBranches = (list: unknown): Branch[] => {
+  if (!Array.isArray(list)) return DEFAULT_BRANCHES;
+  const out = list
+    .filter((b): b is Branch => !!b && typeof (b as Branch).name === 'string')
+    .map((b) => ({ name: b.name.trim(), whatsapp: normalizeWhatsapp(String(b.whatsapp ?? '')) || SHOP.whatsapp }))
+    .filter((b) => b.name);
+  return out.length ? out : DEFAULT_BRANCHES;
+};
+
+export async function fetchBranches(): Promise<Branch[]> {
+  if (!supabase) return cleanBranches(await readJson<Branch[]>(BRANCHES_LOCAL));
+  try {
+    const { data, error } = await supabase.from('settings').select('value').eq('key', 'branches').maybeSingle();
+    if (error) throw error;
+    const list = cleanBranches(data?.value);
+    writeJson(BRANCHES_CACHE, list);
+    return list;
+  } catch {
+    return cleanBranches(await readJson<Branch[]>(BRANCHES_CACHE));
+  }
+}
+
+export async function saveBranches(list: Branch[]): Promise<Branch[]> {
+  const clean = cleanBranches(list);
+  if (supabase) {
+    const { error } = await supabase.from('settings').upsert({ key: 'branches', value: clean });
+    if (error) throw error;
+  } else {
+    await writeJson(BRANCHES_LOCAL, clean);
+  }
+  return clean;
 }

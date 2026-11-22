@@ -166,6 +166,24 @@ export default function AdminStats() {
             <Tile icon="bicycle-electric" value={stats.rents ?? 0} label="Ижарага өтүнмө" sub={`${days} күндө`} />
           </View>
 
+          <Card style={{ gap: 12 }}>
+            <Text style={styles.h}>Точкалар боюнча ({days} күндө)</Text>
+            {stats.branches?.length ? (
+              stats.branches.map((b) => (
+                <View key={b.branch} style={styles.branchRow}>
+                  <MaterialCommunityIcons name="store-marker" size={20} color={colors.primary} />
+                  <Text style={styles.rowLabel} numberOfLines={1}>
+                    {b.branch}
+                  </Text>
+                  <Text style={styles.branchNum}>🛒 {b.orders}</Text>
+                  <Text style={styles.branchNum}>🔧 {b.repairs}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.hint}>Азырынча маалымат жок. Кардарлар точканы тандап заказ бергенде бул жерде көрүнөт.</Text>
+            )}
+          </Card>
+
           <Card style={{ gap: 10 }}>
             <Text style={styles.h}>Күн сайын канча адам кирди</Text>
             <DailyChart daily={stats.daily} />
@@ -223,6 +241,8 @@ const styles = StyleSheet.create({
   labels: { flexDirection: 'row', gap: 2, marginTop: 4 },
   barLabel: { flex: 1, textAlign: 'center' },
   axisText: { fontSize: 11, color: colors.muted, fontVariant: ['tabular-nums'] },
+  branchRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: colors.border },
+  branchNum: { fontWeight: '800', color: colors.text, fontVariant: ['tabular-nums'], minWidth: 48, textAlign: 'right' },
   rowHead: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
   rowLabel: { flex: 1, color: colors.text, fontSize: 14 },
   rowValue: { color: colors.text, fontWeight: '800', fontVariant: ['tabular-nums'] },

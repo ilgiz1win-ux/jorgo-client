@@ -10,6 +10,8 @@ import type { IconName } from '../../data/products';
 import { callShop, formatPrice, mapUrl, openWhatsApp } from '../../lib/format';
 import { TKey, useT } from '../../i18n';
 import { LangSwitch } from '../../components/LangSwitch';
+import { useContent } from '../../context/ContentContext';
+import { branchLabel } from '../../lib/branches';
 
 function Row({ icon, title, value, onPress, color = colors.primary }: { icon: IconName; title: string; value: string; onPress?: () => void; color?: string }) {
   return (
@@ -28,6 +30,7 @@ function Row({ icon, title, value, onPress, color = colors.primary }: { icon: Ic
 
 export default function Contacts() {
   const { t } = useT();
+  const { branches } = useContent();
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 96 }}>
       <View style={styles.langRow}>
@@ -38,15 +41,19 @@ export default function Contacts() {
         <Row icon="phone" title={t('contacts.phone')} value={SHOP.phone} onPress={callShop} />
         <Row icon="whatsapp" title="WhatsApp" value={`+${SHOP.whatsapp}`} color={colors.whatsapp} onPress={() => openWhatsApp(t('common.hello'))} />
         <Row icon="instagram" title="Instagram" value={`@${SHOP.instagram}`} color="#DB2777" onPress={() => Linking.openURL(`https://instagram.com/${SHOP.instagram}`)} />
-        {SHOP.branches.map((b, i) => (
-          <Row
-            key={b}
-            icon="map-marker"
-            title={t('contacts.branch', { n: i + 1, city: SHOP.city })}
-            value={t(`shop.branch.${i}` as TKey)}
-            color={colors.danger}
-            onPress={() => Linking.openURL(mapUrl(b))}
-          />
+        {branches.map((b, i) => (
+          <View key={b.name + i}>
+            <Row
+              icon="map-marker"
+              title={t('contacts.branch', { n: i + 1, city: SHOP.city })}
+              value={branchLabel(b, t)}
+              color={colors.danger}
+              onPress={() => Linking.openURL(mapUrl(b.name))}
+            />
+            {b.whatsapp !== SHOP.whatsapp && (
+              <Row icon="whatsapp" title={`WhatsApp · ${branchLabel(b, t)}`} value={`+${b.whatsapp}`} color={colors.whatsapp} onPress={() => openWhatsApp(t('common.hello'), b.whatsapp)} />
+            )}
+          </View>
         ))}
         <Row icon="clock-outline" title={t('contacts.hours')} value={t('shop.hours')} color={colors.accent} />
       </Card>
