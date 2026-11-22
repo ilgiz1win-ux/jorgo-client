@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ProductGrid } from '../../components/ProductGrid';
@@ -58,6 +58,7 @@ export default function Catalog() {
         {CATEGORIES.map((c) => (
           <Chip key={c.id} label={t(`cat.${c.id}`)} active={category === c.id} onPress={() => setCategory(c.id)} />
         ))}
+        <Chip label={`🚲 ${t('tab.rent')}`} onPress={() => router.push('/rent')} />
       </ScrollView>
 
       <View style={styles.sortRow}>
