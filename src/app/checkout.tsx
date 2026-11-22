@@ -211,14 +211,6 @@ export default function Checkout() {
           {delivery === 'express' && <Text style={styles.feeRow}>{t('express.feeRow')}</Text>}
         </Card>
 
-        {delivery === 'express' && (
-          <Button
-            title={t('express.ask')}
-            icon="whatsapp"
-            variant="outline"
-            onPress={() => openWhatsApp(t('msg.expressAsk', { v: address.trim() || '…' }), expressTo).catch(() => {})}
-          />
-        )}
 
         {needLogin ? (
           <View style={{ gap: 8 }}>
