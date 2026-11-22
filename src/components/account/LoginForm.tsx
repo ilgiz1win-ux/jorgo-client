@@ -2,7 +2,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Button } from '../ui';
+import { Button, Chip } from '../ui';
+import { EmailLogin } from './EmailLogin';
 import { colors } from '../../config/theme';
 import { useAccount } from '../../context/AccountContext';
 import { TKey, useT } from '../../i18n';
@@ -15,6 +16,8 @@ export function LoginForm({ onDone, subtitle }: { onDone: () => void; subtitle?:
   const { t } = useT();
   const { signIn, signUp } = useAccount();
   const [mode, setMode] = useState<'in' | 'up'>('in');
+  // Негизги жол — почта (Gmail) коду; телефон + сырсөз да калды
+  const [method, setMethod] = useState<'email' | 'phone'>('email');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -45,7 +48,15 @@ export function LoginForm({ onDone, subtitle }: { onDone: () => void; subtitle?:
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.title}>{mode === 'in' ? t('acc.signIn') : t('acc.signUp')}</Text>
+          <Text style={styles.title}>{method === 'email' ? t('acc.signInUp') : mode === 'in' ? t('acc.signIn') : t('acc.signUp')}</Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Chip label={`✉️ ${t('acc.byEmail')}`} active={method === 'email'} onPress={() => setMethod('email')} />
+            <Chip label={`📱 ${t('acc.byPhone')}`} active={method === 'phone'} onPress={() => setMethod('phone')} />
+          </View>
+          {method === 'email' ? (
+            <EmailLogin onDone={onDone} />
+          ) : (
+            <>
 
           {mode === 'up' && (
             <View style={{ gap: 6 }}>
@@ -123,6 +134,8 @@ export function LoginForm({ onDone, subtitle }: { onDone: () => void; subtitle?:
             <Pressable onPress={() => openWhatsApp(t('acc.forgot')).catch(() => {})} hitSlop={6}>
               <Text style={styles.forgot}>{t('acc.forgot')}</Text>
             </Pressable>
+          )}
+            </>
           )}
         </View>
 

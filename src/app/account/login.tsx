@@ -6,8 +6,9 @@ export default function Login() {
   return (
     <LoginForm
       onDone={() => {
-        if (next && next.startsWith('/')) router.replace(next as never);
-        else if (router.canGoBack()) router.back();
+        // Мурунку баракка (мисалы толтурулган заказга) кайтабыз — маалымат жоголбойт
+        if (router.canGoBack()) router.back();
+        else if (next && next.startsWith('/')) router.replace(next as never);
         else router.replace('/rent');
       }}
     />

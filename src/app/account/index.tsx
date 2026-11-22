@@ -39,6 +39,7 @@ export default function AccountMenu() {
       <MenuGroup>
         <MenuRow first icon="bell-outline" label={t('acc.notifications')} onPress={() => router.push('/account/notifications')} />
         <MenuRow icon="wallet-outline" label={t('acc.payments')} onPress={() => router.push('/account/payments')} />
+        <MenuRow icon="package-variant-closed" label={t('acc.orders')} onPress={() => router.push('/orders')} />
         <MenuRow icon="cog-outline" label={t('acc.settings')} onPress={() => router.push('/account/settings')} />
       </MenuGroup>
     </ScrollView>

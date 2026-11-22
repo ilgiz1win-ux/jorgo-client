@@ -9,6 +9,8 @@ type Account = {
   profile: Profile | null;
   signIn: (phone: string, password: string) => Promise<AuthError | null>;
   signUp: (phone: string, password: string, name: string) => Promise<AuthError | null>;
+  sendEmailCode: (email: string) => Promise<AuthError | null>;
+  verifyEmailCode: (email: string, code: string) => Promise<AuthError | null>;
   signOut: () => Promise<void>;
   save: (p: Profile) => Promise<void>;
   uploadDoc: (kind: DocKind, source: 'camera' | 'library') => Promise<boolean>;
@@ -18,9 +20,9 @@ type Account = {
 
 const Ctx = createContext<Account | null>(null);
 
-// Ижара үчүн маалымат даярбы: аты-жөнү, селфи, паспорт (сүрөтү жана номери), эки тууганы
+// Ижара үчүн маалымат даярбы: аты-жөнү, телефону, селфи, паспорт (сүрөтү жана номери), эки тууганы
 export const docsReady = (p: Profile | null) =>
-  !!p && p.fullName.trim().length > 1 && !!p.selfiePath && !!p.passportPath && p.passportNo.trim().length >= 5 && api.relativesReady(p.relatives);
+  !!p && p.fullName.trim().length > 1 && p.phone.replace(/\D/g, '').length >= 9 && !!p.selfiePath && !!p.passportPath && p.passportNo.trim().length >= 5 && api.relativesReady(p.relatives);
 
 export function AccountProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
@@ -62,6 +64,12 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       },
       signUp: async (phone, password, name) => {
         const e = await api.signUp(phone, password, name);
+        if (!e) await load();
+        return e;
+      },
+      sendEmailCode: (email) => api.sendEmailCode(email),
+      verifyEmailCode: async (email, code) => {
+        const e = await api.verifyEmailCode(email, code);
         if (!e) await load();
         return e;
       },
