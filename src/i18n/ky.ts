@@ -342,6 +342,11 @@ export const ky = {
   'masters.any': "Каалаган мастер",
   'masters.chosen': "Тандалды",
   'msg.master': "Мастер: {v}",
+  'masters.orders': "{n} заказ",
+  'masters.outcall': "Выездге чыгат",
+  'masters.outcallAsk': "Выезд керек (мастер өзүңүзгө келет)",
+  'msg.outcall': "🚗 Выезд керек",
+  'masters.hours': "{from}–{to}",
 };
 
 export type TKey = keyof typeof ky;

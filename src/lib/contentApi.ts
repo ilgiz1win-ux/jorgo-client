@@ -120,7 +120,22 @@ export const galleryApi = listTable<GalleryItem, GalleryRow>({
   toRow: (g, sort) => ({ id: g.id, title: g.title, before_url: g.beforeUrl ?? null, after_url: g.afterUrl ?? null, sort }),
 });
 
-type MasterRow = { id: string; name: string; photo_url: string | null; specialty: string; experience: string; branch: string; active: boolean; sort: number };
+type MasterRow = {
+  id: string;
+  name: string;
+  photo_url: string | null;
+  specialty: string;
+  experience: string;
+  branch: string;
+  active: boolean;
+  rating: number | string | null;
+  orders: number | null;
+  hours_from: string | null;
+  hours_to: string | null;
+  outcall: boolean | null;
+  outcall_note: string | null;
+  sort: number;
+};
 export const mastersApi = listTable<Master, MasterRow>({
   table: 'masters',
   localKey: 'jorgo.local.masters',
@@ -133,6 +148,12 @@ export const mastersApi = listTable<Master, MasterRow>({
     experience: r.experience ?? '',
     branch: r.branch ?? '',
     active: r.active,
+    rating: r.rating == null ? 5 : Number(r.rating),
+    orders: r.orders ?? 0,
+    hoursFrom: r.hours_from ?? '',
+    hoursTo: r.hours_to ?? '',
+    outcall: !!r.outcall,
+    outcallNote: r.outcall_note ?? '',
   }),
   toRow: (m, sort) => ({
     id: m.id,
@@ -142,6 +163,12 @@ export const mastersApi = listTable<Master, MasterRow>({
     experience: m.experience,
     branch: m.branch,
     active: m.active,
+    rating: Math.min(5, Math.max(0, Math.round(m.rating * 10) / 10)),
+    orders: Math.max(0, Math.round(m.orders)),
+    hours_from: m.hoursFrom,
+    hours_to: m.hoursTo,
+    outcall: m.outcall,
+    outcall_note: m.outcallNote,
     sort,
   }),
 });

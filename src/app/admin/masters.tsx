@@ -9,12 +9,45 @@ import type { Master } from '../../data/content';
 import { newId } from '../../lib/catalogApi';
 import { pickAndUploadImage } from '../../lib/pickImage';
 
-const empty = (): Master => ({ id: '', name: '', specialty: '', experience: '', branch: '', active: true });
+const empty = (): Master => ({
+  id: '',
+  name: '',
+  specialty: '',
+  experience: '',
+  branch: '',
+  active: true,
+  rating: 5,
+  orders: 0,
+  hoursFrom: '09:00',
+  hoursTo: '18:00',
+  outcall: false,
+  outcallNote: '',
+});
+
+// "9" → "09:00", "930" → "09:30"
+const fixTime = (v: string) => {
+  const d = v.replace(/\D/g, '').slice(0, 4);
+  if (!d) return '';
+  const h = d.length <= 2 ? d : d.slice(0, d.length - 2);
+  const m = d.length <= 2 ? '00' : d.slice(-2);
+  return `${h.padStart(2, '0')}:${m}`;
+};
 
 // Оңдоо мастерлери: сүрөтү, аты, адистиги, тажрыйбасы, филиалы
 export default function AdminMasters() {
   const { masters, saveMaster, deleteMaster } = useContent();
-  const [draft, setDraft] = useState<Master | null>(null);
+  const [draft, setDraftRaw] = useState<Master | null>(null);
+  const [ratingText, setRatingText] = useState('5');
+  const [ordersText, setOrdersText] = useState('0');
+  const setDraft = (m: Master | null) => {
+    // Сан талааларын жаңы мастер ачылганда гана толтурабыз (терип жатканда өчүрбөйт)
+    const opening = m && (!draft || m.id !== draft.id);
+    setDraftRaw(m);
+    if (m && opening) {
+      setRatingText(String(m.rating));
+      setOrdersText(String(m.orders));
+    }
+  };
   const [uploading, setUploading] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +69,7 @@ export default function AdminMasters() {
     setError(null);
     try {
       const url = await pickAndUploadImage([1, 1]);
-      if (url) setDraft((d) => (d ? { ...d, photoUrl: url } : d));
+      if (url) setDraftRaw((d) => (d ? { ...d, photoUrl: url } : d));
     } catch (e) {
       setError('Сүрөт жүктөлгөн жок: ' + (e instanceof Error ? e.message : ''));
     }
@@ -52,6 +85,11 @@ export default function AdminMasters() {
       specialty: draft.specialty.trim(),
       experience: draft.experience.trim(),
       branch: draft.branch.trim(),
+      rating: Math.min(5, Math.max(0, Number(ratingText.replace(',', '.')) || 0)),
+      orders: Math.max(0, parseInt(ordersText.replace(/\D/g, ''), 10) || 0),
+      hoursFrom: fixTime(draft.hoursFrom),
+      hoursTo: fixTime(draft.hoursTo),
+      outcallNote: draft.outcall ? draft.outcallNote.trim() : '',
     };
     if (await run(() => saveMaster(m))) setDraft(null);
   };
@@ -73,13 +111,39 @@ export default function AdminMasters() {
       <Field label="Аты-жөнү *" value={draft.name} onChangeText={(t) => setDraft({ ...draft, name: t })} placeholder="Мисалы: Азамат" />
       <Field label="Адистиги" value={draft.specialty} onChangeText={(t) => setDraft({ ...draft, specialty: t })} placeholder="Мисалы: Мотор жана контроллер" />
       <Field label="Тажрыйбасы" value={draft.experience} onChangeText={(t) => setDraft({ ...draft, experience: t })} placeholder="Мисалы: 5 жыл" />
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <View style={{ flex: 1 }}>
+          <Field label="Рейтинг (0–5)" value={ratingText} onChangeText={setRatingText} keyboardType="decimal-pad" placeholder="4.9" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Field label="Аткарган заказдары" value={ordersText} onChangeText={setOrdersText} keyboardType="number-pad" placeholder="120" />
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 10 }}>
+        <View style={{ flex: 1 }}>
+          <Field label="Иштейт: саат канчадан" value={draft.hoursFrom} onChangeText={(t) => setDraft({ ...draft, hoursFrom: t })} placeholder="09:00" keyboardType="numbers-and-punctuation" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Field label="саат канчага чейин" value={draft.hoursTo} onChangeText={(t) => setDraft({ ...draft, hoursTo: t })} placeholder="18:00" keyboardType="numbers-and-punctuation" />
+        </View>
+      </View>
       <View style={{ gap: 6 }}>
-        <Text style={styles.label}>Филиал</Text>
+        <Text style={styles.label}>Кайсы жерде иштейт (филиал)</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {SHOP.branches.map((b) => (
             <Chip key={b} label={b} active={draft.branch === b} onPress={() => setDraft({ ...draft, branch: draft.branch === b ? '' : b })} />
           ))}
         </View>
+      </View>
+      <View style={styles.outcall}>
+        <View style={styles.row}>
+          <MaterialCommunityIcons name="car-side" size={22} color={colors.primary} />
+          <Text style={{ flex: 1, color: colors.text, fontWeight: '700', marginLeft: 8 }}>Жумуштан кийин выездге чыгат</Text>
+          <Switch value={draft.outcall} onValueChange={(v) => setDraft({ ...draft, outcall: v })} trackColor={{ true: colors.primary, false: colors.border }} />
+        </View>
+        {draft.outcall && (
+          <Field label="Выезд: убактысы жана баасы" value={draft.outcallNote} onChangeText={(t) => setDraft({ ...draft, outcallNote: t })} placeholder="Мисалы: 18:00–22:00, 500 сомдон" />
+        )}
       </View>
       <View style={styles.row}>
         <Text style={{ flex: 1, color: colors.text, fontWeight: '600' }}>Кардарларга көрсөтүү</Text>
@@ -118,7 +182,10 @@ export default function AdminMasters() {
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={styles.name}>{m.name}</Text>
                 {!!m.specialty && <Text style={{ color: colors.primary, fontSize: 13 }}>{m.specialty}</Text>}
-                <Text style={{ color: colors.muted, fontSize: 12 }}>{[m.experience, m.branch].filter(Boolean).join(' · ')}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12 }}>
+                  {[`⭐ ${m.rating.toFixed(1)}`, `${m.orders} заказ`, m.hoursFrom && m.hoursTo ? `${m.hoursFrom}–${m.hoursTo}` : '', m.branch].filter(Boolean).join(' · ')}
+                </Text>
+                {m.outcall && <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>🚗 Выезд{m.outcallNote ? `: ${m.outcallNote}` : ''}</Text>}
                 {!m.active && <Text style={{ color: colors.muted, fontSize: 12, fontWeight: '700' }}>Жашырылган</Text>}
               </View>
               <View style={{ gap: 16, alignItems: 'center' }}>
@@ -151,5 +218,6 @@ const styles = StyleSheet.create({
   empty: { color: colors.muted, textAlign: 'center', paddingVertical: 24 },
   photo: { height: 220, borderRadius: radius.lg, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   photoBtn: { position: 'absolute', bottom: 10, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  outcall: { gap: 10, backgroundColor: colors.primarySoft, borderRadius: radius.md, padding: 12 },
   thumb: { width: 64, height: 64, borderRadius: radius.md, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
 });

@@ -330,4 +330,9 @@ export const ru: Record<TKey, string> = {
   'masters.any': "Любой мастер",
   'masters.chosen': "Выбран",
   'msg.master': "Мастер: {v}",
+  'masters.orders': "{n} заказов",
+  'masters.outcall': "Выезжает на место",
+  'masters.outcallAsk': "Нужен выезд (мастер приедет к вам)",
+  'msg.outcall': "🚗 Нужен выезд",
+  'masters.hours': "{from}–{to}",
 };

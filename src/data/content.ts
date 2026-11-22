@@ -39,6 +39,12 @@ export type Master = {
   experience: string;
   branch: string;
   active: boolean;
+  rating: number; // 0–5
+  orders: number; // аткарылган заказдар
+  hoursFrom: string; // "09:00"
+  hoursTo: string; // "18:00"
+  outcall: boolean; // жумуштан кийин выездге чыгат
+  outcallNote: string; // мисалы "18:00–22:00, 500 сомдон"
 };
 
 export type GalleryItem = {
