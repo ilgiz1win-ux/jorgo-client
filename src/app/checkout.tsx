@@ -52,6 +52,12 @@ export default function Checkout() {
   const expressTo = express.whatsapp || branch?.whatsapp;
   const phoneOk = phone.replace(/\D/g, '').length >= 9;
   const valid = name.trim().length > 1 && phoneOk && (delivery === 'pickup' || address.trim().length > 3);
+  // Кайсы талаа толтурулбай калганын так көрсөтөбүз
+  const missing = [
+    name.trim().length > 1 ? null : t('checkout.missName'),
+    phoneOk ? null : t('checkout.missPhone'),
+    delivery === 'express' && address.trim().length <= 3 ? t('checkout.missAddress') : null,
+  ].filter(Boolean) as string[];
 
   if (done) {
     return (
@@ -222,7 +228,9 @@ export default function Checkout() {
             <Button title={sending ? '…' : t('checkout.send')} icon="whatsapp" variant="whatsapp" disabled={!valid || sending} onPress={submit} />
           </>
         )}
-        {!valid && <Text style={{ color: colors.muted, textAlign: 'center', fontSize: 13 }}>{t('checkout.fill')}</Text>}
+        {!valid && !needLogin && (
+          <Text style={{ color: colors.danger, textAlign: 'center', fontSize: 14, fontWeight: '600' }}>{t('checkout.missing', { v: missing.join(', ') })}</Text>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );

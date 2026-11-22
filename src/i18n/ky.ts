@@ -400,6 +400,10 @@ export const ky = {
   'checkout.blocked': "Кечиресиз, бул номерден буйрутма кабыл алынбайт. Дүкөнгө телефон аркылуу кайрылыңыз.",
   'order.status.pickedSelf': "Кардар алып кетти",
   'order.cancelReason': "Себеби: {v}",
+  'checkout.missing': "Толтуруңуз: {v}",
+  'checkout.missName': "атыңыз",
+  'checkout.missPhone': "телефон (толук номер)",
+  'checkout.missAddress': "облус, шаар жана дарек",
 };
 
 export type TKey = keyof typeof ky;

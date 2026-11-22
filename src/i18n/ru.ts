@@ -389,4 +389,8 @@ export const ru: Record<TKey, string> = {
   'checkout.blocked': "Извините, с этого номера заказы не принимаются. Обратитесь в магазин по телефону.",
   'order.status.pickedSelf': "Клиент забрал",
   'order.cancelReason': "Причина: {v}",
+  'checkout.missing': "Заполните: {v}",
+  'checkout.missName': "имя",
+  'checkout.missPhone': "телефон (полный номер)",
+  'checkout.missAddress': "область, город и адрес",
 };
