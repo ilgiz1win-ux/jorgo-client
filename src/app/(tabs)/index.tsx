@@ -168,10 +168,10 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  header: { backgroundColor: colors.card, paddingHorizontal: 16, paddingBottom: 14, gap: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
-  headerRow: { alignItems: 'center', justifyContent: 'center' },
+  header: { zIndex: 10, backgroundColor: colors.card, paddingHorizontal: 16, paddingBottom: 14, gap: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
+  headerRow: { alignItems: 'center', justifyContent: 'center', zIndex: 10 },
   logo: { width: 150, height: 84 },
-  langPos: { position: 'absolute', right: 0, top: 0 },
+  langPos: { position: 'absolute', right: 0, top: 0, zIndex: 20 },
   bellPos: { position: 'absolute', left: 0, top: 0, width: 44, height: 44, borderRadius: 22, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   bellBadge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   bellBadgeText: { color: '#fff', fontSize: 10, fontWeight: '900' },
