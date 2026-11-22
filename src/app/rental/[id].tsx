@@ -77,7 +77,6 @@ export default function Tariffs() {
 
       {periods.map((p, i) => {
         const price = priceFor(bike, p)!;
-        const perDay = Math.round(price / DAYS[p]);
         return (
           <FadeIn key={p} delay={i * 80}>
             <View style={styles.tariff}>
@@ -97,7 +96,6 @@ export default function Tariffs() {
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.price}>{formatPrice(price)}</Text>
-                    {p !== 'day' && <Text style={styles.muted}>{t('rent.perDayShort', { sum: formatPrice(perDay) })}</Text>}
                   </View>
                   <View style={styles.daysChip}>
                     <MaterialCommunityIcons name="calendar-blank-outline" size={16} color={colors.muted} />

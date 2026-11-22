@@ -6,7 +6,6 @@ import { HeroBanner, ReviewsCarousel, StatsRow } from '../../components/HomeSect
 import { InstallBanner } from '../../components/InstallApp';
 import { ProductGrid } from '../../components/ProductGrid';
 import { PromoCarousel } from '../../components/PromoCarousel';
-import { RentStrip } from '../../components/RentStrip';
 import { SkeletonGrid } from '../../components/Skeleton';
 import { SectionTitle } from '../../components/ui';
 import { MastersList } from '../../components/MastersList';
@@ -24,7 +23,7 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const { t } = useT();
   const { products, promos, loading, refresh } = useCatalog();
-  const { settings, reviews, rentals, masters, refreshContent } = useContent();
+  const { settings, reviews, masters, refreshContent } = useContent();
   // Дүкөндүн коңгуроосу: жалпы жаңылыктар гана
   const unread = useUnread(true, true, false);
   const popular = products.filter((p) => p.popular);
@@ -73,20 +72,6 @@ export default function Home() {
         <HeroBanner settings={settings} />
         <StatsRow stats={settings.stats} />
 
-        {rentals.length > 0 && (
-          <>
-            <SectionTitle
-              right={
-                <Link href="/rent" style={styles.link}>
-                  {t('common.allArrow')}
-                </Link>
-              }
-            >
-              {t('rent.homeBikes')}
-            </SectionTitle>
-            <RentStrip bikes={rentals} />
-          </>
-        )}
         <PromoCarousel promos={activePromos} />
 
         <SectionTitle>{t('home.categories')}</SectionTitle>
@@ -101,6 +86,19 @@ export default function Home() {
               </Text>
             </Pressable>
           ))}
+          {/* Ижара — категориялардын бири; велосипеддердин сүрөттөрү ичине киргенде гана */}
+          <Pressable style={[styles.cat, styles.catRent]} onPress={() => router.push('/rent')} accessibilityRole="button">
+            <View style={[styles.catIcon, { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
+              <MaterialCommunityIcons name="bicycle-electric" size={28} color="#fff" />
+            </View>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={styles.rentTitle}>{t('tab.rent')}</Text>
+              <Text style={styles.rentSub} numberOfLines={2}>
+                {t('rent.homeText')}
+              </Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={26} color="#fff" />
+          </Pressable>
         </View>
 
         {onSale.length > 0 && (
@@ -138,18 +136,6 @@ export default function Home() {
           </>
         )}
 
-        <Link href="/rent" asChild>
-          <Pressable style={styles.rentCard}>
-            <View style={styles.repairIcon}>
-              <MaterialCommunityIcons name="bicycle-electric" size={28} color={colors.ink} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.repairTitle}>{t('rent.homeTitle')}</Text>
-              <Text style={[styles.repairText, { color: colors.primarySoft }]}>{t('rent.homeText')}</Text>
-            </View>
-            <MaterialCommunityIcons name="chevron-right" size={26} color="#fff" />
-          </Pressable>
-        </Link>
 
         <SectionTitle right={all}>{t('home.popular')}</SectionTitle>
         {showSkeleton ? <SkeletonGrid count={4} /> : <ProductGrid products={popular} />}
@@ -183,6 +169,9 @@ const styles = StyleSheet.create({
   repairText: { color: '#D1D5DB', fontSize: 13, marginTop: 2 },
   cats: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   cat: { flexBasis: '30%', flexGrow: 1, backgroundColor: colors.card, borderRadius: radius.md, padding: 10, alignItems: 'center', gap: 6, borderWidth: 1, borderColor: colors.border },
+  catRent: { flexBasis: '100%', flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, backgroundColor: colors.primary, borderColor: colors.primary },
+  rentTitle: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  rentSub: { color: colors.primarySoft, fontSize: 12 },
   catIcon: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
   catText: { fontSize: 12, fontWeight: '600', color: colors.text, textAlign: 'center' },
 });

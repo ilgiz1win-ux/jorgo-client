@@ -26,7 +26,7 @@ function Checkout() {
   const { profile } = useAccount();
   const bike = rentals.find((b) => b.id === params.bike);
   const periods = bike ? periodsOf(bike) : [];
-  const period: RentPeriod = periods.includes(params.period as RentPeriod) ? (params.period as RentPeriod) : periods[0] ?? 'day';
+  const period: RentPeriod = periods.includes(params.period as RentPeriod) ? (params.period as RentPeriod) : periods[0] ?? 'week';
   const [count, setCount] = useState(1);
   const [start, setStart] = useState('');
   const [consent, setConsent] = useState(false);

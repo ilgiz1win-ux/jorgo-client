@@ -166,7 +166,7 @@ export const ru: Record<TKey, string> = {
 
   'tab.rent': 'Аренда',
   'rent.title': 'Аренда электровелосипедов',
-  'rent.subtitle': 'Для курьеров и поездок по городу — на день, неделю или месяц',
+  'rent.subtitle': 'Для курьеров и поездок по городу — на неделю или месяц',
   'rent.bikes': 'Велосипеды в аренду',
   'rent.empty': 'Сейчас свободных велосипедов нет. Напишите в WhatsApp — сообщим, когда освободится.',
   'rent.ask': 'Спросить в WhatsApp',
@@ -192,7 +192,7 @@ export const ru: Record<TKey, string> = {
   'rent.send': 'Отправить заявку в WhatsApp',
   'rent.sent': 'Заявка отправлена! Скоро свяжемся.',
   'rent.homeTitle': 'Аренда электровелосипедов',
-  'rent.homeText': 'Удобно для курьеров — на день, неделю, месяц',
+  'rent.homeText': 'Удобно для курьеров — на неделю или месяц',
   'rent.passport': 'Номер паспорта *',
   'rent.passportPh': 'Например: ID1234567',
   'rent.consent': 'Согласен передать паспортные данные и геолокацию (GPS) для аренды',
@@ -339,4 +339,6 @@ export const ru: Record<TKey, string> = {
   'news.empty': "Пока нет новостей",
   'news.promos': "Акции",
   'news.open': "Посмотреть",
+  'rent.perWeekShort': '{sum}/неделя',
+  'rent.perMonthShort': "{sum}/месяц",
 };

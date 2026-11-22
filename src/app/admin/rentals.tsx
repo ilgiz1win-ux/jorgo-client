@@ -58,7 +58,7 @@ const fromDraft = (d: Draft): RentalBike => ({
     .map((l) => l.split(':'))
     .filter((p) => p.length >= 2 && p[0].trim())
     .map(([k, ...v]) => [k.trim(), v.join(':').trim()] as [string, string]),
-  priceDay: toNum(d.priceDay),
+  priceDay: undefined,
   priceWeek: toNum(d.priceWeek),
   priceMonth: toNum(d.priceMonth),
   deposit: toNum(d.deposit),
@@ -122,7 +122,7 @@ export default function AdminRentals() {
     if (ok) setDraft(null);
   };
 
-  const hasPrice = draft && (toNum(draft.priceDay) || toNum(draft.priceWeek) || toNum(draft.priceMonth));
+  const hasPrice = draft && (toNum(draft.priceWeek) || toNum(draft.priceMonth));
 
   const editor = draft && (
     <Card style={{ gap: 12 }}>
@@ -139,11 +139,8 @@ export default function AdminRentals() {
         </View>
       </Pressable>
       <Field label="Аталышы *" value={draft.name} onChangeText={(t) => setDraft({ ...draft, name: t })} placeholder="Мисалы: Курьерлер үчүн 48V" />
-      <Text style={styles.label}>Баалар, сом (керектүүсүн гана толтуруңуз) *</Text>
+      <Text style={styles.label}>Баалар, сом (ижара жумага же айга гана) *</Text>
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        <View style={{ flex: 1 }}>
-          <Field label="Күнүнө" value={draft.priceDay} onChangeText={(t) => setDraft({ ...draft, priceDay: t })} keyboardType="number-pad" placeholder="600" />
-        </View>
         <View style={{ flex: 1 }}>
           <Field label="Жумасына" value={draft.priceWeek} onChangeText={(t) => setDraft({ ...draft, priceWeek: t })} keyboardType="number-pad" placeholder="3500" />
         </View>
