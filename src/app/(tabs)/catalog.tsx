@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import type { TextInputInstance } from 'react-native';
 import { ProductGrid } from '../../components/ProductGrid';
 import { SkeletonGrid } from '../../components/Skeleton';
 import { Chip } from '../../components/ui';
@@ -13,7 +14,16 @@ import { useT } from '../../i18n';
 type Sort = 'popular' | 'cheap' | 'expensive';
 
 export default function Catalog() {
-  const params = useLocalSearchParams<{ category?: CategoryId }>();
+  const params = useLocalSearchParams<{ category?: CategoryId; search?: string }>();
+  const inputRef = useRef<TextInputInstance>(null);
+  // Башкы беттеги 🔍 басылса — издөө талаасы дароо ачылат
+  useEffect(() => {
+    if (params.search === '1') {
+      // Параметрди тазалоо эффектти кайра чакырат — таймерди токтотпойбуз
+      setTimeout(() => inputRef.current?.focus(), 250);
+      router.setParams({ search: undefined });
+    }
+  }, [params.search]);
   const [category, setCategory] = useState<CategoryId | 'all'>(params.category ?? 'all');
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<Sort>('popular');
@@ -43,6 +53,7 @@ export default function Catalog() {
       <View style={styles.search}>
         <MaterialCommunityIcons name="magnify" size={20} color={colors.muted} />
         <TextInput
+          ref={inputRef}
           value={query}
           onChangeText={setQuery}
           placeholder={t('common.search')}
