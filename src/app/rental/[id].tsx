@@ -36,9 +36,8 @@ export default function Tariffs() {
   const popular: RentPeriod | undefined = periods.includes('week') ? 'week' : periods[0];
 
   const order = (p: RentPeriod) => {
-    const target = `/rental/checkout?bike=${encodeURIComponent(bike.id)}&period=${p}`;
-    if (profile) router.push({ pathname: '/rental/checkout', params: { bike: bike.id, period: p } });
-    else router.push({ pathname: '/account/login', params: { next: target } });
+    // Катталуу жана паспорт тариздөө барагында суралат
+    router.push({ pathname: '/rental/checkout', params: { bike: bike.id, period: p } });
   };
 
   return (

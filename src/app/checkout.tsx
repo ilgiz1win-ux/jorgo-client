@@ -13,7 +13,8 @@ import { branchLabel } from '../lib/branches';
 import { TKey, useT } from '../i18n';
 import { track } from '../lib/analytics';
 
-type Delivery = 'pickup' | 'courier';
+// Өзүбүздүн жеткирүү жок: кардар өзү алат же башка облуска экспресс (курьер) аркылуу
+type Delivery = 'pickup' | 'express';
 type Payment = 'cash' | 'transfer' | 'installment';
 
 const PAYMENTS: Payment[] = ['cash', 'transfer', 'installment'];
@@ -26,15 +27,17 @@ export default function Checkout() {
   const [delivery, setDelivery] = useState<Delivery>('pickup');
   const [address, setAddress] = useState('');
   const [branchIdx, setBranchIdx] = useState(0);
-  const { branches } = useContent();
+  const { branches, express } = useContent();
+  const [sentMsg, setSentMsg] = useState<string | null>(null);
   const branch = branches[Math.min(branchIdx, branches.length - 1)] ?? branches[0];
   const branchName = (i: number) => (branches[i] ? branchLabel(branches[i], t) : '');
   const [payment, setPayment] = useState<Payment>('cash');
   const [comment, setComment] = useState('');
   const [done, setDone] = useState<string | null>(null);
 
-  const deliveryFee = delivery === 'courier' && subtotal < SHOP.freeDeliveryFrom ? SHOP.deliveryFee : 0;
-  const total = subtotal + deliveryFee;
+  // Биз товардын баасын гана алабыз; экспресстин жол акысын кардар экспресстен сурайт
+  const total = subtotal;
+  const expressTo = express.whatsapp || branch?.whatsapp;
   const phoneOk = phone.replace(/\D/g, '').length >= 9;
   const valid = name.trim().length > 1 && phoneOk && (delivery === 'pickup' || address.trim().length > 3);
 
@@ -46,8 +49,11 @@ export default function Checkout() {
         </PopIn>
         <Text style={styles.doneTitle}>{t('checkout.done', { id: done })}</Text>
         <Text style={{ color: colors.muted, textAlign: 'center' }}>
-          {t('checkout.doneText', { phone })}
+          {sentMsg ? t('express.doneText') : t('checkout.doneText', { phone })}
         </Text>
+        {sentMsg && branch && (
+          <Button title={t('express.notifyShop')} icon="whatsapp" variant="whatsapp" onPress={() => openWhatsApp(sentMsg, branch.whatsapp).catch(() => {})} />
+        )}
         <Button title={t('checkout.home')} icon="home" onPress={() => router.replace('/')} />
       </View>
     );
@@ -65,18 +71,21 @@ export default function Checkout() {
   const submit = () => {
     const id = String(Date.now()).slice(-6);
     const itemsText = lines.map((l, i) => `${i + 1}. ${l.product.name} × ${l.qty} = ${formatPrice(l.product.price * l.qty)}`).join('\n');
+    const isExpress = delivery === 'express';
     const msg = [
-      t('msg.newOrder', { id }),
+      isExpress ? t('msg.expressHead', { shop: SHOP.name }) : t('msg.newOrder', { id }),
+      isExpress ? `№${id}` : null,
       '',
       itemsText,
       '',
-      deliveryFee ? t('msg.delivery', { sum: formatPrice(deliveryFee) }) : null,
       t('msg.total', { sum: formatPrice(total) }),
+      isExpress ? t('msg.expressPay') : null,
       '',
       t('msg.name', { v: name.trim() }),
       t('msg.phone', { v: phone.trim() }),
-      delivery === 'pickup' ? t('msg.pickup', { v: branchName(branchIdx) }) : t('msg.courier', { v: address.trim() }),
-      delivery === 'courier' ? t('msg.branch', { v: branchName(branchIdx) }) : null,
+      isExpress ? t('msg.expressTo', { v: address.trim() }) : t('msg.pickup', { v: branchName(branchIdx) }),
+      isExpress ? t('msg.expressFrom', { shop: SHOP.name, v: branchName(branchIdx) }) : null,
+      isExpress && branch ? t('msg.expressFromPhone', { v: branch.whatsapp }) : null,
       t('msg.payment', { v: t(`pay.${payment}`) }),
       comment.trim() ? t('msg.comment', { v: comment.trim() }) : null,
     ]
@@ -95,8 +104,9 @@ export default function Checkout() {
     clear();
     setDone(id);
     // Буйрутма сакталгандан кийин WhatsApp'ты ачабыз
-    // Заказ тандалган точканын өз номерине кетет
-    setTimeout(() => openWhatsApp(msg, branch?.whatsapp).catch(() => {}), 400);
+    setSentMsg(isExpress ? msg : null);
+    // Өзү алса — тандалган точканын номерине; экспресс болсо — экспресстин номерине түз
+    setTimeout(() => openWhatsApp(msg, isExpress ? expressTo : branch?.whatsapp).catch(() => {}), 400);
   };
 
   return (
@@ -112,11 +122,11 @@ export default function Checkout() {
           <Text style={styles.h}>{t('checkout.method')}</Text>
           <View style={styles.chips}>
             <Chip label={t('checkout.pickup')} active={delivery === 'pickup'} onPress={() => setDelivery('pickup')} />
-            <Chip label={t('checkout.courier')} active={delivery === 'courier'} onPress={() => setDelivery('courier')} />
+            <Chip label={`📦 ${t('checkout.courier')}`} active={delivery === 'express'} onPress={() => setDelivery('express')} />
           </View>
           <View style={{ gap: 8 }}>
             <Text style={{ color: colors.muted, fontSize: 13 }}>
-              {delivery === 'pickup' ? t('checkout.whichBranch', { city: SHOP.city }) : t('branch.courier')}
+              {delivery === 'pickup' ? t('checkout.whichBranch', { city: SHOP.city }) : t('express.pickupFrom')}
             </Text>
             <View style={styles.chips}>
               {branches.map((b, i) => (
@@ -124,8 +134,19 @@ export default function Checkout() {
               ))}
             </View>
           </View>
-          {delivery === 'courier' && (
-            <Field label={t('checkout.address')} value={address} onChangeText={setAddress} placeholder={t('checkout.addressPh')} />
+          {delivery === 'express' && (
+            <>
+              <Field label={t('checkout.address')} value={address} onChangeText={setAddress} placeholder={t('checkout.addressPh')} />
+              <View style={styles.warn}>
+                <Text style={styles.warnText}>{t('express.priceNote')}</Text>
+                <Button
+                  title={t('express.ask')}
+                  icon="whatsapp"
+                  variant="whatsapp"
+                  onPress={() => openWhatsApp(t('msg.expressAsk', { v: address.trim() || '…' }), expressTo).catch(() => {})}
+                />
+              </View>
+            </>
           )}
         </Card>
 
@@ -148,14 +169,11 @@ export default function Checkout() {
               <Text style={{ fontWeight: '600' }}>{formatPrice(l.product.price * l.qty)}</Text>
             </View>
           ))}
-          <View style={styles.row}>
-            <Text style={{ color: colors.muted }}>{t('checkout.delivery')}</Text>
-            <Text style={{ fontWeight: '600' }}>{deliveryFee ? formatPrice(deliveryFee) : t('checkout.free')}</Text>
-          </View>
           <View style={[styles.row, { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 8 }]}>
-            <Text style={styles.h}>{t('checkout.total')}</Text>
+            <Text style={styles.h}>{delivery === 'express' ? t('express.goodsTotal') : t('checkout.total')}</Text>
             <Text style={[styles.h, { color: colors.primary }]}>{formatPrice(total)}</Text>
           </View>
+          {delivery === 'express' && <Text style={styles.feeRow}>{t('express.feeRow')}</Text>}
         </Card>
 
         <Button title={t('checkout.send')} icon="whatsapp" variant="whatsapp" disabled={!valid} onPress={submit} />
@@ -169,6 +187,9 @@ const styles = StyleSheet.create({
   h: { fontSize: 16, fontWeight: '800', color: colors.text },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
+  warn: { gap: 10, backgroundColor: '#FFFBEB', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: '#FCD34D' },
+  warnText: { color: '#92400E', fontWeight: '600', lineHeight: 20 },
+  feeRow: { color: '#B45309', fontWeight: '700', textAlign: 'right' },
   done: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 32 },
   doneTitle: { fontSize: 20, fontWeight: '800', color: colors.text, textAlign: 'center' },
 });

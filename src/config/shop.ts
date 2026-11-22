@@ -15,6 +15,4 @@ export const SHOP = {
   currency: 'сом',
   // Android үчүн APK файлдын шилтемеси (GitHub Releases). Бош болсо, баскыч көрүнбөйт.
   apkUrl: '' as string | undefined,
-  deliveryFee: 300,
-  freeDeliveryFrom: 20000,
 };

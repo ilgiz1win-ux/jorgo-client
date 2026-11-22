@@ -9,6 +9,7 @@ import { PromoCarousel } from '../../components/PromoCarousel';
 import { SkeletonGrid } from '../../components/Skeleton';
 import { SectionTitle } from '../../components/ui';
 import { MastersList } from '../../components/MastersList';
+import { RentBikeGrid } from '../../components/RentBikeGrid';
 import { useUnread } from '../../lib/useUnread';
 import { colors, radius } from '../../config/theme';
 import { useCatalog } from '../../context/CatalogContext';
@@ -23,7 +24,7 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const { t } = useT();
   const { products, promos, loading, refresh } = useCatalog();
-  const { settings, reviews, masters, refreshContent } = useContent();
+  const { settings, reviews, masters, rentals, refreshContent } = useContent();
   // Дүкөндүн коңгуроосу: жалпы жаңылыктар гана
   const unread = useUnread(true, true, false);
   const popular = products.filter((p) => p.popular);
@@ -86,7 +87,7 @@ export default function Home() {
               </Text>
             </Pressable>
           ))}
-          {/* Ижара — категориялардын бири; велосипеддердин сүрөттөрү ичине киргенде гана */}
+          {/* Ижара — категориялардын бири */}
           <Pressable style={[styles.cat, styles.catRent]} onPress={() => router.push('/rent')} accessibilityRole="button">
             <View style={[styles.catIcon, { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
               <MaterialCommunityIcons name="bicycle-electric" size={28} color="#fff" />
@@ -100,6 +101,21 @@ export default function Home() {
             <MaterialCommunityIcons name="chevron-right" size={26} color="#fff" />
           </Pressable>
         </View>
+
+        {rentals.length > 0 && (
+          <>
+            <SectionTitle
+              right={
+                <Link href="/rent" style={styles.link}>
+                  {t('common.allArrow')}
+                </Link>
+              }
+            >
+              {t('rent.homeBikes')}
+            </SectionTitle>
+            <RentBikeGrid bikes={[...rentals].sort((a, b) => Number(b.available) - Number(a.available)).slice(0, 4)} />
+          </>
+        )}
 
         {onSale.length > 0 && (
           <>

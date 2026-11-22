@@ -60,7 +60,7 @@ export default function Contacts() {
 
       <Card style={{ gap: 8 }}>
         <Text style={styles.h}>{t('contacts.deliveryTitle')}</Text>
-        <Text style={styles.p}>{t('contacts.delivery', { fee: formatPrice(SHOP.deliveryFee), free: formatPrice(SHOP.freeDeliveryFrom) })}</Text>
+        <Text style={styles.p}>{t('contacts.delivery')}</Text>
         <Text style={styles.p}>{t('contacts.warranty')}</Text>
         <Text style={styles.p}>{t('contacts.payment')}</Text>
       </Card>
