@@ -6,7 +6,6 @@ import { Button, Card, Chip, Field } from '../../components/ui';
 import { isRemote } from '../../config/backend';
 import { colors, radius } from '../../config/theme';
 import { useCatalog } from '../../context/CatalogContext';
-import { useContent } from '../../context/ContentContext';
 import { Broadcast, deleteBroadcast, fetchBroadcasts, sendBroadcast } from '../../lib/broadcasts';
 import { formatPrice } from '../../lib/format';
 import { pickAndUploadImage } from '../../lib/pickImage';
@@ -18,22 +17,6 @@ const empty: Draft = { title: '', body: '' };
 // Бардык кардарларга билдирме: акция, арзандатылган товар, жаңылык
 export default function AdminBroadcast() {
   const { promos, products } = useCatalog();
-  const { branches } = useContent();
-  // Розыгрыш үлгүсү: убакыт, точка, белек → даяр текст
-  const [gOpen, setGOpen] = useState(false);
-  const [gTime, setGTime] = useState('19:00');
-  const [gBranch, setGBranch] = useState(0);
-  const [gPrize, setGPrize] = useState('шлем');
-  const fillGiveaway = () => {
-    const place = branches[gBranch]?.name ?? '';
-    setD({
-      title: `🎁 Розыгрыш! ${gPrize.trim()} бекер`,
-      body: `Бүгүн саат ${gTime.trim()}дө ${place} дарегинде ${gPrize.trim()} бекер беребиз — ким биринчи келсе! Досторуңузга да айтыңыз. Кеч калбаңыз!`,
-      imageUrl: d.imageUrl,
-      link: '/contacts',
-    });
-    setGOpen(false);
-  };
   const [d, setD] = useState<Draft>(empty);
   const [history, setHistory] = useState<Broadcast[]>([]);
   const [devices, setDevices] = useState<number | null>(null);
@@ -93,33 +76,6 @@ export default function AdminBroadcast() {
           Билдирме бардык кардарларга барат: сайтта жана колдонмодо 🔔 коңгуроодо көрүнөт. Колдонмону (APK) орноткондордун телефонуна SMS сыяктуу push келет.
           {isRemote && devices !== null ? `\nPush алуучу телефондор: ${devices}` : ''}
         </Text>
-
-        <View style={styles.giveaway}>
-          <Pressable onPress={() => setGOpen(!gOpen)} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <MaterialCommunityIcons name="gift-outline" size={22} color="#DB2777" />
-            <Text style={{ flex: 1, fontWeight: '800', color: colors.text }}>🎁 Розыгрыш үлгүсү</Text>
-            <MaterialCommunityIcons name={gOpen ? 'chevron-up' : 'chevron-down'} size={22} color={colors.muted} />
-          </Pressable>
-          {gOpen && (
-            <View style={{ gap: 10 }}>
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <View style={{ flex: 1 }}>
-                  <Field label="Саат" value={gTime} onChangeText={setGTime} placeholder="19:00" keyboardType="numbers-and-punctuation" />
-                </View>
-                <View style={{ flex: 1.6 }}>
-                  <Field label="Белек" value={gPrize} onChangeText={setGPrize} placeholder="шлем" />
-                </View>
-              </View>
-              <Text style={styles.label}>Кайсы точкада</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {branches.map((b, i) => (
-                  <Chip key={b.name + i} label={`📍 ${b.name}`} active={gBranch === i} onPress={() => setGBranch(i)} />
-                ))}
-              </View>
-              <Button title="Текстти толтуруу" icon="text-box-edit-outline" variant="outline" disabled={!gTime.trim() || !gPrize.trim()} onPress={fillGiveaway} />
-            </View>
-          )}
-        </View>
 
         {activePromos.length > 0 && (
           <View style={{ gap: 6 }}>
@@ -208,6 +164,5 @@ const styles = StyleSheet.create({
   label: { fontSize: 13, fontWeight: '700', color: colors.muted },
   photo: { height: 150, borderRadius: radius.lg, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   photoBtn: { position: 'absolute', bottom: 8, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
-  giveaway: { gap: 10, backgroundColor: '#FDF2F8', borderRadius: radius.lg, padding: 12, borderWidth: 1, borderColor: '#FBCFE8' },
   linkRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 });
