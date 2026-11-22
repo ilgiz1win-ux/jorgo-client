@@ -1,12 +1,13 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { DEFAULT_SETTINGS, GalleryItem, Review, SiteSettings } from '../data/content';
+import { DEFAULT_SETTINGS, GalleryItem, Master, Review, SiteSettings } from '../data/content';
 import { DEFAULT_RENT_TERMS, RentalBike, RentTerms } from '../data/rentals';
-import { fetchRentals, fetchRentTerms, fetchSettings, galleryApi, rentalsApi, reviewsApi, saveRentTerms as apiSaveRentTerms, saveSettings as apiSaveSettings } from '../lib/contentApi';
+import { fetchMasters, fetchRentals, mastersApi, fetchRentTerms, fetchSettings, galleryApi, rentalsApi, reviewsApi, saveRentTerms as apiSaveRentTerms, saveSettings as apiSaveSettings } from '../lib/contentApi';
 
 type ContentContextValue = {
   settings: SiteSettings;
   reviews: Review[];
   gallery: GalleryItem[];
+  masters: Master[];
   rentals: RentalBike[];
   rentTerms: RentTerms;
   refreshContent: () => Promise<void>;
@@ -15,6 +16,8 @@ type ContentContextValue = {
   deleteReview: (id: string) => Promise<void>;
   saveGalleryItem: (g: GalleryItem) => Promise<void>;
   deleteGalleryItem: (id: string) => Promise<void>;
+  saveMaster: (m: Master) => Promise<void>;
+  deleteMaster: (id: string) => Promise<void>;
   saveRental: (b: RentalBike) => Promise<void>;
   deleteRental: (id: string) => Promise<void>;
   saveRentTerms: (t: RentTerms) => Promise<void>;
@@ -26,11 +29,13 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<SiteSettings>(DEFAULT_SETTINGS);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
+  const [masters, setMasters] = useState<Master[]>([]);
   const [rentals, setRentals] = useState<RentalBike[]>([]);
   const [rentTerms, setRentTerms] = useState<RentTerms>(DEFAULT_RENT_TERMS);
 
   const refreshContent = useCallback(async () => {
-    const [s, r, g, rb, rt] = await Promise.all([fetchSettings(), reviewsApi.fetch(), galleryApi.fetch(), fetchRentals(), fetchRentTerms()]);
+    const [s, r, g, rb, rt, ms] = await Promise.all([fetchSettings(), reviewsApi.fetch(), galleryApi.fetch(), fetchRentals(), fetchRentTerms(), fetchMasters()]);
+    setMasters(ms);
     setSettings(s);
     setReviews(r);
     setGallery(g);
@@ -47,6 +52,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       settings,
       reviews,
       gallery,
+      masters,
       rentals,
       rentTerms,
       refreshContent,
@@ -55,11 +61,13 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       deleteReview: async (id) => setReviews(await reviewsApi.remove(id, reviews)),
       saveGalleryItem: async (g) => setGallery(await galleryApi.save(g, gallery)),
       deleteGalleryItem: async (id) => setGallery(await galleryApi.remove(id, gallery)),
+      saveMaster: async (m) => setMasters(await mastersApi.save(m, masters)),
+      deleteMaster: async (id) => setMasters(await mastersApi.remove(id, masters)),
       saveRental: async (b) => setRentals(await rentalsApi.save(b, rentals)),
       deleteRental: async (id) => setRentals(await rentalsApi.remove(id, rentals)),
       saveRentTerms: async (t) => setRentTerms(await apiSaveRentTerms(t)),
     }),
-    [settings, reviews, gallery, rentals, rentTerms, refreshContent],
+    [settings, reviews, gallery, masters, rentals, rentTerms, refreshContent],
   );
 
   return <ContentContext.Provider value={value}>{children}</ContentContext.Provider>;

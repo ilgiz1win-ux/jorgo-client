@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DEFAULT_SETTINGS, GalleryItem, Review, SiteSettings } from '../data/content';
+import { DEFAULT_SETTINGS, GalleryItem, Master, Review, SiteSettings } from '../data/content';
 import { DEFAULT_RENT_TERMS, DEMO_RENTALS, RentalBike, RentTerms } from '../data/rentals';
 import { supabase } from './supabase';
 
@@ -119,6 +119,76 @@ export const galleryApi = listTable<GalleryItem, GalleryRow>({
   fromRow: (r) => ({ id: r.id, title: r.title ?? '', beforeUrl: r.before_url ?? undefined, afterUrl: r.after_url ?? undefined }),
   toRow: (g, sort) => ({ id: g.id, title: g.title, before_url: g.beforeUrl ?? null, after_url: g.afterUrl ?? null, sort }),
 });
+
+type MasterRow = {
+  id: string;
+  name: string;
+  photo_url: string | null;
+  specialty: string;
+  experience: string;
+  branch: string;
+  active: boolean;
+  rating: number | string | null;
+  orders: number | null;
+  hours_from: string | null;
+  hours_to: string | null;
+  outcall: boolean | null;
+  outcall_note: string | null;
+  sort: number;
+};
+export const mastersApi = listTable<Master, MasterRow>({
+  table: 'masters',
+  localKey: 'jorgo.local.masters',
+  cacheKey: 'jorgo.cache.masters',
+  fromRow: (r) => ({
+    id: r.id,
+    name: r.name,
+    photoUrl: r.photo_url ?? undefined,
+    specialty: r.specialty ?? '',
+    experience: r.experience ?? '',
+    branch: r.branch ?? '',
+    active: r.active,
+    rating: r.rating == null ? 5 : Number(r.rating),
+    orders: r.orders ?? 0,
+    hoursFrom: r.hours_from ?? '',
+    hoursTo: r.hours_to ?? '',
+    outcall: !!r.outcall,
+    outcallNote: r.outcall_note ?? '',
+  }),
+  toRow: (m, sort) => ({
+    id: m.id,
+    name: m.name,
+    photo_url: m.photoUrl ?? null,
+    specialty: m.specialty,
+    experience: m.experience,
+    branch: m.branch,
+    active: m.active,
+    rating: Math.min(5, Math.max(0, Math.round(m.rating * 10) / 10)),
+    orders: Math.max(0, Math.round(m.orders)),
+    hours_from: m.hoursFrom,
+    hours_to: m.hoursTo,
+    outcall: m.outcall,
+    outcall_note: m.outcallNote,
+    sort,
+  }),
+});
+
+// Демо режим үчүн гана мисалдар (сервер туташканда көрсөтүлбөйт)
+const DEMO_MASTERS: Master[] = [
+  { id: 'demo-m1', name: 'Азамат', specialty: 'Мотор жана контроллер', experience: '7 жыл', branch: 'Фучика көч., 62а', active: true, rating: 4.9, orders: 148, hoursFrom: '09:00', hoursTo: '18:00', outcall: true, outcallNote: '18:00–22:00, 500 сомдон' },
+  { id: 'demo-m2', name: 'Бекзат', specialty: 'Батарея жана заряд', experience: '4 жыл', branch: 'Манас пр., 2а', active: true, rating: 4.7, orders: 63, hoursFrom: '10:00', hoursTo: '19:00', outcall: false, outcallNote: '' },
+];
+
+// SQL (011) иштетиле элек болсо, бош тизме
+export async function fetchMasters(): Promise<Master[]> {
+  try {
+    const list = await mastersApi.fetch();
+    if (!supabase && list.length === 0 && (await readJson<Master[]>('jorgo.local.masters')) === null) return DEMO_MASTERS;
+    return list;
+  } catch {
+    return [];
+  }
+}
 
 // ---------- Ижара (аренда) ----------
 

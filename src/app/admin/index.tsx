@@ -12,7 +12,7 @@ import { CATEGORIES, CategoryId, IconName } from '../../data/products';
 import { formatPrice } from '../../lib/format';
 import { useUnread } from '../../lib/useUnread';
 
-type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery'; title: string; text: string; icon: IconName; color: string };
+type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/masters' | '/admin/broadcast' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery'; title: string; text: string; icon: IconName; color: string };
 
 // Ижара панели — дүкөндөн өзүнчө
 const RENT_SECTIONS: Tile[] = [
@@ -23,10 +23,12 @@ const RENT_SECTIONS: Tile[] = [
 ];
 
 const SECTIONS: Tile[] = [
+  { href: '/admin/broadcast', title: 'Билдирме жөнөтүү', text: 'Акция, арзандатуу — бардык кардарларга', icon: 'send', color: '#DB2777' },
   { href: '/admin/stats', title: 'Статистика', text: 'Канча адам кирди, буйрутмалар', icon: 'chart-bar', color: '#111827' },
   { href: '/admin/home', title: 'Башкы бет', text: 'Чоң баннер жана сандар', icon: 'home-edit', color: '#2E7D32' },
   { href: '/admin/promos', title: 'Акциялар', text: 'Баннерлер жана слайдер', icon: 'bullhorn', color: '#7C3AED' },
   { href: '/admin/services', title: 'Оңдоо', text: 'Кызматтар жана баалар', icon: 'wrench', color: '#EA580C' },
+  { href: '/admin/masters', title: 'Мастерлер', text: 'Сүрөттөрү, адистиги, филиалы', icon: 'account-hard-hat', color: '#B45309' },
   { href: '/admin/reviews', title: 'Пикирлер', text: 'Кардарлардын сөздөрү', icon: 'star', color: '#CA8A04' },
   { href: '/admin/gallery', title: 'Галерея', text: 'Чейин / кийин сүрөттөр', icon: 'image-multiple', color: '#0284C7' },
 ];

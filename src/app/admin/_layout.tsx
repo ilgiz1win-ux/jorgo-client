@@ -28,10 +28,12 @@ function Gate() {
       <Stack.Screen name="product/[id]" options={{ title: 'Товар' }} />
       <Stack.Screen name="promos" options={{ title: 'Акциялар' }} />
       <Stack.Screen name="services" options={{ title: 'Оңдоо кызматтары' }} />
+      <Stack.Screen name="masters" options={{ title: 'Мастерлер' }} />
       <Stack.Screen name="stats" options={{ title: 'Статистика' }} />
       <Stack.Screen name="rentals" options={{ title: 'Аренда' }} />
       <Stack.Screen name="rent-requests" options={{ title: 'Ижара өтүнмөлөрү' }} />
       <Stack.Screen name="notifications" options={{ title: 'Билдирмелер' }} />
+      <Stack.Screen name="broadcast" options={{ title: 'Билдирме жөнөтүү' }} />
       <Stack.Screen name="admins" options={{ title: 'Админдер' }} />
       <Stack.Screen name="home" options={{ title: 'Башкы бет' }} />
       <Stack.Screen name="reviews" options={{ title: 'Пикирлер' }} />

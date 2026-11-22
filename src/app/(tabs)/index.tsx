@@ -9,6 +9,8 @@ import { PromoCarousel } from '../../components/PromoCarousel';
 import { RentStrip } from '../../components/RentStrip';
 import { SkeletonGrid } from '../../components/Skeleton';
 import { SectionTitle } from '../../components/ui';
+import { MastersList } from '../../components/MastersList';
+import { useUnread } from '../../lib/useUnread';
 import { colors, radius } from '../../config/theme';
 import { useCatalog } from '../../context/CatalogContext';
 import { useContent } from '../../context/ContentContext';
@@ -22,7 +24,9 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const { t } = useT();
   const { products, promos, loading, refresh } = useCatalog();
-  const { settings, reviews, rentals, refreshContent } = useContent();
+  const { settings, reviews, rentals, masters, refreshContent } = useContent();
+  // Дүкөндүн коңгуроосу: жалпы жаңылыктар гана
+  const unread = useUnread(true, true, false);
   const popular = products.filter((p) => p.popular);
   const onSale = products.filter((p) => p.oldPrice && p.oldPrice > p.price);
   const activePromos = promos.filter((p) => p.active);
@@ -45,6 +49,14 @@ export default function Home() {
       {/* Логотип жана издөө */}
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <View style={styles.headerRow}>
+          <Pressable style={styles.bellPos} onPress={() => router.push('/news')} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('news.title')}>
+            <MaterialCommunityIcons name="bell-outline" size={24} color={colors.text} />
+            {unread > 0 && (
+              <View style={styles.bellBadge}>
+                <Text style={styles.bellBadgeText}>{unread > 9 ? '9+' : unread}</Text>
+              </View>
+            )}
+          </Pressable>
           <Image source={LOGO} style={styles.logo} resizeMode="contain" accessibilityLabel="Jorgo Eco Service" />
           <View style={styles.langPos}>
             <LangSwitch />
@@ -111,6 +123,21 @@ export default function Home() {
           </Pressable>
         </Link>
 
+        {masters.some((m) => m.active) && (
+          <>
+            <SectionTitle
+              right={
+                <Link href="/repair" style={styles.link}>
+                  {t('common.allArrow')}
+                </Link>
+              }
+            >
+              {t('masters.title')}
+            </SectionTitle>
+            <MastersList masters={masters} />
+          </>
+        )}
+
         <Link href="/rent" asChild>
           <Pressable style={styles.rentCard}>
             <View style={styles.repairIcon}>
@@ -143,6 +170,9 @@ const styles = StyleSheet.create({
   headerRow: { alignItems: 'center', justifyContent: 'center' },
   logo: { width: 150, height: 84 },
   langPos: { position: 'absolute', right: 0, top: 0 },
+  bellPos: { position: 'absolute', left: 0, top: 0, width: 44, height: 44, borderRadius: 22, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
+  bellBadge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  bellBadgeText: { color: '#fff', fontSize: 10, fontWeight: '900' },
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.bg, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: colors.border },
   body: { padding: 16, gap: 14 },
   link: { color: colors.primary, fontWeight: '700' },

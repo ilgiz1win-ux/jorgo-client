@@ -2,7 +2,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Image, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { BroadcastList } from '../../components/BroadcastList';
 import { NotificationList } from '../../components/NotificationList';
+import { Broadcast, fetchBroadcasts, markBroadcastsSeen } from '../../lib/broadcasts';
 import { colors } from '../../config/theme';
 import { useAccount } from '../../context/AccountContext';
 import { useCatalog } from '../../context/CatalogContext';
@@ -15,10 +17,15 @@ export default function Notifications() {
   const { promos } = useCatalog();
   const { profile } = useAccount();
   const [items, setItems] = useState<AppNotification[]>([]);
+  const [news, setNews] = useState<Broadcast[]>([]);
   const [loading, setLoading] = useState(false);
   const list = promos.filter((p) => p.active);
 
   const load = useCallback(async () => {
+    fetchBroadcasts()
+      .then(setNews)
+      .catch(() => {});
+    markBroadcastsSeen();
     if (!profile) return;
     setLoading(true);
     try {
@@ -37,13 +44,14 @@ export default function Notifications() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}>
-      {items.length === 0 && list.length === 0 && (
+      {items.length === 0 && news.length === 0 && list.length === 0 && (
         <View style={styles.empty}>
           <MaterialCommunityIcons name="bell-sleep-outline" size={44} color={colors.muted} />
           <Text style={{ color: colors.muted }}>{t('acc.noNotifications')}</Text>
         </View>
       )}
       <NotificationList items={items} />
+      <BroadcastList items={news} />
       {list.map((p) => (
         <View key={p.id} style={styles.card}>
           {!!p.imageUrl && <Image source={{ uri: p.imageUrl }} style={styles.image} resizeMode="cover" />}

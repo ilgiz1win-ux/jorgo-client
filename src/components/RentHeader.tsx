@@ -14,7 +14,7 @@ export function RentHeader() {
   const insets = useSafeAreaInsets();
   const { t } = useT();
   const { profile } = useAccount();
-  const unread = useUnread(!!profile);
+  const unread = useUnread(!!profile, true);
   return (
     <View style={[styles.wrap, { paddingTop: insets.top + 8 }]}>
       <Pressable style={styles.shop} onPress={() => router.navigate('/')} accessibilityRole="button" accessibilityLabel={t('rent.backShop')} hitSlop={6}>
