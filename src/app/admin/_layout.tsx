@@ -33,6 +33,7 @@ function Gate() {
       <Stack.Screen name="rentals" options={{ title: 'Аренда' }} />
       <Stack.Screen name="rent-requests" options={{ title: 'Ижара өтүнмөлөрү' }} />
       <Stack.Screen name="notifications" options={{ title: 'Билдирмелер' }} />
+      <Stack.Screen name="broadcast" options={{ title: 'Билдирме жөнөтүү' }} />
       <Stack.Screen name="admins" options={{ title: 'Админдер' }} />
       <Stack.Screen name="home" options={{ title: 'Башкы бет' }} />
       <Stack.Screen name="reviews" options={{ title: 'Пикирлер' }} />

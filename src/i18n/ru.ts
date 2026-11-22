@@ -335,4 +335,8 @@ export const ru: Record<TKey, string> = {
   'masters.outcallAsk': "Нужен выезд (мастер приедет к вам)",
   'msg.outcall': "🚗 Нужен выезд",
   'masters.hours': "{from}–{to}",
+  'news.title': "Уведомления",
+  'news.empty': "Пока нет новостей",
+  'news.promos': "Акции",
+  'news.open': "Посмотреть",
 };

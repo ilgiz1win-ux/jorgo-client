@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { Platform } from 'react-native';
+import { PushHandler } from '../components/PushHandler';
 import { SplashIntro } from '../components/SplashIntro';
 import { colors } from '../config/theme';
 import { APP_VARIANT } from '../config/variant';
@@ -37,6 +39,7 @@ function RootStack() {
         <Stack.Screen name="product/[id]" options={{ title: t('nav.product') }} />
         <Stack.Screen name="checkout" options={{ title: t('nav.checkout') }} />
         <Stack.Screen name="orders" options={{ title: t('nav.orders') }} />
+        <Stack.Screen name="news" options={{ title: t('news.title') }} />
         <Stack.Screen name="account" options={{ headerShown: false }} />
         <Stack.Screen
           name="rental/[id]"
@@ -49,6 +52,7 @@ function RootStack() {
         <Stack.Screen name="admin" options={{ headerShown: false }} />
       </Stack>
       {showSplash && <SplashIntro />}
+      {Platform.OS !== 'web' && <PushHandler />}
     </>
   );
 }

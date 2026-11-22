@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import * as api from '../lib/account';
 import type { AuthError, DocKind, Profile } from '../lib/account';
+import { registerPush } from '../lib/push';
 import { supabase } from '../lib/supabase';
 
 type Account = {
@@ -32,6 +33,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
       setReady(true);
       return;
     }
+    registerPush();
     try {
       setProfile(await api.fetchProfile(id));
     } catch {

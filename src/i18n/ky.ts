@@ -347,6 +347,10 @@ export const ky = {
   'masters.outcallAsk': "Выезд керек (мастер өзүңүзгө келет)",
   'msg.outcall': "🚗 Выезд керек",
   'masters.hours': "{from}–{to}",
+  'news.title': "Билдирмелер",
+  'news.empty': "Азырынча жаңылык жок",
+  'news.promos': "Акциялар",
+  'news.open': "Карап чыгуу",
 };
 
 export type TKey = keyof typeof ky;
