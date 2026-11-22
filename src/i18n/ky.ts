@@ -353,6 +353,10 @@ export const ky = {
   'news.open': "Карап чыгуу",
   'rent.perWeekShort': '{sum}/жума',
   'rent.perMonthShort': "{sum}/ай",
+  'branch.choose': "Кайсы точкага кайрыласыз",
+  'branch.courier': "Кайсы точкадан жеткиребиз (жакыныраагын тандаңыз)",
+  'branch.repair': "Кайсы точкага келесиз",
+  'msg.branch': "Точка: {v}",
 };
 
 export type TKey = keyof typeof ky;

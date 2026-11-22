@@ -341,4 +341,8 @@ export const ru: Record<TKey, string> = {
   'news.open': "Посмотреть",
   'rent.perWeekShort': '{sum}/неделя',
   'rent.perMonthShort': "{sum}/месяц",
+  'branch.choose': "В какую точку обращаетесь",
+  'branch.courier': "С какой точки доставить (выберите ближайшую)",
+  'branch.repair': "В какую точку приедете",
+  'msg.branch': "Точка: {v}",
 };

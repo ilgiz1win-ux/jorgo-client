@@ -30,6 +30,9 @@ export type Review = {
   rating: number; // 1–5
 };
 
+// Точкалар (филиалдар): ар биринин өз WhatsApp номери — заказ ошол номерге кетет
+export type Branch = { name: string; whatsapp: string };
+
 // Оңдоо мастерлери (админ панелден башкарылат)
 export type Master = {
   id: string;

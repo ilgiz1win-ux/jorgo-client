@@ -4,7 +4,8 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { PopIn } from '../../components/anim';
 import { BeforeAfter } from '../../components/HomeSections';
 import { MastersList } from '../../components/MastersList';
-import { Button, Card, Field, SectionTitle } from '../../components/ui';
+import { Button, Card, Chip, Field, SectionTitle } from '../../components/ui';
+import { branchLabel } from '../../lib/branches';
 import { useContent } from '../../context/ContentContext';
 import { colors } from '../../config/theme';
 import { useCatalog } from '../../context/CatalogContext';
@@ -18,7 +19,16 @@ export default function Repair() {
   const { gallery, masters } = useContent();
   const [masterId, setMasterId] = useState<string | null>(null);
   const master = masters.find((m) => m.id === masterId);
+  const chooseMaster = (id: string | null) => {
+    setMasterId(id);
+    const m = masters.find((x) => x.id === id);
+    const i = m ? branches.findIndex((b) => b.name === m.branch) : -1;
+    if (i >= 0) setBranchIdx(i);
+  };
   const [outcall, setOutcall] = useState(false);
+  const { branches } = useContent();
+  const [branchIdx, setBranchIdx] = useState(0);
+  const branch = branches[Math.min(branchIdx, branches.length - 1)] ?? branches[0];
   // Выезд: тандалган мастер чыкса, же мастер тандалбаса — кимдир бирөө чыкса
   const outcallAvailable = master ? master.outcall : masters.some((m) => m.active && m.outcall);
   const [selected, setSelected] = useState<string[]>([]);
@@ -39,6 +49,7 @@ export default function Repair() {
       t('msg.name', { v: name.trim() }),
       t('msg.phone', { v: phone.trim() }),
       bike.trim() ? t('msg.bike', { v: bike.trim() }) : null,
+      branch ? t('msg.branch', { v: branchLabel(branch, t) }) : null,
       master ? t('msg.master', { v: master.name }) : null,
       outcall && outcallAvailable ? t('msg.outcall') : null,
       services.length ? `${t('msg.services')}\n${services.join('\n')}` : null,
@@ -46,8 +57,9 @@ export default function Repair() {
     ]
       .filter(Boolean)
       .join('\n');
-    openWhatsApp(msg).catch(() => {});
-    track('repair');
+    // Өтүнмө тандалган точканын өз номерине кетет
+    openWhatsApp(msg, branch?.whatsapp).catch(() => {});
+    track('repair', undefined, branch?.name);
     setSent(true);
   };
 
@@ -66,7 +78,7 @@ export default function Repair() {
           <>
             <SectionTitle>{t('masters.title')}</SectionTitle>
             <Text style={{ color: colors.muted, fontSize: 13, marginTop: -4 }}>{t('masters.choose')}</Text>
-            <MastersList masters={masters} selectedId={masterId} onSelect={setMasterId} />
+            <MastersList masters={masters} selectedId={masterId} onSelect={chooseMaster} />
           </>
         )}
 
@@ -119,6 +131,14 @@ export default function Repair() {
           <Card style={{ gap: 12 }}>
             <Field label={t('common.name')} value={name} onChangeText={setName} placeholder={t('repair.namePh')} />
             <Field label={t('common.phone')} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+            <View style={{ gap: 8 }}>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: '600' }}>{t('branch.repair')}</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {branches.map((b, i) => (
+                  <Chip key={b.name + i} label={`📍 ${branchLabel(b, t)}`} active={branchIdx === i} onPress={() => setBranchIdx(i)} />
+                ))}
+              </View>
+            </View>
             <Field label={t('repair.bike')} value={bike} onChangeText={setBike} placeholder={t('repair.bikePh')} />
             {outcallAvailable && (
               <Pressable style={styles.outcall} onPress={() => setOutcall(!outcall)} accessibilityRole="checkbox" accessibilityState={{ checked: outcall }}>
