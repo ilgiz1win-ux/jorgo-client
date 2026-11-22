@@ -62,8 +62,9 @@ function Checkout() {
         accuracy: loc?.accuracy,
         userId: profile.id,
       });
-    } catch {
-      setError(t('rent.error'));
+    } catch (e) {
+      const m = e instanceof Error ? e.message : String((e as { message?: string })?.message ?? '');
+      setError(/row-level security/i.test(m) ? t('checkout.blocked') : t('rent.error'));
       setSending(false);
       return;
     }

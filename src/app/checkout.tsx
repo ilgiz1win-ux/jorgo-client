@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PopIn } from '../components/anim';
 import { Button, Card, Chip, Field } from '../components/ui';
@@ -9,6 +9,8 @@ import { colors } from '../config/theme';
 import { useCart } from '../context/CartContext';
 import { formatPrice, openWhatsApp } from '../lib/format';
 import { useContent } from '../context/ContentContext';
+import { useAccount } from '../context/AccountContext';
+import { createOrder } from '../lib/orders';
 import { branchLabel } from '../lib/branches';
 import { TKey, useT } from '../i18n';
 import { track } from '../lib/analytics';
@@ -28,7 +30,17 @@ export default function Checkout() {
   const [address, setAddress] = useState('');
   const [branchIdx, setBranchIdx] = useState(0);
   const { branches, express } = useContent();
+  const { profile } = useAccount();
+  // Экспресс заказы аккаунт менен гана — абалын кардар өзү көрө алышы үчүн
+  const needLogin = delivery === 'express' && !profile;
+  useEffect(() => {
+    if (!profile) return;
+    setName((v) => v || profile.fullName);
+    setPhone((v) => (v.replace(/\D/g, '').length > 3 ? v : profile.phone || v));
+  }, [profile]);
   const [sentMsg, setSentMsg] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const branch = branches[Math.min(branchIdx, branches.length - 1)] ?? branches[0];
   const branchName = (i: number) => (branches[i] ? branchLabel(branches[i], t) : '');
   const [payment, setPayment] = useState<Payment>('cash');
@@ -68,14 +80,16 @@ export default function Checkout() {
     );
   }
 
-  const submit = () => {
+  const submit = async () => {
     const id = String(Date.now()).slice(-6);
     const itemsText = lines.map((l, i) => `${i + 1}. ${l.product.name} × ${l.qty} = ${formatPrice(l.product.price * l.qty)}`).join('\n');
     const isExpress = delivery === 'express';
     const msg = [
       isExpress ? t('msg.expressHead', { shop: SHOP.name }) : t('msg.newOrder', { id }),
       isExpress ? `№${id}` : null,
+      isExpress ? t('msg.expressTrack') : null,
       '',
+      t('msg.goodsHead'),
       itemsText,
       '',
       t('msg.total', { sum: formatPrice(total) }),
@@ -92,6 +106,27 @@ export default function Checkout() {
       .filter((x) => x !== null)
       .join('\n');
 
+    // Бардык заказдар админге түшөт (базага). Кара тизмедеги номерден заказ өтпөйт.
+    setSending(true);
+    setError(null);
+    const res = await createOrder({
+      number: id,
+      userId: profile?.id,
+      delivery: isExpress ? 'express' : 'pickup',
+      branch: branch?.name ?? '',
+      items: lines.map((l) => ({ name: l.product.name, qty: l.qty, price: l.product.price })),
+      goodsTotal: total,
+      name: name.trim(),
+      phone: phone.trim(),
+      address: isExpress ? address.trim() : '',
+      payment: t(`pay.${payment}`),
+      comment: comment.trim(),
+    }).catch(() => 'error' as const);
+    setSending(false);
+    if (res === 'blocked') {
+      setError(t('checkout.blocked'));
+      return;
+    }
     addOrder({
       id,
       date: new Date().toISOString(),
@@ -176,7 +211,17 @@ export default function Checkout() {
           {delivery === 'express' && <Text style={styles.feeRow}>{t('express.feeRow')}</Text>}
         </Card>
 
-        <Button title={t('checkout.send')} icon="whatsapp" variant="whatsapp" disabled={!valid} onPress={submit} />
+        {needLogin ? (
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: colors.muted, textAlign: 'center', fontSize: 13 }}>{t('order.loginForExpress')}</Text>
+            <Button title={t('order.loginBtn')} icon="login" onPress={() => router.push({ pathname: '/account/login', params: { next: '/checkout' } })} />
+          </View>
+        ) : (
+          <>
+            {error && <Text style={{ color: colors.danger, textAlign: 'center', fontWeight: '600' }}>{error}</Text>}
+            <Button title={sending ? '…' : t('checkout.send')} icon="whatsapp" variant="whatsapp" disabled={!valid || sending} onPress={submit} />
+          </>
+        )}
         {!valid && <Text style={{ color: colors.muted, textAlign: 'center', fontSize: 13 }}>{t('checkout.fill')}</Text>}
       </ScrollView>
     </KeyboardAvoidingView>

@@ -19,6 +19,8 @@ export type Profile = {
   birthDate: string;
   address: string;
   passportNo: string;
+  // Почта менен катталса — почтасы (телефону кийин суралат)
+  email?: string;
   selfiePath?: string;
   passportPath?: string;
   licensePath?: string;
@@ -105,7 +107,7 @@ export const emptyProfile = (id: string, phone = ''): Profile => ({
   verified: false,
 });
 
-export type AuthError = 'invalidPhone' | 'shortPassword' | 'wrongLogin' | 'exists' | 'signupClosed' | 'network' | 'unknown';
+export type AuthError = 'invalidPhone' | 'shortPassword' | 'wrongLogin' | 'exists' | 'signupClosed' | 'network' | 'unknown' | 'invalidEmail' | 'badCode' | 'tooMany';
 
 function mapError(message: string): AuthError {
   const m = message.toLowerCase();
@@ -113,6 +115,8 @@ function mapError(message: string): AuthError {
   if (m.includes('already registered') || m.includes('already exists')) return 'exists';
   if (m.includes('signups not allowed') || m.includes('signup is disabled') || m.includes('not allowed')) return 'signupClosed';
   if (m.includes('fetch') || m.includes('network')) return 'network';
+  if (m.includes('expired') || m.includes('invalid') && m.includes('token') || m.includes('otp')) return 'badCode';
+  if (m.includes('rate') || m.includes('too many') || m.includes('seconds')) return 'tooMany';
   return 'unknown';
 }
 
@@ -154,6 +158,38 @@ export async function signUp(phoneInput: string, password: string, fullName: str
   return null;
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// Gmail (же башка почта) менен кирүү/катталуу: почтага 6 сандуу код барат
+export async function sendEmailCode(emailInput: string): Promise<AuthError | null> {
+  const email = emailInput.trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) return 'invalidEmail';
+  if (!supabase) return null; // демо: каалаган код иштейт
+  const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+  return error ? mapError(error.message) : null;
+}
+
+export async function verifyEmailCode(emailInput: string, code: string): Promise<AuthError | null> {
+  const email = emailInput.trim().toLowerCase();
+  const token = code.replace(/\D/g, '');
+  if (token.length < 6) return 'badCode';
+  if (!supabase) {
+    const id = `local-${email}`;
+    await AsyncStorage.setItem(LOCAL_USER, JSON.stringify(id));
+    const all = await readJson<Record<string, Profile>>(LOCAL_PROFILES, {});
+    all[id] = all[id] ?? { ...emptyProfile(id), email };
+    await AsyncStorage.setItem(LOCAL_PROFILES, JSON.stringify(all));
+    return null;
+  }
+  const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+  if (error) return mapError(error.message);
+  if (data.user) {
+    const { data: existing } = await supabase.from('profiles').select('id').eq('id', data.user.id).maybeSingle();
+    if (!existing) await supabase.from('profiles').upsert(toRow({ ...emptyProfile(data.user.id), email }));
+  }
+  return null;
+}
+
 export async function signIn(phoneInput: string, password: string): Promise<AuthError | null> {
   const phone = normalizePhone(phoneInput);
   if (!phone) return 'invalidPhone';
@@ -183,7 +219,10 @@ export async function fetchProfile(id: string): Promise<Profile> {
   }
   const { data, error } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle();
   if (error) throw error;
-  if (data) return fromRow(data as Row);
+  const { data: sess } = await supabase.auth.getSession();
+  const mail = sess.session?.user.email;
+  const email = mail && !mail.endsWith('@phone.jorgo.app') ? mail : undefined;
+  if (data) return { ...fromRow(data as Row), email };
   // Профиль жок болсо (мисалы, катталганда тармак үзүлсө) — түзөбүз
   const { data: s } = await supabase.auth.getSession();
   const meta = (s.session?.user.user_metadata ?? {}) as { phone?: string; full_name?: string };

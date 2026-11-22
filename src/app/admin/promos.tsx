@@ -7,6 +7,7 @@ import { colors } from '../../config/theme';
 import { useCatalog } from '../../context/CatalogContext';
 import { Promo, PROMO_COLORS } from '../../data/products';
 import { newId } from '../../lib/catalogApi';
+import { sendBroadcast } from '../../lib/broadcasts';
 import { pickAndUploadImage } from '../../lib/pickImage';
 
 const empty = (): Promo => ({ id: '', title: '', text: '', color: PROMO_COLORS[0], active: true });
@@ -17,6 +18,18 @@ export default function Promos() {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  // Акцияны бардык кардарларга билдирме катары да жөнөтүү
+  const [notify, setNotify] = useState(true);
+  const [info, setInfo] = useState<string | null>(null);
+
+  const announce = async (p: Promo) => {
+    try {
+      await sendBroadcast({ title: `🔥 ${p.title}`, body: p.text, imageUrl: p.imageUrl, link: '/' });
+      setInfo('Акция бардык кардарларга билдирме болуп жөнөтүлдү 🔔');
+    } catch {
+      setInfo('Акция сакталды, бирок билдирме жөнөтүлгөн жок (012 SQL иштетилгенин текшериңиз).');
+    }
+  };
 
   const pickImage = async () => {
     if (!draft) return;
@@ -45,7 +58,11 @@ export default function Promos() {
   const saveDraft = async () => {
     if (!draft) return;
     const p = { ...draft, id: draft.id || newId('promo'), title: draft.title.trim(), text: draft.text.trim() };
-    if (await run(() => savePromo(p))) setDraft(null);
+    setInfo(null);
+    if (await run(() => savePromo(p))) {
+      setDraft(null);
+      if (notify && p.active) await announce(p);
+    }
   };
 
   return (
@@ -56,6 +73,7 @@ export default function Promos() {
         </Text>
 
         {error && <Text style={{ color: colors.danger }}>{error}</Text>}
+        {info && <Text style={{ color: colors.success, fontWeight: '600' }}>{info}</Text>}
 
         {draft ? (
           <Card style={{ gap: 14 }}>
@@ -93,13 +111,20 @@ export default function Promos() {
                 ))}
               </View>
             </View>
+            <Pressable style={styles.notify} onPress={() => setNotify(!notify)} accessibilityRole="checkbox" accessibilityState={{ checked: notify }}>
+              <MaterialCommunityIcons name={notify ? 'checkbox-marked' : 'checkbox-blank-outline'} size={24} color={notify ? colors.primary : colors.muted} />
+              <Text style={{ flex: 1, color: colors.text, fontWeight: '600' }}>🔔 Бардык кардарларга билдирме кылып жөнөтүү</Text>
+            </Pressable>
             <View style={{ flexDirection: 'row', gap: 10 }}>
               <Button title="Жокко чыгаруу" variant="outline" style={{ flex: 1 }} onPress={() => setDraft(null)} />
               <Button title="Сактоо" icon="content-save" style={{ flex: 1 }} disabled={draft.title.trim().length < 2 || uploading} onPress={saveDraft} />
             </View>
           </Card>
         ) : (
-          <Button title="Жаңы акция кошуу" icon="plus" onPress={() => setDraft(empty())} />
+          <Button title="Жаңы акция кошуу" icon="plus" onPress={() => {
+              setNotify(true);
+              setDraft(empty());
+            }} />
         )}
 
         {promos.length === 0 && !draft && <Text style={{ color: colors.muted, textAlign: 'center', paddingVertical: 24 }}>Азырынча акция жок</Text>}
@@ -108,9 +133,14 @@ export default function Promos() {
           <Card key={p.id} style={{ gap: 10, opacity: p.active ? 1 : 0.6 }}>
             <PromoBanner promo={p} />
             <View style={styles.actions}>
-              <Switch value={p.active} onValueChange={(v) => { run(() => savePromo({ ...p, active: v })); }} trackColor={{ true: colors.primary, false: colors.border }} />
+              <Switch
+                value={p.active}
+                onValueChange={(v) => {
+                  setInfo(null);
+                  run(() => savePromo({ ...p, active: v }));
+                }} trackColor={{ true: colors.primary, false: colors.border }} />
               <Text style={{ flex: 1, color: colors.text, fontWeight: '600' }}>{p.active ? 'Көрсөтүлүүдө' : 'Өчүк'}</Text>
-              <Pressable hitSlop={8} onPress={() => setDraft(p)} accessibilityLabel="Өзгөртүү">
+              <Pressable hitSlop={8} onPress={() => { setNotify(false); setDraft(p); }} accessibilityLabel="Өзгөртүү">
                 <MaterialCommunityIcons name="pencil" size={22} color={colors.primary} />
               </Pressable>
               {confirmId === p.id ? (
@@ -131,6 +161,7 @@ export default function Promos() {
 }
 
 const styles = StyleSheet.create({
+  notify: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.primarySoft, borderRadius: 12, padding: 12 },
   h: { fontSize: 16, fontWeight: '800', color: colors.text },
   label: { fontSize: 13, fontWeight: '600', color: colors.muted },
   hint: { color: colors.muted, fontSize: 13 },

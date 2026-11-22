@@ -2,7 +2,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Button, Card, Chip, Field } from '../../components/ui';
-import { SHOP } from '../../config/shop';
 import { colors, radius } from '../../config/theme';
 import { useContent } from '../../context/ContentContext';
 import type { Master } from '../../data/content';
@@ -35,7 +34,7 @@ const fixTime = (v: string) => {
 
 // Оңдоо мастерлери: сүрөтү, аты, адистиги, тажрыйбасы, филиалы
 export default function AdminMasters() {
-  const { masters, saveMaster, deleteMaster } = useContent();
+  const { masters, saveMaster, deleteMaster, branches } = useContent();
   const [draft, setDraftRaw] = useState<Master | null>(null);
   const [ratingText, setRatingText] = useState('5');
   const [ordersText, setOrdersText] = useState('0');
@@ -130,7 +129,7 @@ export default function AdminMasters() {
       <View style={{ gap: 6 }}>
         <Text style={styles.label}>Кайсы жерде иштейт (филиал)</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {SHOP.branches.map((b) => (
+          {branches.map(({ name: b }) => (
             <Chip key={b} label={b} active={draft.branch === b} onPress={() => setDraft({ ...draft, branch: draft.branch === b ? '' : b })} />
           ))}
         </View>
