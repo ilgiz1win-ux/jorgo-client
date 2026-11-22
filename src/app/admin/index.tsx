@@ -25,7 +25,7 @@ const RENT_SECTIONS: Tile[] = [
 const SECTIONS: Tile[] = [
   { href: '/admin/broadcast', title: 'Билдирме жөнөтүү', text: 'Акция, арзандатуу — бардык кардарларга', icon: 'send', color: '#DB2777' },
   { href: '/admin/stats', title: 'Статистика', text: 'Канча адам кирди, кайсы точкага канча заказ', icon: 'chart-bar', color: '#111827' },
-  { href: '/admin/branches', title: 'Точкалар', text: 'Ар бир точканын WhatsApp номери', icon: 'store-marker', color: '#0D9488' },
+  { href: '/admin/branches', title: 'Точкалар', text: 'Точкалардын жана экспресстин номерлери', icon: 'store-marker', color: '#0D9488' },
   { href: '/admin/home', title: 'Башкы бет', text: 'Чоң баннер жана сандар', icon: 'home-edit', color: '#2E7D32' },
   { href: '/admin/promos', title: 'Акциялар', text: 'Баннерлер жана слайдер', icon: 'bullhorn', color: '#7C3AED' },
   { href: '/admin/services', title: 'Оңдоо', text: 'Кызматтар жана баалар', icon: 'wrench', color: '#EA580C' },

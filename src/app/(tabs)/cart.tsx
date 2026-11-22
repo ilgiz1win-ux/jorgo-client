@@ -29,7 +29,6 @@ export default function Cart() {
     );
   }
 
-  const left = SHOP.freeDeliveryFrom - subtotal;
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 96 }}>
@@ -58,13 +57,7 @@ export default function Cart() {
           <Text style={{ color: colors.muted }}>{t('cart.items')}</Text>
           <Text style={{ fontWeight: '600' }}>{formatPrice(subtotal)}</Text>
         </View>
-        {left > 0 ? (
-          <Text style={{ color: colors.muted, fontSize: 13 }}>
-            {t('cart.toFree', { sum: formatPrice(left) })}
-          </Text>
-        ) : (
-          <Text style={{ color: colors.success, fontSize: 13, fontWeight: '600' }}>{t('cart.freeDelivery')}</Text>
-        )}
+        <Text style={{ color: colors.muted, fontSize: 13 }}>{t('cart.pickupNote')}</Text>
       </Card>
 
       <Button title={t('cart.checkout')} icon="check-circle" onPress={() => router.push('/checkout')} />
