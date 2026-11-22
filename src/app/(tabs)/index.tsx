@@ -9,6 +9,7 @@ import { PromoCarousel } from '../../components/PromoCarousel';
 import { RentStrip } from '../../components/RentStrip';
 import { SkeletonGrid } from '../../components/Skeleton';
 import { SectionTitle } from '../../components/ui';
+import { MastersList } from '../../components/MastersList';
 import { colors, radius } from '../../config/theme';
 import { useCatalog } from '../../context/CatalogContext';
 import { useContent } from '../../context/ContentContext';
@@ -22,7 +23,7 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const { t } = useT();
   const { products, promos, loading, refresh } = useCatalog();
-  const { settings, reviews, rentals, refreshContent } = useContent();
+  const { settings, reviews, rentals, masters, refreshContent } = useContent();
   const popular = products.filter((p) => p.popular);
   const onSale = products.filter((p) => p.oldPrice && p.oldPrice > p.price);
   const activePromos = promos.filter((p) => p.active);
@@ -110,6 +111,21 @@ export default function Home() {
             <MaterialCommunityIcons name="chevron-right" size={26} color={colors.lime} />
           </Pressable>
         </Link>
+
+        {masters.some((m) => m.active) && (
+          <>
+            <SectionTitle
+              right={
+                <Link href="/repair" style={styles.link}>
+                  {t('common.allArrow')}
+                </Link>
+              }
+            >
+              {t('masters.title')}
+            </SectionTitle>
+            <MastersList masters={masters} />
+          </>
+        )}
 
         <Link href="/rent" asChild>
           <Pressable style={styles.rentCard}>

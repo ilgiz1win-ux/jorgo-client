@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PopIn } from '../../components/anim';
 import { BeforeAfter } from '../../components/HomeSections';
+import { MastersList } from '../../components/MastersList';
 import { Button, Card, Field, SectionTitle } from '../../components/ui';
 import { useContent } from '../../context/ContentContext';
 import { colors } from '../../config/theme';
@@ -14,7 +15,9 @@ import { track } from '../../lib/analytics';
 export default function Repair() {
   const { t } = useT();
   const { services: SERVICES } = useCatalog();
-  const { gallery } = useContent();
+  const { gallery, masters } = useContent();
+  const [masterId, setMasterId] = useState<string | null>(null);
+  const master = masters.find((m) => m.id === masterId);
   const [selected, setSelected] = useState<string[]>([]);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('+996 ');
@@ -33,6 +36,7 @@ export default function Repair() {
       t('msg.name', { v: name.trim() }),
       t('msg.phone', { v: phone.trim() }),
       bike.trim() ? t('msg.bike', { v: bike.trim() }) : null,
+      master ? t('msg.master', { v: master.name }) : null,
       services.length ? `${t('msg.services')}\n${services.join('\n')}` : null,
       problem.trim() ? t('msg.problem', { v: problem.trim() }) : null,
     ]
@@ -53,6 +57,14 @@ export default function Repair() {
             <Text style={{ color: colors.primarySoft }}>{t('repair.subtitle')}</Text>
           </View>
         </Card>
+
+        {masters.some((m) => m.active) && (
+          <>
+            <SectionTitle>{t('masters.title')}</SectionTitle>
+            <Text style={{ color: colors.muted, fontSize: 13, marginTop: -4 }}>{t('masters.choose')}</Text>
+            <MastersList masters={masters} selectedId={masterId} onSelect={setMasterId} />
+          </>
+        )}
 
         <SectionTitle>{t('repair.services')}</SectionTitle>
         {SERVICES.map((s) => {

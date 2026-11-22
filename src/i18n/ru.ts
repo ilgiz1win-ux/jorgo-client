@@ -325,4 +325,9 @@ export const ru: Record<TKey, string> = {
   'acc.relWhoPh': "Например: мама, брат, супруг(а)",
   'acc.relPhone': "Телефон",
   'acc.paidUntil': "Оплачено до {d}",
+  'masters.title': "Наши мастера",
+  'masters.choose': "Выберите мастера (необязательно)",
+  'masters.any': "Любой мастер",
+  'masters.chosen': "Выбран",
+  'msg.master': "Мастер: {v}",
 };

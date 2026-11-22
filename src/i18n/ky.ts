@@ -337,6 +337,11 @@ export const ky = {
   'acc.relWhoPh': "Мисалы: апасы, агасы, жубайы",
   'acc.relPhone': "Телефону",
   'acc.paidUntil': "Төлөнгөн: {d} чейин",
+  'masters.title': "Биздин мастерлер",
+  'masters.choose': "Мастер тандаңыз (милдеттүү эмес)",
+  'masters.any': "Каалаган мастер",
+  'masters.chosen': "Тандалды",
+  'msg.master': "Мастер: {v}",
 };
 
 export type TKey = keyof typeof ky;

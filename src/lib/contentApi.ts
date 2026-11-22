@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DEFAULT_SETTINGS, GalleryItem, Review, SiteSettings } from '../data/content';
+import { DEFAULT_SETTINGS, GalleryItem, Master, Review, SiteSettings } from '../data/content';
 import { DEFAULT_RENT_TERMS, DEMO_RENTALS, RentalBike, RentTerms } from '../data/rentals';
 import { supabase } from './supabase';
 
@@ -119,6 +119,41 @@ export const galleryApi = listTable<GalleryItem, GalleryRow>({
   fromRow: (r) => ({ id: r.id, title: r.title ?? '', beforeUrl: r.before_url ?? undefined, afterUrl: r.after_url ?? undefined }),
   toRow: (g, sort) => ({ id: g.id, title: g.title, before_url: g.beforeUrl ?? null, after_url: g.afterUrl ?? null, sort }),
 });
+
+type MasterRow = { id: string; name: string; photo_url: string | null; specialty: string; experience: string; branch: string; active: boolean; sort: number };
+export const mastersApi = listTable<Master, MasterRow>({
+  table: 'masters',
+  localKey: 'jorgo.local.masters',
+  cacheKey: 'jorgo.cache.masters',
+  fromRow: (r) => ({
+    id: r.id,
+    name: r.name,
+    photoUrl: r.photo_url ?? undefined,
+    specialty: r.specialty ?? '',
+    experience: r.experience ?? '',
+    branch: r.branch ?? '',
+    active: r.active,
+  }),
+  toRow: (m, sort) => ({
+    id: m.id,
+    name: m.name,
+    photo_url: m.photoUrl ?? null,
+    specialty: m.specialty,
+    experience: m.experience,
+    branch: m.branch,
+    active: m.active,
+    sort,
+  }),
+});
+
+// SQL (011) иштетиле элек болсо, бош тизме
+export async function fetchMasters(): Promise<Master[]> {
+  try {
+    return await mastersApi.fetch();
+  } catch {
+    return [];
+  }
+}
 
 // ---------- Ижара (аренда) ----------
 

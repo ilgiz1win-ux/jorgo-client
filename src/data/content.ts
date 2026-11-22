@@ -30,6 +30,17 @@ export type Review = {
   rating: number; // 1–5
 };
 
+// Оңдоо мастерлери (админ панелден башкарылат)
+export type Master = {
+  id: string;
+  name: string;
+  photoUrl?: string;
+  specialty: string;
+  experience: string;
+  branch: string;
+  active: boolean;
+};
+
 export type GalleryItem = {
   id: string;
   title: string;
