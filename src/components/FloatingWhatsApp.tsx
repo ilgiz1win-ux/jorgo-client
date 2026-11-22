@@ -18,7 +18,7 @@ export function FloatingWhatsApp({ bottomOffset = 64 }: { bottomOffset?: number 
     if (reduce) return;
     // Логотип экраны бүткөндөн кийин секирип чыгат
     Animated.sequence([
-      Animated.delay(2100),
+      Animated.delay(3300),
       Animated.spring(scale, { toValue: 1, speed: 10, bounciness: 12, useNativeDriver: nativeDriver }),
     ]).start();
   }, [reduce, scale]);
