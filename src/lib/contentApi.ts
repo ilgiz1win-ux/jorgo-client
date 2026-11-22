@@ -173,10 +173,18 @@ export const mastersApi = listTable<Master, MasterRow>({
   }),
 });
 
+// Демо режим үчүн гана мисалдар (сервер туташканда көрсөтүлбөйт)
+const DEMO_MASTERS: Master[] = [
+  { id: 'demo-m1', name: 'Азамат', specialty: 'Мотор жана контроллер', experience: '7 жыл', branch: 'Фучика көч., 62а', active: true, rating: 4.9, orders: 148, hoursFrom: '09:00', hoursTo: '18:00', outcall: true, outcallNote: '18:00–22:00, 500 сомдон' },
+  { id: 'demo-m2', name: 'Бекзат', specialty: 'Батарея жана заряд', experience: '4 жыл', branch: 'Манас пр., 2а', active: true, rating: 4.7, orders: 63, hoursFrom: '10:00', hoursTo: '19:00', outcall: false, outcallNote: '' },
+];
+
 // SQL (011) иштетиле элек болсо, бош тизме
 export async function fetchMasters(): Promise<Master[]> {
   try {
-    return await mastersApi.fetch();
+    const list = await mastersApi.fetch();
+    if (!supabase && list.length === 0 && (await readJson<Master[]>('jorgo.local.masters')) === null) return DEMO_MASTERS;
+    return list;
   } catch {
     return [];
   }
