@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { HeroBanner, ReviewsCarousel, StatsRow } from '../../components/HomeSections';
+import { ReviewsCarousel, StatsRow } from '../../components/HomeSections';
 import { InstallBanner } from '../../components/InstallApp';
 import { ProductGrid } from '../../components/ProductGrid';
 import { PromoCarousel } from '../../components/PromoCarousel';
@@ -48,29 +48,41 @@ export default function Home() {
     >
       {/* Логотип жана издөө */}
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+        {/* Логотип ортодо + ураан; солдо 🔔 🔍, оңдо тил */}
         <View style={styles.headerRow}>
-          <Pressable style={styles.bellPos} onPress={() => router.push('/news')} hitSlop={8} accessibilityRole="button" accessibilityLabel={t('news.title')}>
-            <MaterialCommunityIcons name="bell-outline" size={24} color={colors.text} />
-            {unread > 0 && (
-              <View style={styles.bellBadge}>
-                <Text style={styles.bellBadgeText}>{unread > 9 ? '9+' : unread}</Text>
-              </View>
-            )}
-          </Pressable>
-          <Image source={LOGO} style={styles.logo} resizeMode="contain" accessibilityLabel="Jorgo Eco Service" />
-          <View style={styles.langPos}>
+          <View style={styles.side}>
+            <Pressable style={styles.iconBtn} onPress={() => router.push('/news')} hitSlop={6} accessibilityRole="button" accessibilityLabel={t('news.title')}>
+              <MaterialCommunityIcons name="bell-outline" size={23} color={colors.text} />
+              {unread > 0 && (
+                <View style={styles.bellBadge}>
+                  <Text style={styles.bellBadgeText}>{unread > 9 ? '9+' : unread}</Text>
+                </View>
+              )}
+            </Pressable>
+            <Pressable
+              style={styles.iconBtn}
+              onPress={() => router.push({ pathname: '/catalog', params: { search: '1' } })}
+              hitSlop={6}
+              accessibilityRole="search"
+              accessibilityLabel={t('common.search')}
+            >
+              <MaterialCommunityIcons name="magnify" size={24} color={colors.text} />
+            </Pressable>
+          </View>
+          <View style={styles.brand}>
+            <Image source={LOGO} style={styles.logo} resizeMode="contain" accessibilityLabel="Jorgo Eco Service" />
+            <Text style={styles.slogan} numberOfLines={2}>
+              {t('home.slogan')}
+            </Text>
+          </View>
+          <View style={[styles.side, { justifyContent: 'flex-end', zIndex: 20 }]}>
             <LangSwitch />
           </View>
         </View>
-        <Pressable style={styles.search} onPress={() => router.push('/catalog')} accessibilityRole="search">
-          <MaterialCommunityIcons name="magnify" size={20} color={colors.muted} />
-          <Text style={{ color: colors.muted, fontSize: 15, flex: 1 }}>{t('common.search')}</Text>
-        </Pressable>
       </View>
 
       <View style={styles.body}>
         <InstallBanner />
-        <HeroBanner settings={settings} />
         <StatsRow stats={settings.stats} />
 
         <PromoCarousel promos={activePromos} />
@@ -168,14 +180,15 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  header: { zIndex: 10, backgroundColor: colors.card, paddingHorizontal: 16, paddingBottom: 14, gap: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
-  headerRow: { alignItems: 'center', justifyContent: 'center', zIndex: 10 },
-  logo: { width: 150, height: 84 },
-  langPos: { position: 'absolute', right: 0, top: 0, zIndex: 20 },
-  bellPos: { position: 'absolute', left: 0, top: 0, width: 44, height: 44, borderRadius: 22, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
+  header: { zIndex: 10, backgroundColor: colors.card, paddingHorizontal: 16, paddingBottom: 8, gap: 10, borderBottomWidth: 1, borderBottomColor: colors.border },
+  headerRow: { flexDirection: 'row', alignItems: 'flex-start', zIndex: 10 },
+  side: { width: 96, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  brand: { flex: 1, alignItems: 'center' },
+  logo: { width: 120, height: 64 },
+  slogan: { fontSize: 12, fontWeight: '700', color: colors.primary, textAlign: 'center', marginTop: 2 },
+  iconBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
   bellBadge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   bellBadgeText: { color: '#fff', fontSize: 10, fontWeight: '900' },
-  search: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.bg, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 12, borderWidth: 1, borderColor: colors.border },
   body: { padding: 16, gap: 14 },
   link: { color: colors.primary, fontWeight: '700' },
   repair: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.ink, borderRadius: radius.lg, padding: 16 },

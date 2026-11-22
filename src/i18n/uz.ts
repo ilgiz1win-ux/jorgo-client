@@ -379,4 +379,5 @@ export const uz: Record<TKey, string> = {
   'checkout.missName': 'ismingiz',
   'checkout.missPhone': "telefon (to'liq raqam)",
   'checkout.missAddress': 'viloyat, shahar va manzil',
+  'home.slogan': "Biz bilan hammasi osonroq",
 };

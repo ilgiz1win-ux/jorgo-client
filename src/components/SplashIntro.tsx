@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Animated, Easing, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { colors } from '../config/theme';
 import { SHOP } from '../config/shop';
 import { nativeDriver, useReduceMotion } from './anim';
 import { BIKE_IMAGE, BIKE_RATIO, SpeedLines, useBob } from './BikeRide';
@@ -9,8 +10,9 @@ const TEXT_IMAGE = require('../../assets/brand/logo-text.png');
 const TEXT_RATIO = 640 / 198;
 
 // Колдонмо ачылганда: логотиптеги велосипед сол жактан айдап келип ортодо токтойт,
-// астынан «Jorgo Eco Service» жазуусу көтөрүлүп логотип чогулат, анан экран жоголот.
-// Болжол менен 2 секунд. Экранга басууларды бөгөбөйт.
+// астынан «Jorgo Eco Service» жазуусу көтөрүлүп логотип чогулат, андан кийин ураан
+// («Биз менен баары жеңилирээк») сөз-сөз болуп секирип чыгат, анан экран жоголот.
+// Болжол менен 3 секунд. Экранга басууларды бөгөбөйт.
 export function SplashIntro() {
   const reduce = useReduceMotion();
   const { t } = useT();
@@ -21,6 +23,10 @@ export function SplashIntro() {
   const tilt = useRef(new Animated.Value(0)).current;
   const text = useRef(new Animated.Value(reduce ? 1 : 0)).current;
   const fade = useRef(new Animated.Value(1)).current;
+  // Ураандын ар бир сөзү өзүнчө кыймылдайт (тил боюнча которулат)
+  const words = t('home.slogan').split(/\s+/).filter(Boolean).slice(0, 8);
+  const wordAnims = useRef(Array.from({ length: 8 }, () => new Animated.Value(reduce ? 1 : 0))).current;
+  const line = useRef(new Animated.Value(reduce ? 1 : 0)).current;
   const bob = useBob(riding);
 
   const bikeW = Math.min(240, width * 0.62);
@@ -41,7 +47,16 @@ export function SplashIntro() {
             ]),
             Animated.timing(text, { toValue: 1, duration: 420, delay: 80, easing: Easing.out(Easing.back(1.4)), useNativeDriver: nativeDriver }),
           ]),
-          Animated.delay(450),
+          // Ураан: сөздөр бирин-бири ээрчип, астынан секирип чыгат
+          Animated.stagger(
+            130,
+            wordAnims.slice(0, words.length).map((v) =>
+              Animated.spring(v, { toValue: 1, speed: 14, bounciness: 10, useNativeDriver: nativeDriver }),
+            ),
+          ),
+          // Астынан ачык жашыл сызык созулат
+          Animated.timing(line, { toValue: 1, duration: 380, easing: Easing.out(Easing.cubic), useNativeDriver: nativeDriver }),
+          Animated.delay(550),
         ];
     const anim = Animated.sequence([
       ...steps,
@@ -53,7 +68,7 @@ export function SplashIntro() {
       anim.stop();
       if (stopRiding) clearTimeout(stopRiding);
     };
-  }, [reduce, ride, tilt, text, fade]);
+  }, [reduce, ride, tilt, text, fade, line]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!visible) return null;
 
@@ -81,6 +96,23 @@ export function SplashIntro() {
           transform: [{ translateY: text.interpolate({ inputRange: [0, 1], outputRange: [24, 0] }) }],
         }}
       />
+      <View style={[styles.slogan, { maxWidth: width * 0.86 }]} accessibilityLabel={t('home.slogan')}>
+        {words.map((w, i) => (
+          <Animated.View
+            key={i}
+            style={{
+              opacity: wordAnims[i],
+              transform: [
+                { translateY: wordAnims[i].interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) },
+                { scale: wordAnims[i].interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) },
+              ],
+            }}
+          >
+            <Text style={styles.word}>{w}</Text>
+          </Animated.View>
+        ))}
+      </View>
+      <Animated.View style={[styles.line, { width: Math.min(220, width * 0.55), transform: [{ scaleX: line }] }]} />
     </Animated.View>
   );
 }
@@ -88,4 +120,7 @@ export function SplashIntro() {
 // Логотиптин фону ак болгондуктан, экран да ак
 const styles = StyleSheet.create({
   wrap: { backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', zIndex: 100, overflow: 'hidden' },
+  slogan: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginTop: 14 },
+  word: { fontSize: 20, fontWeight: '900', color: colors.primary },
+  line: { height: 4, borderRadius: 2, backgroundColor: colors.lime, marginTop: 8 },
 });

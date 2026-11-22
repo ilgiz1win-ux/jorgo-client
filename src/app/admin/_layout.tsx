@@ -1,4 +1,5 @@
-import { Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
+import { APP_VARIANT } from '../../config/variant';
 import { ActivityIndicator, View } from 'react-native';
 import { AdminLogin } from '../../components/admin/AdminLogin';
 import { adminColors, colors } from '../../config/theme';
@@ -47,6 +48,8 @@ function Gate() {
 }
 
 export default function AdminLayout() {
+  // Кардарлардын колдонмосунда админ панель жок — ал өзүнчө дарек/колдонмо (APP_VARIANT=admin)
+  if (APP_VARIANT !== 'admin') return <Redirect href="/" />;
   return (
     <AdminAuthProvider>
       <Gate />

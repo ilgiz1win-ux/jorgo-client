@@ -379,4 +379,5 @@ export const en: Record<TKey, string> = {
   'checkout.missName': 'name',
   'checkout.missPhone': 'phone (full number)',
   'checkout.missAddress': 'region, city and address',
+  'home.slogan': "Everything's easier with us",
 };

@@ -1,9 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { InstallRow } from '../../components/InstallApp';
 import { Card } from '../../components/ui';
-import { isRemote } from '../../config/backend';
 import { SHOP } from '../../config/shop';
 import { colors } from '../../config/theme';
 import type { IconName } from '../../data/products';
@@ -67,12 +65,6 @@ export default function Contacts() {
 
       <InstallRow />
 
-      {/* Сервер туташканда гана көрсөтүлөт; демо режимде /admin дареги аркылуу кирсе болот */}
-      {isRemote && (
-        <Link href="/admin" style={styles.admin}>
-          {t('contacts.admin')}
-        </Link>
-      )}
     </ScrollView>
   );
 }
