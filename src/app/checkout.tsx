@@ -180,12 +180,6 @@ export default function Checkout() {
               <Field label={t('checkout.address')} value={address} onChangeText={setAddress} placeholder={t('checkout.addressPh')} />
               <View style={styles.warn}>
                 <Text style={styles.warnText}>{t('express.priceNote')}</Text>
-                <Button
-                  title={t('express.ask')}
-                  icon="whatsapp"
-                  variant="whatsapp"
-                  onPress={() => openWhatsApp(t('msg.expressAsk', { v: address.trim() || '…' }), expressTo).catch(() => {})}
-                />
               </View>
             </>
           )}
@@ -216,6 +210,15 @@ export default function Checkout() {
           </View>
           {delivery === 'express' && <Text style={styles.feeRow}>{t('express.feeRow')}</Text>}
         </Card>
+
+        {delivery === 'express' && (
+          <Button
+            title={t('express.ask')}
+            icon="whatsapp"
+            variant="outline"
+            onPress={() => openWhatsApp(t('msg.expressAsk', { v: address.trim() || '…' }), expressTo).catch(() => {})}
+          />
+        )}
 
         {needLogin ? (
           <View style={{ gap: 8 }}>
