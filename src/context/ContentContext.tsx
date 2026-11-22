@@ -1,7 +1,7 @@
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { Branch, DEFAULT_SETTINGS, GalleryItem, Master, Review, SiteSettings } from '../data/content';
+import { Branch, DEFAULT_SETTINGS, Express, GalleryItem, Master, Review, SiteSettings } from '../data/content';
 import { DEFAULT_RENT_TERMS, RentalBike, RentTerms } from '../data/rentals';
-import { DEFAULT_BRANCHES, fetchBranches, fetchMasters, fetchRentals, mastersApi, saveBranches as apiSaveBranches, fetchRentTerms, fetchSettings, galleryApi, rentalsApi, reviewsApi, saveRentTerms as apiSaveRentTerms, saveSettings as apiSaveSettings } from '../lib/contentApi';
+import { DEFAULT_BRANCHES, DEFAULT_EXPRESS, fetchBranches, fetchExpress, saveExpress as apiSaveExpress, fetchMasters, fetchRentals, mastersApi, saveBranches as apiSaveBranches, fetchRentTerms, fetchSettings, galleryApi, rentalsApi, reviewsApi, saveRentTerms as apiSaveRentTerms, saveSettings as apiSaveSettings } from '../lib/contentApi';
 
 type ContentContextValue = {
   settings: SiteSettings;
@@ -9,6 +9,8 @@ type ContentContextValue = {
   gallery: GalleryItem[];
   masters: Master[];
   branches: Branch[];
+  express: Express;
+  saveExpress: (e: Express) => Promise<void>;
   saveBranches: (b: Branch[]) => Promise<void>;
   rentals: RentalBike[];
   rentTerms: RentTerms;
@@ -33,6 +35,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [masters, setMasters] = useState<Master[]>([]);
   const [branches, setBranches] = useState<Branch[]>(DEFAULT_BRANCHES);
+  const [express, setExpress] = useState<Express>(DEFAULT_EXPRESS);
   const [rentals, setRentals] = useState<RentalBike[]>([]);
   const [rentTerms, setRentTerms] = useState<RentTerms>(DEFAULT_RENT_TERMS);
 
@@ -40,6 +43,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
     const [s, r, g, rb, rt, ms] = await Promise.all([fetchSettings(), reviewsApi.fetch(), galleryApi.fetch(), fetchRentals(), fetchRentTerms(), fetchMasters()]);
     setMasters(ms);
     fetchBranches().then(setBranches).catch(() => {});
+    fetchExpress().then(setExpress).catch(() => {});
     setSettings(s);
     setReviews(r);
     setGallery(g);
@@ -58,6 +62,8 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       gallery,
       masters,
       branches,
+      express,
+      saveExpress: async (e) => setExpress(await apiSaveExpress(e)),
       saveBranches: async (b) => setBranches(await apiSaveBranches(b)),
       rentals,
       rentTerms,
@@ -73,7 +79,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       deleteRental: async (id) => setRentals(await rentalsApi.remove(id, rentals)),
       saveRentTerms: async (t) => setRentTerms(await apiSaveRentTerms(t)),
     }),
-    [settings, reviews, gallery, masters, branches, rentals, rentTerms, refreshContent],
+    [settings, reviews, gallery, masters, branches, express, rentals, rentTerms, refreshContent],
   );
 
   return <ContentContext.Provider value={value}>{children}</ContentContext.Provider>;

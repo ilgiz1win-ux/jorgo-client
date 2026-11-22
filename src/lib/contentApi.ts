@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Branch, DEFAULT_SETTINGS, GalleryItem, Master, Review, SiteSettings } from '../data/content';
+import { Branch, DEFAULT_SETTINGS, Express, GalleryItem, Master, Review, SiteSettings } from '../data/content';
 import { SHOP } from '../config/shop';
 import { DEFAULT_RENT_TERMS, DEMO_RENTALS, RentalBike, RentTerms } from '../data/rentals';
 import { supabase } from './supabase';
@@ -344,6 +344,40 @@ export async function saveBranches(list: Branch[]): Promise<Branch[]> {
     if (error) throw error;
   } else {
     await writeJson(BRANCHES_LOCAL, clean);
+  }
+  return clean;
+}
+
+// ---------- Экспресс (settings, key = 'express') ----------
+const EXPRESS_LOCAL = 'jorgo.local.express';
+const EXPRESS_CACHE = 'jorgo.cache.express';
+export const DEFAULT_EXPRESS: Express = { name: 'Экспресс', whatsapp: '' };
+
+const cleanExpress = (v: unknown): Express => {
+  const e = (v ?? {}) as Partial<Express>;
+  return { name: String(e.name ?? '').trim() || DEFAULT_EXPRESS.name, whatsapp: normalizeWhatsapp(String(e.whatsapp ?? '')) };
+};
+
+export async function fetchExpress(): Promise<Express> {
+  if (!supabase) return cleanExpress(await readJson<Express>(EXPRESS_LOCAL));
+  try {
+    const { data, error } = await supabase.from('settings').select('value').eq('key', 'express').maybeSingle();
+    if (error) throw error;
+    const e = cleanExpress(data?.value);
+    writeJson(EXPRESS_CACHE, e);
+    return e;
+  } catch {
+    return cleanExpress(await readJson<Express>(EXPRESS_CACHE));
+  }
+}
+
+export async function saveExpress(e: Express): Promise<Express> {
+  const clean = cleanExpress(e);
+  if (supabase) {
+    const { error } = await supabase.from('settings').upsert({ key: 'express', value: clean });
+    if (error) throw error;
+  } else {
+    await writeJson(EXPRESS_LOCAL, clean);
   }
   return clean;
 }
