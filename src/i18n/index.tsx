@@ -1,26 +1,38 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
+import { en } from './en';
+import { kk } from './kk';
 import { ky, TKey } from './ky';
 import { ru } from './ru';
+import { uz } from './uz';
 
-export type Lang = 'ky' | 'ru';
+export type Lang = 'ky' | 'ru' | 'en' | 'uz' | 'kk';
 export const LANGS: { id: Lang; short: string; name: string }[] = [
   { id: 'ky', short: 'КЫР', name: 'Кыргызча' },
   { id: 'ru', short: 'РУС', name: 'Русский' },
+  { id: 'en', short: 'ENG', name: 'English' },
+  { id: 'uz', short: 'UZB', name: "O'zbekcha" },
+  { id: 'kk', short: 'ҚАЗ', name: 'Қазақша' },
 ];
 
-const DICTS: Record<Lang, Record<TKey, string>> = { ky, ru };
+const DICTS: Record<Lang, Record<TKey, string>> = { ky, ru, en, uz, kk };
+const isLang = (v: unknown): v is Lang => v === 'ky' || v === 'ru' || v === 'en' || v === 'uz' || v === 'kk';
 const STORAGE_KEY = 'jorgo.lang';
 
-// Биринчи жолу: телефондун тили орусча болсо — орусча, болбосо кыргызча
+// Биринчи жолу: телефондун тили боюнча (орус, өзбек, казак, англис), болбосо кыргызча
 function deviceLang(): Lang {
   try {
     const loc =
       (Platform.OS === 'web' && typeof navigator !== 'undefined' ? navigator.language : undefined) ||
       Intl.DateTimeFormat().resolvedOptions().locale ||
       '';
-    return loc.toLowerCase().startsWith('ru') ? 'ru' : 'ky';
+    const l = loc.toLowerCase();
+    if (l.startsWith('ru')) return 'ru';
+    if (l.startsWith('uz')) return 'uz';
+    if (l.startsWith('kk')) return 'kk';
+    if (l.startsWith('en')) return 'en';
+    return 'ky';
   } catch {
     return 'ky';
   }
@@ -44,7 +56,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
       .then((v) => {
-        if (v === 'ky' || v === 'ru') setLangState(v);
+        if (isLang(v)) setLangState(v);
       })
       .catch(() => {});
   }, []);
