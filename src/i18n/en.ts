@@ -494,4 +494,13 @@ export const en: Record<TKey, string> = {
   'w.go': "Top up balance",
   'mp.arrived': "📍 I've arrived",
   'mp.arrivedAt': "Arrived: {v}",
+  'w.howTo': "Enter the amount and who is sending — you'll get a personal CODE. Put it in the transfer comment so we know the money is yours.",
+  'w.senderName': "Sender (name in the bank)",
+  'w.senderNamePh': "E.g. Nurlan A.",
+  'w.senderAccount': "Phone number or last 4 digits of the card",
+  'w.senderAccountPh': "0700 123 456 or 1234",
+  'w.getCode': "Get code",
+  'w.codeTitle': "Your code for transferring {v}:",
+  'w.codeHow': "Transfer to these details and be sure to put the code above in the transfer COMMENT:",
+  'w.another': "Another top-up",
 };

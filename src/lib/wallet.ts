@@ -8,7 +8,7 @@ import { supabase } from './supabase';
 export type WalletSettings = { outcallFee: number; topupInfo: string };
 export type WalletTx = { id: string; createdAt: string; amount: number; kind: 'topup' | 'outcall' | 'refund' | 'adjust'; note: string };
 export type TopupStatus = 'new' | 'approved' | 'rejected';
-export type Topup = { id: string; createdAt: string; userId: string; amount: number; method: string; receipt?: string; comment: string; status: TopupStatus; name?: string; phone?: string };
+export type Topup = { id: string; createdAt: string; userId: string; code: string; amount: number; method: string; senderName: string; senderAccount: string; receipt?: string; comment: string; status: TopupStatus; name?: string; phone?: string };
 export type WalletRow = { userId: string; name: string; phone: string; balance: number; lastAt: string };
 
 export const DEFAULT_WALLET: WalletSettings = { outcallFee: 500, topupInfo: 'MBank / O!Деньги: +996 ... (атыңыз)' };
@@ -110,21 +110,40 @@ export async function pickReceipt(userId: string): Promise<string | null> {
   return path;
 }
 
-export async function sendTopup(t: { amount: number; method: string; comment: string; receipt?: string }): Promise<void> {
+export async function sendTopup(t: { amount: number; method: string; senderName: string; senderAccount: string; comment: string }): Promise<{ id: string; code: string }> {
   if (!supabase) {
     const u = await localUserId();
     if (!u) throw new Error('login');
     const l = await read<Topup[]>(L_TOPUP, []);
-    l.unshift({ id: String(Date.now()), createdAt: new Date().toISOString(), userId: u, amount: t.amount, method: t.method, comment: t.comment, receipt: t.receipt, status: 'new', name: 'Демо кардар', phone: u.replace('local-', '+') });
+    const r: Topup = { id: String(Date.now()), createdAt: new Date().toISOString(), userId: u, code: `J${1001 + l.length}`, amount: t.amount, method: t.method, senderName: t.senderName.trim(), senderAccount: t.senderAccount.trim(), comment: t.comment.trim(), status: 'new', name: 'Демо кардар', phone: u.replace('local-', '+') };
+    l.unshift(r);
+    await write(L_TOPUP, l);
+    return { id: r.id, code: r.code };
+  }
+  const { data, error } = await supabase
+    .from('topup_requests')
+    .insert({ amount: t.amount, method: t.method, sender_name: t.senderName.trim(), sender_account: t.senderAccount.trim(), comment: t.comment.trim() })
+    .select('id,code')
+    .single();
+  if (error) throw error;
+  return data as { id: string; code: string };
+}
+
+// Чекти кийин тиркөө (текшериле элек өтүнмөгө)
+export async function attachReceipt(id: string, path: string): Promise<void> {
+  if (!supabase) {
+    const l = await read<Topup[]>(L_TOPUP, []);
+    const r = l.find((x) => x.id === id);
+    if (r && r.status === 'new') r.receipt = path;
     await write(L_TOPUP, l);
     return;
   }
-  const { error } = await supabase.from('topup_requests').insert({ amount: t.amount, method: t.method, comment: t.comment.trim(), receipt: t.receipt ?? null });
+  const { error } = await supabase.rpc('topup_attach_receipt', { p_id: id, p_path: path });
   if (error) throw error;
 }
 
-type TopupRow = { id: string; created_at: string; user_id: string; amount: number; method: string; receipt: string | null; comment: string; status: TopupStatus };
-const topFrom = (r: TopupRow): Topup => ({ id: r.id, createdAt: r.created_at, userId: r.user_id, amount: r.amount, method: r.method, receipt: r.receipt ?? undefined, comment: r.comment, status: r.status });
+type TopupRow = { id: string; created_at: string; user_id: string; code: string | null; amount: number; method: string; sender_name?: string; sender_account?: string; receipt: string | null; comment: string; status: TopupStatus };
+const topFrom = (r: TopupRow): Topup => ({ id: r.id, createdAt: r.created_at, userId: r.user_id, code: r.code ?? '', amount: r.amount, method: r.method, senderName: r.sender_name ?? '', senderAccount: r.sender_account ?? '', receipt: r.receipt ?? undefined, comment: r.comment, status: r.status });
 
 // Кардар — өзүнүкүн, админ — баарын (RLS)
 export async function fetchTopups(): Promise<Topup[]> {

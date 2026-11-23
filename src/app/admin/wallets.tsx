@@ -31,6 +31,7 @@ export default function AdminWallets() {
   const [hist, setHist] = useState<WalletTx[]>([]);
   const [adjAmount, setAdjAmount] = useState('');
   const [adjNote, setAdjNote] = useState('');
+  const [search, setSearch] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -98,7 +99,10 @@ export default function AdminWallets() {
   };
 
   const pending = tops.filter((t) => t.status === 'new');
-  const shownTops = tab === 'new' ? pending : tops;
+  const qq = search.trim().toLowerCase().replace(/\s/g, '');
+  const shownTops = (tab === 'new' ? pending : tops).filter(
+    (t) => !qq || [t.code, String(t.amount), t.name, t.phone, t.senderName, t.senderAccount].some((v) => (v ?? '').toLowerCase().replace(/\s/g, '').includes(qq)),
+  );
   const total = wallets.reduce((s, w) => s + w.balance, 0);
 
   return (
@@ -114,10 +118,15 @@ export default function AdminWallets() {
 
         {(tab === 'new' || tab === 'all') && (
           <>
+            <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>
+              Банк колдонмосунан түшкөн акчанын комментарийиндеги КОДду (мисалы J1027) караңыз — ушул жерден ошол кодду издеп, ырастаңыз.
+            </Text>
+            <Field label="Издөө: код, сумма, аты же номери" value={search} onChangeText={setSearch} placeholder="J1027" autoCapitalize="characters" />
             {!loading && shownTops.length === 0 && <Text style={styles.empty}>Толуктоо өтүнмөсү жок</Text>}
             {shownTops.map((t) => (
               <Card key={t.id} style={{ gap: 6, borderLeftWidth: 5, borderLeftColor: ST[t.status].color }}>
                 <View style={styles.row}>
+                  {!!t.code && <Text style={styles.code}>{t.code}</Text>}
                   <Text style={{ fontSize: 20, fontWeight: '900', color: colors.text }}>{fmtSom(t.amount)}</Text>
                   <Text style={[styles.badge, { backgroundColor: ST[t.status].color }]}>{ST[t.status].label}</Text>
                   <Text style={{ marginLeft: 'auto', color: colors.muted, fontSize: 12 }}>{fmt(t.createdAt)}</Text>
@@ -128,6 +137,11 @@ export default function AdminWallets() {
                   </Text>
                 </Pressable>
                 <Text style={styles.text}>💳 {t.method || '—'}</Text>
+                {(!!t.senderName || !!t.senderAccount) && (
+                  <Text style={styles.text}>
+                    🏦 Которгон: <Text style={{ fontWeight: '800' }}>{[t.senderName, t.senderAccount].filter(Boolean).join(' · ')}</Text>
+                  </Text>
+                )}
                 {!!t.comment && <Text style={styles.text}>💬 {t.comment}</Text>}
                 {!!t.receipt &&
                   (t.receipt.startsWith('data:') ? (
@@ -222,6 +236,7 @@ export default function AdminWallets() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  code: { fontSize: 18, fontWeight: '900', color: '#fff', backgroundColor: colors.primary, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden', letterSpacing: 1 },
   badge: { color: '#fff', fontWeight: '800', fontSize: 12, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
   text: { color: colors.text, fontSize: 14 },
   label: { fontSize: 13, fontWeight: '600', color: colors.muted },

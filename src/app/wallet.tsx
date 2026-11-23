@@ -7,7 +7,7 @@ import { Button, Card, Chip, Field, SectionTitle } from '../components/ui';
 import { colors, radius } from '../config/theme';
 import { useAccount } from '../context/AccountContext';
 import { TKey, useT } from '../i18n';
-import { fetchTopups, fetchTx, fmtSom, getWalletSettings, myBalance, pickReceipt, sendTopup, Topup, WalletSettings, WalletTx, DEFAULT_WALLET } from '../lib/wallet';
+import { attachReceipt, fetchTopups, fetchTx, fmtSom, getWalletSettings, myBalance, pickReceipt, sendTopup, Topup, WalletSettings, WalletTx, DEFAULT_WALLET } from '../lib/wallet';
 
 const AMOUNTS = [500, 1000, 2000, 5000];
 const METHODS = ['MBank', 'O!Деньги', 'Бакай', 'Элсом', 'Накталай'];
@@ -29,7 +29,10 @@ function Wallet() {
   const [amount, setAmount] = useState('1000');
   const [method, setMethod] = useState(METHODS[0]);
   const [comment, setComment] = useState('');
-  const [receipt, setReceipt] = useState<string | undefined>();
+  const [senderName, setSenderName] = useState('');
+  const [senderAccount, setSenderAccount] = useState('');
+  // Акыркы түзүлгөн толуктоо (коду менен)
+  const [made, setMade] = useState<{ id: string; code: string; amount: number; receipt?: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -58,10 +61,9 @@ function Wallet() {
     setBusy(true);
     setMsg(null);
     try {
-      await sendTopup({ amount: num, method, comment, receipt });
+      const r = await sendTopup({ amount: num, method, senderName, senderAccount, comment });
+      setMade({ ...r, amount: num });
       setComment('');
-      setReceipt(undefined);
-      setMsg({ ok: true, text: t('w.sent') });
       load();
     } catch {
       setMsg({ ok: false, text: t('chat.error') });
@@ -69,10 +71,12 @@ function Wallet() {
     setBusy(false);
   };
   const addReceipt = async () => {
-    if (!profile) return;
+    if (!profile || !made) return;
     try {
-      const r = await pickReceipt(profile.id);
-      if (r) setReceipt(r);
+      const path = await pickReceipt(profile.id);
+      if (!path) return;
+      await attachReceipt(made.id, path);
+      setMade({ ...made, receipt: path });
     } catch {
       setMsg({ ok: false, text: t('repair.photoErr') });
     }
@@ -94,38 +98,52 @@ function Wallet() {
         </View>
 
         <SectionTitle>{t('w.topup')}</SectionTitle>
-        <Card style={{ gap: 12 }}>
-          <Text style={{ color: colors.text, fontWeight: '700' }}>1. {t('w.step1')}</Text>
-          <Text selectable style={styles.info}>{cfg.topupInfo}</Text>
-          <Text style={{ color: colors.text, fontWeight: '700' }}>2. {t('w.step2')}</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {AMOUNTS.map((a) => (
-              <Chip key={a} label={`${a} сом`} active={num === a} onPress={() => setAmount(String(a))} />
-            ))}
-          </View>
-          <Field label={t('w.amount')} value={amount} onChangeText={setAmount} keyboardType="number-pad" />
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {METHODS.map((m) => (
-              <Chip key={m} label={m} active={method === m} onPress={() => setMethod(m)} />
-            ))}
-          </View>
-          <Field label={t('w.comment')} value={comment} onChangeText={setComment} placeholder={t('w.commentPh')} />
-          {receipt ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              {receipt.startsWith('data:') ? <Image source={{ uri: receipt }} style={styles.receipt} /> : <MaterialCommunityIcons name="receipt" size={28} color={colors.success} />}
-              <Text style={{ color: colors.success, fontWeight: '700', flex: 1 }}>{t('w.receiptOk')}</Text>
+        {made ? (
+          <Card style={{ gap: 12, borderColor: colors.primary, borderWidth: 2 }}>
+            <Text style={{ color: colors.text, fontWeight: '800', fontSize: 16 }}>{t('w.codeTitle', { v: fmtSom(made.amount) })}</Text>
+            <View style={styles.codeBox}>
+              <Text selectable style={styles.code}>{made.code}</Text>
             </View>
-          ) : (
-            <Button title={t('w.receipt')} icon="camera" variant="outline" onPress={addReceipt} />
-          )}
-          {msg && <Text style={{ color: msg.ok ? colors.success : colors.danger, fontWeight: '600' }}>{msg.text}</Text>}
-          <Button title={t('w.send')} icon="send" disabled={busy || num < 50} onPress={submit} />
-        </Card>
+            <Text style={{ color: colors.text, lineHeight: 21 }}>{t('w.codeHow')}</Text>
+            <Text selectable style={styles.info}>{cfg.topupInfo}</Text>
+            {made.receipt ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                {made.receipt.startsWith('data:') ? <Image source={{ uri: made.receipt }} style={styles.receipt} /> : <MaterialCommunityIcons name="receipt" size={28} color={colors.success} />}
+                <Text style={{ color: colors.success, fontWeight: '700', flex: 1 }}>{t('w.receiptOk')}</Text>
+              </View>
+            ) : (
+              <Button title={t('w.receipt')} icon="camera" variant="outline" onPress={addReceipt} />
+            )}
+            <Text style={{ color: colors.muted, fontSize: 13 }}>{t('w.sent')}</Text>
+            <Button title={t('w.another')} variant="outline" onPress={() => setMade(null)} />
+          </Card>
+        ) : (
+          <Card style={{ gap: 12 }}>
+            <Text style={{ color: colors.muted, lineHeight: 20 }}>{t('w.howTo')}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {AMOUNTS.map((a) => (
+                <Chip key={a} label={`${a} сом`} active={num === a} onPress={() => setAmount(String(a))} />
+              ))}
+            </View>
+            <Field label={t('w.amount')} value={amount} onChangeText={setAmount} keyboardType="number-pad" />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {METHODS.map((m) => (
+                <Chip key={m} label={m} active={method === m} onPress={() => setMethod(m)} />
+              ))}
+            </View>
+            <Field label={t('w.senderName')} value={senderName} onChangeText={setSenderName} placeholder={t('w.senderNamePh')} />
+            <Field label={t('w.senderAccount')} value={senderAccount} onChangeText={setSenderAccount} placeholder={t('w.senderAccountPh')} keyboardType="phone-pad" />
+            <Field label={t('w.comment')} value={comment} onChangeText={setComment} placeholder={t('w.commentPh')} />
+            {msg && <Text style={{ color: msg.ok ? colors.success : colors.danger, fontWeight: '600' }}>{msg.text}</Text>}
+            <Button title={t('w.getCode')} icon="qrcode" disabled={busy || num < 50 || senderName.trim().length < 2} onPress={submit} />
+          </Card>
+        )}
 
         {tops.length > 0 && <SectionTitle>{t('w.requests')}</SectionTitle>}
         {tops.slice(0, 10).map((r) => (
           <View key={r.id} style={styles.row}>
             <Text style={{ flex: 1, color: colors.text, fontWeight: '700' }}>
+              {r.code ? `${r.code} · ` : ''}
               {fmtSom(r.amount)} · {r.method}
             </Text>
             <Text style={{ color: ST_COLOR[r.status], fontWeight: '800' }}>{t(`w.st.${r.status}` as TKey)}</Text>
@@ -167,5 +185,7 @@ const styles = StyleSheet.create({
   note: { flexDirection: 'row', gap: 10, backgroundColor: '#FEF3C7', borderRadius: radius.md, padding: 12, borderWidth: 1, borderColor: '#F59E0B' },
   info: { backgroundColor: colors.bg, borderRadius: radius.md, padding: 12, fontSize: 15, fontWeight: '700', color: colors.text, borderWidth: 1, borderColor: colors.border },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card, borderRadius: radius.md, padding: 12, borderWidth: 1, borderColor: colors.border },
+  codeBox: { alignSelf: 'center', backgroundColor: '#ECFDF5', borderRadius: radius.lg, paddingHorizontal: 28, paddingVertical: 12, borderWidth: 2, borderColor: colors.primary, borderStyle: 'dashed' },
+  code: { fontSize: 40, fontWeight: '900', color: colors.primary, letterSpacing: 4 },
   receipt: { width: 48, height: 48, borderRadius: 8 },
 });

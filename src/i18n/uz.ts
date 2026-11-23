@@ -494,4 +494,13 @@ export const uz: Record<TKey, string> = {
   'w.go': "Balansni to'ldirish",
   'mp.arrived': "📍 Yetib keldim",
   'mp.arrivedAt': "Usta keldi: {v}",
+  'w.howTo': "Summani va kim o'tkazishini yozing — sizga alohida KOD beriladi. O'tkazmada shu kodni izohga yozasiz, shunda pul sizniki ekanini bilamiz.",
+  'w.senderName': "Kim o'tkazadi (bankdagi ismi)",
+  'w.senderNamePh': "Masalan: Nurlan A.",
+  'w.senderAccount': "Qaysi raqamdan yoki kartaning oxirgi 4 raqami",
+  'w.senderAccountPh': "0700 123 456 yoki 1234",
+  'w.getCode': "Kod olish",
+  'w.codeTitle': "{v} o'tkazish uchun kodingiz:",
+  'w.codeHow': "Shu rekvizitlarga o'tkazing va o'tkazma IZOHIGA yuqoridagi kodni albatta yozing:",
+  'w.another': "Yana to'ldirish",
 };
