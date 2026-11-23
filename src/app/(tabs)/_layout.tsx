@@ -7,6 +7,7 @@ import { colors } from '../../config/theme';
 import { APP_VARIANT } from '../../config/variant';
 import { useCart } from '../../context/CartContext';
 import type { IconName } from '../../data/products';
+import { useIsMaster } from '../../hooks/useIsMaster';
 import { useT } from '../../i18n';
 
 const icon =
@@ -16,8 +17,12 @@ const icon =
 export default function TabsLayout() {
   const { count } = useCart();
   const { t } = useT();
+  const isMaster = useIsMaster();
   // Ижара бөлүмү дүкөндөн өзүнчө: ал жерде дүкөндүн менюсу жана WhatsApp баскычы көрүнбөйт
-  const inRent = usePathname() === '/rent';
+  const path = usePathname();
+  const inRent = path === '/rent';
+  // Мастердин табында WhatsApp баскычы керек эмес
+  const hideWa = inRent || path === '/master';
   // Админ колдонмо дароо админ панелден ачылат
   if (APP_VARIANT === 'admin') return <Redirect href="/admin" />;
   return (
@@ -45,10 +50,11 @@ export default function TabsLayout() {
           tabBarBadgeStyle: { backgroundColor: colors.accent },
         }}
       />
+      <Tabs.Screen name="master" options={{ title: t('mp.tab'), href: isMaster ? '/master' : null, tabBarIcon: icon('account-hard-hat') }} />
       <Tabs.Screen name="contacts" options={{ title: t('tab.contacts'), tabBarIcon: icon('phone') }} />
     </Tabs>
       {/* Ылдыйкы меню (болжол менен 50px) үстүндө */}
-      {!inRent && <FloatingWhatsApp bottomOffset={66} />}
+      {!hideWa && <FloatingWhatsApp bottomOffset={66} />}
     </View>
   );
 }

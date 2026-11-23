@@ -1,8 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useAccount } from '../../context/AccountContext';
-import { createRepair, myMasterId } from '../../lib/repairs';
+import { useIsMaster } from '../../hooks/useIsMaster';
+import { createRepair } from '../../lib/repairs';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PopIn } from '../../components/anim';
 import { BeforeAfter } from '../../components/HomeSections';
@@ -48,12 +48,7 @@ export default function Repair() {
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   // Кирген колдонуучу мастер болсо — мастер панелине баскыч
-  const { profile } = useAccount();
-  const [isMaster, setIsMaster] = useState(false);
-  useEffect(() => {
-    if (!profile) return setIsMaster(false);
-    myMasterId(profile.id).then((m) => setIsMaster(!!m)).catch(() => setIsMaster(false));
-  }, [profile]);
+  const isMaster = useIsMaster(true);
 
   const toggle = (id: string) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   const valid = name.trim().length > 1 && phone.replace(/\D/g, '').length >= 9 && (selected.length > 0 || problem.trim().length > 3);
@@ -105,7 +100,7 @@ export default function Repair() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 96 }} keyboardShouldPersistTaps="handled">
         {isMaster && (
-          <Pressable style={styles.masterBtn} onPress={() => router.push('/master-panel')} accessibilityRole="button">
+          <Pressable style={styles.masterBtn} onPress={() => router.push('/master')} accessibilityRole="button">
             <MaterialCommunityIcons name="account-hard-hat" size={24} color="#fff" />
             <Text style={{ flex: 1, color: '#fff', fontWeight: '800', fontSize: 16 }}>{t('mp.title')}</Text>
             <MaterialCommunityIcons name="chevron-right" size={24} color="#fff" />

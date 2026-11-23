@@ -441,4 +441,5 @@ export const en: Record<TKey, string> = {
   'mp.outcallOff': "🏪 Works at the shop",
   'mp.entry': "For mechanics: open the panel",
   'mp.entrySub': "Login is given by the admin",
+  'mp.tab': "Mechanic",
 };

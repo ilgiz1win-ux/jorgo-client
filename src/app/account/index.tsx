@@ -5,18 +5,13 @@ import { Button } from '../../components/ui';
 import { colors } from '../../config/theme';
 import { docsReady, useAccount } from '../../context/AccountContext';
 import { useT } from '../../i18n';
-import { useEffect, useState } from 'react';
-import { myMasterId } from '../../lib/repairs';
+import { useIsMaster } from '../../hooks/useIsMaster';
 
 // Меню: профиль, документтер, ижаралар, билдирмелер, төлөм, жөндөөлөр
 export default function AccountMenu() {
   const { t } = useT();
   const { profile, ready } = useAccount();
-  const [isMaster, setIsMaster] = useState(false);
-  useEffect(() => {
-    if (!profile) return setIsMaster(false);
-    myMasterId(profile.id).then((m) => setIsMaster(!!m)).catch(() => setIsMaster(false));
-  }, [profile]);
+  const isMaster = useIsMaster(true);
 
   return (
     <ScrollView contentContainerStyle={styles.wrap}>
@@ -45,7 +40,7 @@ export default function AccountMenu() {
       )}
 
       <MenuGroup>
-        <MenuRow first icon="account-hard-hat" label={isMaster ? t('mp.title') : t('mp.entry')} sub={isMaster ? undefined : t('mp.entrySub')} onPress={() => router.push('/master-panel')} />
+        <MenuRow first icon="account-hard-hat" label={isMaster ? t('mp.title') : t('mp.entry')} sub={isMaster ? undefined : t('mp.entrySub')} onPress={() => router.push(isMaster ? '/master' : '/master-panel')} />
       </MenuGroup>
 
       <MenuGroup>

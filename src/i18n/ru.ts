@@ -455,4 +455,5 @@ export const ru: Record<TKey, string> = {
   'mp.outcallOff': "🏪 Работает в точке",
   'mp.entry': "Для мастеров: вход в панель",
   'mp.entrySub': "Логин и пароль выдаёт администратор",
+  'mp.tab': "Мастер",
 };

@@ -466,6 +466,7 @@ export const ky = {
   'mp.outcallOff': "🏪 Точкада иштейт",
   'mp.entry': "Мастерлер үчүн: панелге кирүү",
   'mp.entrySub': "Логин-сырсөздү админ берет",
+  'mp.tab': "Мастер",
 };
 
 export type TKey = keyof typeof ky;

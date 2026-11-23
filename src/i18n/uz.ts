@@ -441,4 +441,5 @@ export const uz: Record<TKey, string> = {
   'mp.outcallOff': "🏪 Shoxobchada ishlaydi",
   'mp.entry': "Ustalar uchun: panelga kirish",
   'mp.entrySub': "Login va parolni administrator beradi",
+  'mp.tab': "Usta",
 };

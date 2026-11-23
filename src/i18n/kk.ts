@@ -441,4 +441,5 @@ export const kk: Record<TKey, string> = {
   'mp.outcallOff': "🏪 Нүктеде жұмыс істейді",
   'mp.entry': "Шеберлерге: панельге кіру",
   'mp.entrySub': "Логин мен құпиясөзді әкімші береді",
+  'mp.tab': "Шебер",
 };
