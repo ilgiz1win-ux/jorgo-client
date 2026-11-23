@@ -24,7 +24,7 @@ const RENT_SECTIONS: Tile[] = [
 
 const SECTIONS: Tile[] = [
   { href: '/admin/chats', title: 'Кардарлардын суроолору', text: 'Чат: выезд канча, товар барбы — жооп бериңиз', icon: 'chat-processing', color: '#7C3AED' },
-  { href: '/admin/assistant', title: 'ИИ жардамчы', text: 'Сурасаңыз — заказдар, ижаралар боюнча айтып берет', icon: 'robot-happy', color: '#0F172A' },
+  // ИИ жардамчы кийин кошулат (код даяр: /admin/assistant, supabase/functions/admin-assistant)
   { href: '/admin/orders', title: 'Заказдар', text: 'Алып кетти / отказ, экспресс жол акысы', icon: 'truck-fast', color: '#D97706' },
   { href: '/admin/customers', title: 'Кардарлар', text: 'Катталгандар жана кара тизме', icon: 'account-group', color: '#334155' },
   { href: '/admin/broadcast', title: 'Билдирме жөнөтүү', text: 'Акция, арзандатуу — бардык кардарларга', icon: 'send', color: '#DB2777' },
