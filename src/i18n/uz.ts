@@ -380,4 +380,7 @@ export const uz: Record<TKey, string> = {
   'checkout.missPhone': "telefon (to'liq raqam)",
   'checkout.missAddress': 'viloyat, shahar va manzil',
   'home.slogan': "Biz bilan hammasi osonroq",
+  'home.products': "Mahsulotlar",
+  'masters.empty': "Hozircha ustalar qo'shilmagan",
+  'masters.tapToBook': "Ustani bosib, unga ta'mirga yoziling",
 };

@@ -40,6 +40,7 @@ function RootStack() {
         <Stack.Screen name="checkout" options={{ title: t('nav.checkout') }} />
         <Stack.Screen name="orders" options={{ title: t('nav.orders') }} />
         <Stack.Screen name="news" options={{ title: t('news.title') }} />
+        <Stack.Screen name="masters" options={{ title: t('masters.title') }} />
         <Stack.Screen name="account" options={{ headerShown: false }} />
         <Stack.Screen
           name="rental/[id]"
