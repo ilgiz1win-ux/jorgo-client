@@ -1,7 +1,9 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useIsMaster } from '../../hooks/useIsMaster';
+import { useAccount } from '../../context/AccountContext';
+import { DEFAULT_WALLET, fmtSom, getWalletSettings, myBalance } from '../../lib/wallet';
 import * as ImagePicker from 'expo-image-picker';
 import { createRepair, fmtVisit, uploadRepairPhoto } from '../../lib/repairs';
 import { getLocationOnce, mapLink } from '../../lib/rentRequests';
@@ -88,9 +90,23 @@ export default function Repair() {
   };
   // Кирген колдонуучу мастер болсо — мастер панелине баскыч
   const isMaster = useIsMaster(true);
+  // Выезд: аккаунт, баланс жана макулдук керек
+  const { profile } = useAccount();
+  const [fee, setFee] = useState(DEFAULT_WALLET.outcallFee);
+  const [balance, setBalance] = useState<number | null>(null);
+  const [agree, setAgree] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      getWalletSettings().then((c) => setFee(c.outcallFee)).catch(() => {});
+      if (profile) myBalance().then(setBalance).catch(() => setBalance(null));
+      else setBalance(null);
+    }, [profile]),
+  );
 
   const toggle = (id: string) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
-  const valid = name.trim().length > 1 && phone.replace(/\D/g, '').length >= 9 && (selected.length > 0 || problem.trim().length > 3);
+  const wantsOutcall = outcall && outcallAvailable;
+  const outcallOk = !wantsOutcall || (!!profile && (balance ?? 0) >= fee && agree);
+  const valid = name.trim().length > 1 && phone.replace(/\D/g, '').length >= 9 && (selected.length > 0 || problem.trim().length > 3) && outcallOk;
 
   const submit = async () => {
     const chosen = SERVICES.filter((s) => selected.includes(s.id));
@@ -138,6 +154,19 @@ export default function Repair() {
       setError(t('checkout.blocked'));
       return;
     }
+    if (res === 'login') {
+      setError(t('w.needLogin'));
+      return;
+    }
+    if (res === 'balance') {
+      setError(t('w.low', { b: fmtSom(balance ?? 0), v: String(fee) }));
+      return;
+    }
+    if (res === 'error') {
+      setError(t('chat.error'));
+      return;
+    }
+    if (wantsOutcall) myBalance().then(setBalance).catch(() => {});
     // Өтүнмө тандалган точканын өз номерине да кетет
     openWhatsApp(msg, branch?.whatsapp).catch(() => {});
     track('repair', undefined, branch?.name);
@@ -260,6 +289,30 @@ export default function Repair() {
             <Pressable onPress={() => router.push({ pathname: '/chat', params: { q: t('chat.q.outcall') } })} accessibilityRole="link">
               <Text style={{ color: colors.primary, fontWeight: '700' }}>{t('chat.askOutcall')}</Text>
             </Pressable>
+            {wantsOutcall && (
+              <View style={styles.feeBox}>
+                <Text style={{ color: '#78350F', lineHeight: 20 }}>⚠️ {t('w.outcallInfo', { v: String(fee) })}</Text>
+                {!profile ? (
+                  <>
+                    <Text style={{ color: colors.danger, fontWeight: '700' }}>{t('w.needLogin')}</Text>
+                    <Button title={t('acc.signIn')} icon="login" onPress={() => router.push({ pathname: '/account/login', params: { next: '/repair' } })} />
+                  </>
+                ) : (balance ?? 0) < fee ? (
+                  <>
+                    <Text style={{ color: colors.danger, fontWeight: '700' }}>{t('w.low', { b: fmtSom(balance ?? 0), v: String(fee) })}</Text>
+                    <Button title={t('w.go')} icon="wallet-plus" onPress={() => router.push('/wallet')} />
+                  </>
+                ) : (
+                  <>
+                    <Text style={{ color: colors.success, fontWeight: '700' }}>{t('w.balance')}: {fmtSom(balance ?? 0)}</Text>
+                    <Pressable onPress={() => setAgree(!agree)} style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }} accessibilityRole="checkbox" accessibilityState={{ checked: agree }}>
+                      <MaterialCommunityIcons name={agree ? 'checkbox-marked' : 'checkbox-blank-outline'} size={24} color={agree ? colors.primary : colors.muted} />
+                      <Text style={{ flex: 1, color: colors.text, fontWeight: '600' }}>{t('w.agree', { v: String(fee) })}</Text>
+                    </Pressable>
+                  </>
+                )}
+              </View>
+            )}
             {outcall && outcallAvailable && (
               <View style={{ gap: 8 }}>
                 <Field label={t('repair.address')} value={address} onChangeText={setAddress} placeholder={t('repair.addressPh')} />
@@ -299,6 +352,7 @@ const styles = StyleSheet.create({
   serviceOn: { borderColor: colors.primary, backgroundColor: '#F0FDFA' },
   outcall: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.primarySoft, borderRadius: 14, padding: 12 },
   masterBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#B45309', borderRadius: 16, padding: 14 },
+  feeBox: { gap: 10, backgroundColor: '#FEF3C7', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: '#F59E0B' },
   locBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', borderWidth: 1.5, borderColor: colors.primary, borderStyle: 'dashed', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
   masterLink: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1.5, borderColor: '#B45309', backgroundColor: '#FFFBEB' },
   cta: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.primarySoft, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: colors.primary },

@@ -91,6 +91,12 @@ export default function AdminRepairs() {
             </Pressable>
           )}
           {!!r.visitAt && <Text style={[styles.text, { fontWeight: '800' }]}>🕘 {fmtVisit(r.visitAt)}</Text>}
+          {!!r.outcallFee && (
+            <Text style={[styles.text, { color: '#92400E' }]}>
+              💰 Выезд акысы {r.outcallFee} сом балансынан алынды{r.status === 'cancelled' ? (r.arrivedAt ? ' · мастер барган — кайтарылбайт' : ' · кайтарылды') : ''}
+            </Text>
+          )}
+          {!!r.arrivedAt && <Text style={[styles.text, { color: '#2563EB', fontWeight: '700' }]}>📍 Мастер келди: {fmtVisit(r.arrivedAt)}</Text>}
           {!!r.bring && <Text style={[styles.text, { backgroundColor: '#FEF3C7', padding: 6, borderRadius: 8 }]}>🧰 Ала барсын: {r.bring}</Text>}
           <Text style={styles.muted}>
             📍 {r.branch || '—'} · 👷 {masterName(r.masterId) ?? 'мастер тандала элек'}

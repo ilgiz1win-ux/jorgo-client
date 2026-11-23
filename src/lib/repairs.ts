@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../config/backend';
 import { base64ToBytes } from './catalogApi';
 import { supabase } from './supabase';
+import { getWalletSettings, localChargeOutcall, localRefundOutcall } from './wallet';
 
 // Оңдоо өтүнмөлөрү (базада), мастердин панели, «мастер болом» өтүнмөлөрү
 export type RepairStatus = 'new' | 'accepted' | 'in_progress' | 'done' | 'cancelled';
@@ -27,6 +28,8 @@ export type Repair = {
   lng?: number;
   visitAt?: string;
   bring: string;
+  outcallFee?: number;
+  arrivedAt?: string;
 };
 type Row = {
   id: string;
@@ -49,6 +52,8 @@ type Row = {
   lng?: number | null;
   visit_at?: string | null;
   bring?: string;
+  outcall_fee?: number | null;
+  arrived_at?: string | null;
 };
 const fromRow = (r: Row): Repair => ({
   id: r.id,
@@ -71,6 +76,8 @@ const fromRow = (r: Row): Repair => ({
   lng: r.lng ?? undefined,
   visitAt: r.visit_at ?? undefined,
   bring: r.bring ?? '',
+  outcallFee: r.outcall_fee ?? undefined,
+  arrivedAt: r.arrived_at ?? undefined,
 });
 
 const LOCAL = 'jorgo.local.repairs';
@@ -86,10 +93,17 @@ const read = async <T,>(k: string, d: T): Promise<T> => {
 };
 const write = (k: string, v: unknown) => AsyncStorage.setItem(k, JSON.stringify(v)).catch(() => {});
 
-export async function createRepair(r: Omit<Repair, 'id' | 'createdAt' | 'status' | 'masterNote' | 'bring'>): Promise<'ok' | 'blocked' | 'error'> {
+export async function createRepair(r: Omit<Repair, 'id' | 'createdAt' | 'status' | 'masterNote' | 'bring'>): Promise<'ok' | 'blocked' | 'error' | 'login' | 'balance'> {
   if (!supabase) {
     const l = await read<Repair[]>(LOCAL, []);
-    l.unshift({ ...r, id: String(Date.now()), createdAt: new Date().toISOString(), status: 'new', masterNote: '', bring: '' });
+    const id = String(Date.now());
+    let outcallFee: number | undefined;
+    if (r.outcall) {
+      const res = await localChargeOutcall(id, r.number);
+      if (res !== 'ok') return res;
+      outcallFee = (await getWalletSettings()).outcallFee;
+    }
+    l.unshift({ ...r, id, createdAt: new Date().toISOString(), status: 'new', masterNote: '', bring: '', outcallFee });
     await write(LOCAL, l);
     return 'ok';
   }
@@ -110,6 +124,8 @@ export async function createRepair(r: Omit<Repair, 'id' | 'createdAt' | 'status'
     visit_at: r.visitAt ?? null,
   });
   if (!error) return 'ok';
+  if (/outcall_login_required/.test(error.message)) return 'login';
+  if (/outcall_low_balance/.test(error.message)) return 'balance';
   if (error.code === '42501' || /row-level security/i.test(error.message)) return 'blocked';
   return 'error';
 }
@@ -122,15 +138,17 @@ export async function fetchRepairs(): Promise<Repair[]> {
   return (data as Row[]).map(fromRow);
 }
 
-export async function updateRepair(id: string, patch: { status?: RepairStatus; masterNote?: string; masterId?: string | null; visitAt?: string | null; bring?: string }): Promise<Repair | null> {
+export async function updateRepair(id: string, patch: { status?: RepairStatus; masterNote?: string; masterId?: string | null; visitAt?: string | null; bring?: string; arrived?: boolean }): Promise<Repair | null> {
   if (!supabase) {
     const l = (await read<Repair[]>(LOCAL, [])).map((x) =>
       x.id === id
-        ? { ...x, updatedAt: new Date().toISOString(), visitAt: patch.visitAt === undefined ? x.visitAt : patch.visitAt ?? undefined, bring: patch.bring ?? x.bring, status: patch.status ?? x.status, masterNote: patch.masterNote ?? x.masterNote, masterId: patch.masterId === undefined ? x.masterId : patch.masterId ?? undefined }
+        ? { ...x, updatedAt: new Date().toISOString(), visitAt: patch.visitAt === undefined ? x.visitAt : patch.visitAt ?? undefined, bring: patch.bring ?? x.bring, arrivedAt: patch.arrived && !x.arrivedAt ? new Date().toISOString() : x.arrivedAt, status: patch.status ?? x.status, masterNote: patch.masterNote ?? x.masterNote, masterId: patch.masterId === undefined ? x.masterId : patch.masterId ?? undefined }
         : x,
     );
     await write(LOCAL, l);
-    return l.find((x) => x.id === id) ?? null;
+    const n = l.find((x) => x.id === id) ?? null;
+    if (n && patch.status === 'cancelled' && n.outcall && !n.arrivedAt) await localRefundOutcall(n.id, n.number);
+    return n;
   }
   const row: Record<string, unknown> = {};
   if (patch.status) row.status = patch.status;
@@ -138,6 +156,7 @@ export async function updateRepair(id: string, patch: { status?: RepairStatus; m
   if (patch.masterId !== undefined) row.master_id = patch.masterId;
   if (patch.visitAt !== undefined) row.visit_at = patch.visitAt;
   if (patch.bring !== undefined) row.bring = patch.bring;
+  if (patch.arrived) row.arrived_at = new Date().toISOString();
   const { data, error } = await supabase.from('repair_requests').update(row).eq('id', id).select('*').single();
   if (error) throw error;
   return fromRow(data as Row);

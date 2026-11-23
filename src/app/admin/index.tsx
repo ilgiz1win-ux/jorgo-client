@@ -12,7 +12,7 @@ import { CATEGORIES, CategoryId, IconName } from '../../data/products';
 import { formatPrice } from '../../lib/format';
 import { useUnread } from '../../lib/useUnread';
 
-type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/masters' | '/admin/broadcast' | '/admin/branches' | '/admin/orders' | '/admin/customers' | '/admin/repairs' | '/admin/applications' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery' | '/admin/chats' | '/admin/assistant'; title: string; text: string; icon: IconName; color: string };
+type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/masters' | '/admin/broadcast' | '/admin/branches' | '/admin/orders' | '/admin/customers' | '/admin/repairs' | '/admin/applications' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery' | '/admin/chats' | '/admin/assistant' | '/admin/wallets'; title: string; text: string; icon: IconName; color: string };
 
 // Ижара панели — дүкөндөн өзүнчө
 const RENT_SECTIONS: Tile[] = [
@@ -25,6 +25,7 @@ const RENT_SECTIONS: Tile[] = [
 const SECTIONS: Tile[] = [
   { href: '/admin/chats', title: 'Кардарлардын суроолору', text: 'Чат: выезд канча, товар барбы — жооп бериңиз', icon: 'chat-processing', color: '#7C3AED' },
   // ИИ жардамчы кийин кошулат (код даяр: /admin/assistant, supabase/functions/admin-assistant)
+  { href: '/admin/wallets', title: 'Баланс жана выезд акысы', text: 'Толуктоолорду ырастоо, баланстар, выезд баасы', icon: 'wallet', color: '#15803D' },
   { href: '/admin/orders', title: 'Заказдар', text: 'Алып кетти / отказ, экспресс жол акысы', icon: 'truck-fast', color: '#D97706' },
   { href: '/admin/customers', title: 'Кардарлар', text: 'Катталгандар жана кара тизме', icon: 'account-group', color: '#334155' },
   { href: '/admin/broadcast', title: 'Билдирме жөнөтүү', text: 'Акция, арзандатуу — бардык кардарларга', icon: 'send', color: '#DB2777' },

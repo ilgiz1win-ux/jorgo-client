@@ -32,7 +32,7 @@ function RepairCard({ r, mine, onChange, onTake }: { r: Repair; mine: boolean; o
   const { t } = useT();
   const [note, setNote] = useState(r.masterNote);
   const [busy, setBusy] = useState(false);
-  const apply = async (patch: { status?: RepairStatus; masterNote?: string }) => {
+  const apply = async (patch: { status?: RepairStatus; masterNote?: string; arrived?: boolean }) => {
     setBusy(true);
     try {
       const n = await updateRepair(r.id, patch);
@@ -81,6 +81,12 @@ function RepairCard({ r, mine, onChange, onTake }: { r: Repair; mine: boolean; o
           <Text style={styles.text}>🏪 {t('mp.atShop')}{r.branch ? `: ${r.branch}` : ''}</Text>
         )}
       </View>
+      {r.outcall && mine && (r.status === 'accepted' || r.status === 'in_progress') && !r.arrivedAt && (
+        <Pressable disabled={busy} onPress={() => apply({ arrived: true })} style={[styles.action, { backgroundColor: '#2563EB', borderColor: '#2563EB' }]}>
+          <Text style={{ color: '#fff', fontWeight: '900' }}>{t('mp.arrived')}</Text>
+        </Pressable>
+      )}
+      {!!r.arrivedAt && <Text style={[styles.text, { color: '#2563EB', fontWeight: '800' }]}>✅ {t('mp.arrivedAt', { v: fmtVisit(r.arrivedAt) })}</Text>}
       {!!r.visitAt && (
         <View style={styles.block}>
           <Text style={styles.blockLabel}>🕘 {t('mp.whenVisit')}</Text>
