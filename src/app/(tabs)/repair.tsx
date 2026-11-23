@@ -126,6 +126,13 @@ export default function Repair() {
           </View>
           <MaterialCommunityIcons name="chevron-right" size={24} color={colors.primary} />
         </Pressable>
+        {!isMaster && (
+          <Pressable style={styles.masterLink} onPress={() => router.push('/master-panel')} accessibilityRole="button">
+            <MaterialCommunityIcons name="account-hard-hat" size={20} color="#B45309" />
+            <Text style={{ flex: 1, color: '#B45309', fontWeight: '800' }}>{t('mp.entry')}</Text>
+            <MaterialCommunityIcons name="login" size={20} color="#B45309" />
+          </Pressable>
+        )}
 
         {masters.some((m) => m.active) && (
           <>
@@ -225,6 +232,7 @@ const styles = StyleSheet.create({
   serviceOn: { borderColor: colors.primary, backgroundColor: '#F0FDFA' },
   outcall: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.primarySoft, borderRadius: 14, padding: 12 },
   masterBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#B45309', borderRadius: 16, padding: 14 },
+  masterLink: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1.5, borderColor: '#B45309', backgroundColor: '#FFFBEB' },
   cta: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.primarySoft, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: colors.primary },
   ctaTitle: { fontSize: 16, fontWeight: '800', color: colors.text },
   serviceTitle: { fontSize: 15, fontWeight: '600', color: colors.text },

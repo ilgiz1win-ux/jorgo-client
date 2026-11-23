@@ -8,7 +8,7 @@ import { useContent } from '../../context/ContentContext';
 import type { Master } from '../../data/content';
 import { newId } from '../../lib/catalogApi';
 import { pickAndUploadImage } from '../../lib/pickImage';
-import { fetchHires, fetchMasterLinks, linkMaster, MasterHire, trialDaysLeft } from '../../lib/repairs';
+import { createMasterAccount, fetchHires, fetchMasterLinks, genPassword, MasterHire, trialDaysLeft, unlinkMaster } from '../../lib/repairs';
 
 const empty = (): Master => ({
   id: '',
@@ -55,23 +55,42 @@ export default function AdminMasters() {
   // Мастердин аккаунту (мастер панелине кирүү үчүн)
   const [links, setLinks] = useState<Record<string, boolean>>({});
   const [linkLogin, setLinkLogin] = useState('');
+  const [linkPass, setLinkPass] = useState(genPassword());
+  const [linkBusy, setLinkBusy] = useState(false);
   const [linkMsg, setLinkMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [hires, setHires] = useState<Record<string, MasterHire>>({});
-  useEffect(() => {
+  const reloadLinks = () => {
     fetchMasterLinks().then(setLinks).catch(() => {});
     fetchHires().then(setHires).catch(() => {});
-  }, []);
-  const doLink = async (id: string, login: string) => {
+  };
+  useEffect(reloadLinks, []);
+  // Мастердин аккаунтун админ гана түзөт: телефон + сырсөз
+  const doCreate = async (m: Master) => {
+    setLinkMsg(null);
+    setLinkBusy(true);
+    try {
+      const phone9 = linkLogin.replace(/\D/g, '').slice(-9);
+      const r = await createMasterAccount(m.id, phone9, linkPass, m.name);
+      if (!r.ok) throw new Error('Аккаунт табылган жок.');
+      setLinkLogin('');
+      setLinkPass(genPassword());
+      setLinkMsg({ ok: true, text: r.existed ? 'Бул номер мурунтан катталган экен — ошол аккаунт байланды. Мастер өзүнүн сырсөзү менен кирет.' : 'Аккаунт түзүлдү. Логин менен сырсөздү мастерге бериңиз.' });
+      reloadLinks();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '';
+      setLinkMsg({ ok: false, text: msg.includes('admin_create_master_account') ? 'SQL иштетиле элек (019).' : msg || 'Ката кетти' });
+    }
+    setLinkBusy(false);
+  };
+  const doUnlink = async (id: string) => {
     setLinkMsg(null);
     try {
-      const ok = await linkMaster(id, login);
-      if (!ok) return setLinkMsg({ ok: false, text: 'Мындай аккаунт табылган жок. Мастер алгач колдонмодо катталышы керек.' });
-      setLinks((l) => ({ ...l, [id]: !!login.trim() }));
-      setLinkLogin('');
-      setLinkMsg({ ok: true, text: login.trim() ? 'Байланды. Мастер эми колдонмодон «Мастер панелине» кире алат.' : 'Байланыш алынды.' });
+      await unlinkMaster(id);
+      setLinkMsg({ ok: true, text: 'Аккаунт ажыратылды — мастер панелге кире албайт.' });
+      reloadLinks();
     } catch (e) {
-      const m = e instanceof Error ? e.message : '';
-      setLinkMsg({ ok: false, text: m.includes('admin_link_master') ? 'SQL иштетиле элек (016).' : m || 'Ката кетти' });
+      const msg = e instanceof Error ? e.message : '';
+      setLinkMsg({ ok: false, text: msg.includes('admin_unlink_master') ? 'SQL иштетиле элек (019).' : msg || 'Ката кетти' });
     }
   };
 
@@ -173,19 +192,37 @@ export default function AdminMasters() {
           <View style={styles.row}>
             <MaterialCommunityIcons name="account-key" size={20} color={colors.primary} />
             <Text style={{ flex: 1, color: colors.text, fontWeight: '700', marginLeft: 8 }}>
-              Мастер панели: {links[draft.id] ? '✅ аккаунт байланган' : 'аккаунт байлана элек'}
+              Мастер панелине аккаунт: {links[draft.id] ? '✅ бар' : 'жок'}
             </Text>
           </View>
-          <Text style={{ color: colors.muted, fontSize: 12 }}>Мастер колдонмодо катталгандан кийин анын телефонун жазыңыз — ошондо ал өзүнүн заказдарын көрөт.</Text>
-          <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Field label="Мастердин телефону" value={linkLogin} onChangeText={setLinkLogin} placeholder="0700 123 456" keyboardType="phone-pad" />
-            </View>
-          </View>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <Button title="Байлоо" icon="link-variant" style={{ flex: 1 }} disabled={linkLogin.replace(/\D/g, '').length < 9} onPress={() => doLink(draft.id, linkLogin)} />
-            {links[draft.id] && <Button title="Алып салуу" variant="outline" style={{ flex: 1 }} onPress={() => doLink(draft.id, '')} />}
-          </View>
+          {links[draft.id] ? (
+            <>
+              {hires[draft.id] && (
+                <View style={{ gap: 2 }}>
+                  <Text selectable style={{ color: colors.text }}>Логин: <Text style={{ fontWeight: '800' }}>{hires[draft.id].login}</Text></Text>
+                  <Text selectable style={{ color: colors.text }}>
+                    {hires[draft.id].password ? <>Сырсөз: <Text style={{ fontWeight: '800' }}>{hires[draft.id].password}</Text></> : 'Сырсөз: мастер өзүнүкү менен кирет'}
+                  </Text>
+                  {!hires[draft.id].panelOpen && <Text style={{ color: '#B45309', fontWeight: '700', fontSize: 12 }}>🧪 Сынак айы — панел жабык («Аккаунту» барагынан ачасыз)</Text>}
+                </View>
+              )}
+              <Button title="Аккаунтту ажыратуу" variant="outline" onPress={() => doUnlink(draft.id)} />
+            </>
+          ) : (
+            <>
+              <Text style={{ color: colors.muted, fontSize: 12 }}>Мастердин аккаунтун админ гана түзөт. Телефонун жазыңыз — сырсөз өзү түзүлөт. Логин-сырсөздү мастерге өзүңүз бересиз.</Text>
+              <Field label="Мастердин телефону (логин)" value={linkLogin} onChangeText={setLinkLogin} placeholder="0700 123 456" keyboardType="phone-pad" />
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
+                <View style={{ flex: 1 }}>
+                  <Field label="Сырсөз" value={linkPass} onChangeText={setLinkPass} autoCapitalize="none" />
+                </View>
+                <Pressable onPress={() => setLinkPass(genPassword())} style={styles.regen} accessibilityLabel="Жаңы сырсөз">
+                  <MaterialCommunityIcons name="refresh" size={22} color={colors.primary} />
+                </Pressable>
+              </View>
+              <Button title="Аккаунт түзүү" icon="account-plus" disabled={linkBusy || linkLogin.replace(/\D/g, '').length < 9 || linkPass.length < 6} onPress={() => doCreate(draft)} />
+            </>
+          )}
           {linkMsg && <Text style={{ color: linkMsg.ok ? colors.success : colors.danger, fontSize: 13 }}>{linkMsg.text}</Text>}
         </View>
       )}
@@ -273,6 +310,7 @@ const styles = StyleSheet.create({
   empty: { color: colors.muted, textAlign: 'center', paddingVertical: 24 },
   photo: { height: 220, borderRadius: radius.lg, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   photoBtn: { position: 'absolute', bottom: 10, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  regen: { width: 48, height: 48, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card },
   linkBox: { gap: 8, backgroundColor: colors.bg, borderRadius: radius.md, padding: 12, borderWidth: 1, borderColor: colors.border },
   outcall: { gap: 10, backgroundColor: colors.primarySoft, borderRadius: radius.md, padding: 12 },
   accBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: '#B45309', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginTop: 4 },
