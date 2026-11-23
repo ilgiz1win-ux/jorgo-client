@@ -30,6 +30,10 @@ function Gate() {
       <Stack.Screen name="promos" options={{ title: 'Акциялар' }} />
       <Stack.Screen name="services" options={{ title: 'Оңдоо кызматтары' }} />
       <Stack.Screen name="masters" options={{ title: 'Мастерлер' }} />
+      <Stack.Screen name="master/[id]" options={{ title: 'Мастердин аккаунту' }} />
+      <Stack.Screen name="chats" options={{ title: 'Кардарлардын суроолору' }} />
+      <Stack.Screen name="chat/[userId]" options={{ title: 'Чат' }} />
+      <Stack.Screen name="assistant" options={{ title: 'ИИ жардамчы' }} />
       <Stack.Screen name="branches" options={{ title: 'Точкалар' }} />
       <Stack.Screen name="orders" options={{ title: 'Заказдар' }} />
       <Stack.Screen name="customers" options={{ title: 'Кардарлар' }} />

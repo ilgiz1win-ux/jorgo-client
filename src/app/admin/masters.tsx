@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Button, Card, Chip, Field } from '../../components/ui';
@@ -229,6 +230,10 @@ export default function AdminMasters() {
                 {m.outcall && <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>🚗 Выезд{m.outcallNote ? `: ${m.outcallNote}` : ''}</Text>}
                 {!m.active && <Text style={{ color: colors.muted, fontSize: 12, fontWeight: '700' }}>Жашырылган</Text>}
                 <Text style={{ fontSize: 12, fontWeight: '700', color: links[m.id] ? colors.success : colors.muted }}>{links[m.id] ? '🔑 Панелге кире алат' : '🔑 Аккаунт байлана элек'}</Text>
+                <Pressable onPress={() => router.push({ pathname: '/admin/master/[id]', params: { id: m.id } })} style={styles.accBtn} accessibilityRole="button">
+                  <MaterialCommunityIcons name="chart-box-outline" size={16} color="#fff" />
+                  <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13 }}>Аккаунту: заказдары</Text>
+                </Pressable>
               </View>
               <View style={{ gap: 16, alignItems: 'center' }}>
                 <Pressable hitSlop={8} onPress={() => setDraft(m)} accessibilityLabel="Өзгөртүү">
@@ -262,5 +267,6 @@ const styles = StyleSheet.create({
   photoBtn: { position: 'absolute', bottom: 10, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   linkBox: { gap: 8, backgroundColor: colors.bg, borderRadius: radius.md, padding: 12, borderWidth: 1, borderColor: colors.border },
   outcall: { gap: 10, backgroundColor: colors.primarySoft, borderRadius: radius.md, padding: 12 },
+  accBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: '#B45309', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginTop: 4 },
   thumb: { width: 64, height: 64, borderRadius: radius.md, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
 });

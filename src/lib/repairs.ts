@@ -197,3 +197,24 @@ export async function setApplicationStatus(id: string, status: AppStatus): Promi
   const { error } = await supabase.from('master_applications').update({ status }).eq('id', id);
   if (error) throw error;
 }
+
+// ---------- Админ: мастердин аккаунту ----------
+// Бир мастердин бардык заказдары (админ үчүн)
+export async function fetchMasterRepairs(masterId: string): Promise<Repair[]> {
+  if (!supabase) return (await read<Repair[]>(LOCAL, [])).filter((r) => r.masterId === masterId);
+  const { data, error } = await supabase.from('repair_requests').select('*').eq('master_id', masterId).order('created_at', { ascending: false }).limit(500);
+  if (error) throw error;
+  return (data as Row[]).map(fromRow);
+}
+
+// Мастер кайсы аккаунтка (телефонго) байланган
+export async function fetchMasterAccount(masterId: string): Promise<{ login: string; name: string } | null> {
+  if (!supabase) {
+    const links = await read<Record<string, string>>(LOCAL_LINKS, {});
+    return links[masterId] ? { login: links[masterId].replace('local-', '+'), name: '' } : null;
+  }
+  const { data, error } = await supabase.rpc('admin_master_accounts');
+  if (error) return null;
+  const r = (data as { master_id: string; login: string; full_name: string }[]).find((x) => x.master_id === masterId);
+  return r ? { login: r.login, name: r.full_name } : null;
+}

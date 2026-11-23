@@ -195,6 +195,9 @@ export default function Repair() {
                 </Text>
               </Pressable>
             )}
+            <Pressable onPress={() => router.push({ pathname: '/chat', params: { q: t('chat.q.outcall') } })} accessibilityRole="link">
+              <Text style={{ color: colors.primary, fontWeight: '700' }}>{t('chat.askOutcall')}</Text>
+            </Pressable>
             <Field label={t('repair.problem')} value={problem} onChangeText={setProblem} multiline placeholder={t('repair.problemPh')} />
             {error && <Text style={{ color: colors.danger, textAlign: 'center', fontWeight: '600' }}>{error}</Text>}
             <Button title={t('repair.send')} icon="whatsapp" variant="whatsapp" disabled={!valid || sending} onPress={submit} />

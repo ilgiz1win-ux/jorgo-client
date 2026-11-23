@@ -43,6 +43,7 @@ function RootStack() {
         <Stack.Screen name="masters" options={{ title: t('masters.title') }} />
         <Stack.Screen name="master-panel" options={{ title: t('mp.title') }} />
         <Stack.Screen name="become-master" options={{ title: t('ma.title') }} />
+        <Stack.Screen name="chat" options={{ title: t('chat.title') }} />
         <Stack.Screen name="account" options={{ headerShown: false }} />
         <Stack.Screen
           name="rental/[id]"
