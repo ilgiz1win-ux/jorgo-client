@@ -1,6 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useAccount } from '../../context/AccountContext';
+import { createRepair, myMasterId } from '../../lib/repairs';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PopIn } from '../../components/anim';
 import { BeforeAfter } from '../../components/HomeSections';
@@ -43,14 +45,25 @@ export default function Repair() {
   const [bike, setBike] = useState('');
   const [problem, setProblem] = useState('');
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
+  // Кирген колдонуучу мастер болсо — мастер панелине баскыч
+  const { profile } = useAccount();
+  const [isMaster, setIsMaster] = useState(false);
+  useEffect(() => {
+    if (!profile) return setIsMaster(false);
+    myMasterId(profile.id).then((m) => setIsMaster(!!m)).catch(() => setIsMaster(false));
+  }, [profile]);
 
   const toggle = (id: string) => setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   const valid = name.trim().length > 1 && phone.replace(/\D/g, '').length >= 9 && (selected.length > 0 || problem.trim().length > 3);
 
-  const submit = () => {
-    const services = SERVICES.filter((s) => selected.includes(s.id)).map((s) => `• ${s.title}`);
+  const submit = async () => {
+    const chosen = SERVICES.filter((s) => selected.includes(s.id));
+    const services = chosen.map((s) => `• ${s.title}`);
+    const number = String(Date.now()).slice(-6);
     const msg = [
-      t('msg.repair'),
+      `${t('msg.repair')} №${number}`,
       '',
       t('msg.name', { v: name.trim() }),
       t('msg.phone', { v: phone.trim() }),
@@ -63,7 +76,26 @@ export default function Repair() {
     ]
       .filter(Boolean)
       .join('\n');
-    // Өтүнмө тандалган точканын өз номерине кетет
+    // Өтүнмө базага жазылат: мастердин панелине (же точканын мастерлерине) түшөт
+    setSending(true);
+    setError(null);
+    const res = await createRepair({
+      number,
+      name: name.trim(),
+      phone: phone.trim(),
+      bike: bike.trim(),
+      services: chosen.map((s) => s.title),
+      problem: problem.trim(),
+      branch: branch?.name ?? '',
+      masterId: master?.id,
+      outcall: outcall && outcallAvailable,
+    }).catch(() => 'error' as const);
+    setSending(false);
+    if (res === 'blocked') {
+      setError(t('checkout.blocked'));
+      return;
+    }
+    // Өтүнмө тандалган точканын өз номерине да кетет
     openWhatsApp(msg, branch?.whatsapp).catch(() => {});
     track('repair', undefined, branch?.name);
     setSent(true);
@@ -72,6 +104,13 @@ export default function Repair() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 96 }} keyboardShouldPersistTaps="handled">
+        {isMaster && (
+          <Pressable style={styles.masterBtn} onPress={() => router.push('/master-panel')} accessibilityRole="button">
+            <MaterialCommunityIcons name="account-hard-hat" size={24} color="#fff" />
+            <Text style={{ flex: 1, color: '#fff', fontWeight: '800', fontSize: 16 }}>{t('mp.title')}</Text>
+            <MaterialCommunityIcons name="chevron-right" size={24} color="#fff" />
+          </Pressable>
+        )}
         <Card style={styles.banner}>
           <MaterialCommunityIcons name="tools" size={32} color="#fff" />
           <View style={{ flex: 1 }}>
@@ -156,11 +195,24 @@ export default function Repair() {
                 </Text>
               </Pressable>
             )}
+            <Pressable onPress={() => router.push({ pathname: '/chat', params: { q: t('chat.q.outcall') } })} accessibilityRole="link">
+              <Text style={{ color: colors.primary, fontWeight: '700' }}>{t('chat.askOutcall')}</Text>
+            </Pressable>
             <Field label={t('repair.problem')} value={problem} onChangeText={setProblem} multiline placeholder={t('repair.problemPh')} />
-            <Button title={t('repair.send')} icon="whatsapp" variant="whatsapp" disabled={!valid} onPress={submit} />
+            {error && <Text style={{ color: colors.danger, textAlign: 'center', fontWeight: '600' }}>{error}</Text>}
+            <Button title={t('repair.send')} icon="whatsapp" variant="whatsapp" disabled={!valid || sending} onPress={submit} />
             <Button title={t('repair.call')} icon="phone" variant="outline" onPress={callShop} />
           </Card>
         )}
+
+        <Pressable style={styles.cta} onPress={() => router.push('/become-master')} accessibilityRole="button">
+          <MaterialCommunityIcons name="account-hard-hat-outline" size={30} color={colors.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.ctaTitle}>{t('ma.cta')}</Text>
+            <Text style={{ color: colors.muted, fontSize: 13 }}>{t('ma.ctaSub')}</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={24} color={colors.primary} />
+        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -172,5 +224,8 @@ const styles = StyleSheet.create({
   service: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, padding: 14, borderRadius: 14, borderWidth: 1.5, borderColor: colors.border },
   serviceOn: { borderColor: colors.primary, backgroundColor: '#F0FDFA' },
   outcall: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.primarySoft, borderRadius: 14, padding: 12 },
+  masterBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#B45309', borderRadius: 16, padding: 14 },
+  cta: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.primarySoft, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: colors.primary },
+  ctaTitle: { fontSize: 16, fontWeight: '800', color: colors.text },
   serviceTitle: { fontSize: 15, fontWeight: '600', color: colors.text },
 });

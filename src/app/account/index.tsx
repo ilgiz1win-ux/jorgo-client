@@ -5,11 +5,18 @@ import { Button } from '../../components/ui';
 import { colors } from '../../config/theme';
 import { docsReady, useAccount } from '../../context/AccountContext';
 import { useT } from '../../i18n';
+import { useEffect, useState } from 'react';
+import { myMasterId } from '../../lib/repairs';
 
 // Меню: профиль, документтер, ижаралар, билдирмелер, төлөм, жөндөөлөр
 export default function AccountMenu() {
   const { t } = useT();
   const { profile, ready } = useAccount();
+  const [isMaster, setIsMaster] = useState(false);
+  useEffect(() => {
+    if (!profile) return setIsMaster(false);
+    myMasterId(profile.id).then((m) => setIsMaster(!!m)).catch(() => setIsMaster(false));
+  }, [profile]);
 
   return (
     <ScrollView contentContainerStyle={styles.wrap}>
@@ -33,6 +40,8 @@ export default function AccountMenu() {
             onPress={() => router.push('/account/documents')}
           />
           <MenuRow icon="bicycle-electric" label={t('acc.myRents')} onPress={() => router.push('/account/rentals')} />
+          {isMaster && <MenuRow icon="account-hard-hat" label={t('mp.title')} onPress={() => router.push('/master-panel')} />}
+          <MenuRow icon="chat-processing-outline" label={t('chat.menu')} sub={t('chat.menuSub')} onPress={() => router.push('/chat')} />
         </MenuGroup>
       )}
 
