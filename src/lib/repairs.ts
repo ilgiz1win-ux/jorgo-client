@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../config/backend';
+import { base64ToBytes } from './catalogApi';
 import { supabase } from './supabase';
 
 // Оңдоо өтүнмөлөрү (базада), мастердин панели, «мастер болом» өтүнмөлөрү
@@ -20,6 +21,12 @@ export type Repair = {
   status: RepairStatus;
   masterNote: string;
   updatedAt?: string;
+  photos: string[];
+  address: string;
+  lat?: number;
+  lng?: number;
+  visitAt?: string;
+  bring: string;
 };
 type Row = {
   id: string;
@@ -36,6 +43,12 @@ type Row = {
   status: RepairStatus;
   master_note: string;
   updated_at?: string;
+  photos?: string[];
+  address?: string;
+  lat?: number | null;
+  lng?: number | null;
+  visit_at?: string | null;
+  bring?: string;
 };
 const fromRow = (r: Row): Repair => ({
   id: r.id,
@@ -52,6 +65,12 @@ const fromRow = (r: Row): Repair => ({
   status: r.status,
   masterNote: r.master_note,
   updatedAt: r.updated_at,
+  photos: Array.isArray(r.photos) ? r.photos : [],
+  address: r.address ?? '',
+  lat: r.lat ?? undefined,
+  lng: r.lng ?? undefined,
+  visitAt: r.visit_at ?? undefined,
+  bring: r.bring ?? '',
 });
 
 const LOCAL = 'jorgo.local.repairs';
@@ -67,10 +86,10 @@ const read = async <T,>(k: string, d: T): Promise<T> => {
 };
 const write = (k: string, v: unknown) => AsyncStorage.setItem(k, JSON.stringify(v)).catch(() => {});
 
-export async function createRepair(r: Omit<Repair, 'id' | 'createdAt' | 'status' | 'masterNote'>): Promise<'ok' | 'blocked' | 'error'> {
+export async function createRepair(r: Omit<Repair, 'id' | 'createdAt' | 'status' | 'masterNote' | 'bring'>): Promise<'ok' | 'blocked' | 'error'> {
   if (!supabase) {
     const l = await read<Repair[]>(LOCAL, []);
-    l.unshift({ ...r, id: String(Date.now()), createdAt: new Date().toISOString(), status: 'new', masterNote: '' });
+    l.unshift({ ...r, id: String(Date.now()), createdAt: new Date().toISOString(), status: 'new', masterNote: '', bring: '' });
     await write(LOCAL, l);
     return 'ok';
   }
@@ -84,6 +103,11 @@ export async function createRepair(r: Omit<Repair, 'id' | 'createdAt' | 'status'
     branch: r.branch,
     master_id: r.masterId ?? null,
     outcall: r.outcall,
+    photos: r.photos,
+    address: r.address,
+    lat: r.lat ?? null,
+    lng: r.lng ?? null,
+    visit_at: r.visitAt ?? null,
   });
   if (!error) return 'ok';
   if (error.code === '42501' || /row-level security/i.test(error.message)) return 'blocked';
@@ -98,11 +122,11 @@ export async function fetchRepairs(): Promise<Repair[]> {
   return (data as Row[]).map(fromRow);
 }
 
-export async function updateRepair(id: string, patch: { status?: RepairStatus; masterNote?: string; masterId?: string | null }): Promise<Repair | null> {
+export async function updateRepair(id: string, patch: { status?: RepairStatus; masterNote?: string; masterId?: string | null; visitAt?: string | null; bring?: string }): Promise<Repair | null> {
   if (!supabase) {
     const l = (await read<Repair[]>(LOCAL, [])).map((x) =>
       x.id === id
-        ? { ...x, updatedAt: new Date().toISOString(), status: patch.status ?? x.status, masterNote: patch.masterNote ?? x.masterNote, masterId: patch.masterId === undefined ? x.masterId : patch.masterId ?? undefined }
+        ? { ...x, updatedAt: new Date().toISOString(), visitAt: patch.visitAt === undefined ? x.visitAt : patch.visitAt ?? undefined, bring: patch.bring ?? x.bring, status: patch.status ?? x.status, masterNote: patch.masterNote ?? x.masterNote, masterId: patch.masterId === undefined ? x.masterId : patch.masterId ?? undefined }
         : x,
     );
     await write(LOCAL, l);
@@ -112,6 +136,8 @@ export async function updateRepair(id: string, patch: { status?: RepairStatus; m
   if (patch.status) row.status = patch.status;
   if (patch.masterNote !== undefined) row.master_note = patch.masterNote;
   if (patch.masterId !== undefined) row.master_id = patch.masterId;
+  if (patch.visitAt !== undefined) row.visit_at = patch.visitAt;
+  if (patch.bring !== undefined) row.bring = patch.bring;
   const { data, error } = await supabase.from('repair_requests').update(row).eq('id', id).select('*').single();
   if (error) throw error;
   return fromRow(data as Row);
@@ -351,3 +377,19 @@ export async function unlinkMaster(masterId: string): Promise<void> {
   const { error } = await supabase.rpc('admin_unlink_master', { p_master: masterId });
   if (error) throw error;
 }
+
+// Кардар оңдоо заказына сүрөт жүктөйт (кирбесе да болот)
+export async function uploadRepairPhoto(base64: string, mime = 'image/jpeg'): Promise<string> {
+  if (!supabase) return `data:${mime};base64,${base64}`;
+  const ext = mime.includes('png') ? 'png' : mime.includes('webp') ? 'webp' : 'jpg';
+  const path = `req/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+  const { error } = await supabase.storage.from('repairs').upload(path, base64ToBytes(base64), { contentType: mime });
+  if (error) throw error;
+  return supabase.storage.from('repairs').getPublicUrl(path).data.publicUrl;
+}
+
+export const fmtVisit = (iso?: string) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+};

@@ -2,8 +2,12 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useIsMaster } from '../../hooks/useIsMaster';
-import { createRepair } from '../../lib/repairs';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { createRepair, fmtVisit, uploadRepairPhoto } from '../../lib/repairs';
+import { getLocationOnce, mapLink } from '../../lib/rentRequests';
+import { PhotoStrip } from '../../components/repair/PhotoStrip';
+import { VisitPicker } from '../../components/repair/VisitPicker';
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PopIn } from '../../components/anim';
 import { BeforeAfter } from '../../components/HomeSections';
 import { MastersList } from '../../components/MastersList';
@@ -47,6 +51,41 @@ export default function Repair() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [visitAt, setVisitAt] = useState<string | undefined>();
+  const [address, setAddress] = useState('');
+  const [loc, setLoc] = useState<{ lat: number; lng: number } | null>(null);
+  const [locBusy, setLocBusy] = useState(false);
+  const addPhoto = async () => {
+    if (photos.length >= 3) return;
+    setError(null);
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.5, base64: true, allowsMultipleSelection: false });
+    if (res.canceled || !res.assets?.length) return;
+    const a = res.assets[0];
+    let b64 = a.base64 ?? '';
+    let mime = a.mimeType ?? 'image/jpeg';
+    if (!b64 && a.uri.startsWith('data:')) {
+      const m = a.uri.match(/^data:([^;]+);base64,(.*)$/);
+      if (m) [, mime, b64] = m;
+    }
+    if (!b64) return;
+    setUploading(true);
+    try {
+      const url = await uploadRepairPhoto(b64, mime);
+      setPhotos((p) => [...p, url].slice(0, 3));
+    } catch {
+      setError(t('repair.photoErr'));
+    }
+    setUploading(false);
+  };
+  const addLocation = async () => {
+    setLocBusy(true);
+    const l = await getLocationOnce();
+    setLocBusy(false);
+    if (l) setLoc({ lat: l.lat, lng: l.lng });
+    else setError(t('repair.locErr'));
+  };
   // Кирген колдонуучу мастер болсо — мастер панелине баскыч
   const isMaster = useIsMaster(true);
 
@@ -66,6 +105,10 @@ export default function Repair() {
       branch ? t('msg.branch', { v: branchLabel(branch, t) }) : null,
       master ? t('msg.master', { v: master.name }) : null,
       outcall && outcallAvailable ? t('msg.outcall') : null,
+      outcall && outcallAvailable && address.trim() ? t('msg.address', { v: address.trim() }) : null,
+      outcall && outcallAvailable && loc ? `📍 ${mapLink(loc.lat, loc.lng)}` : null,
+      visitAt ? t('msg.when', { v: fmtVisit(visitAt) }) : null,
+      photos.length && !photos[0].startsWith('data:') ? `📷 ${photos.join('\n')}` : null,
       services.length ? `${t('msg.services')}\n${services.join('\n')}` : null,
       problem.trim() ? t('msg.problem', { v: problem.trim() }) : null,
     ]
@@ -84,6 +127,11 @@ export default function Repair() {
       branch: branch?.name ?? '',
       masterId: master?.id,
       outcall: outcall && outcallAvailable,
+      photos,
+      address: outcall && outcallAvailable ? address.trim() : '',
+      lat: outcall && outcallAvailable ? loc?.lat : undefined,
+      lng: outcall && outcallAvailable ? loc?.lng : undefined,
+      visitAt,
     }).catch(() => 'error' as const);
     setSending(false);
     if (res === 'blocked') {
@@ -179,6 +227,10 @@ export default function Repair() {
                 setSent(false);
                 setSelected([]);
                 setProblem('');
+                setPhotos([]);
+                setVisitAt(undefined);
+                setAddress('');
+                setLoc(null);
               }}
             />
           </Card>
@@ -208,7 +260,27 @@ export default function Repair() {
             <Pressable onPress={() => router.push({ pathname: '/chat', params: { q: t('chat.q.outcall') } })} accessibilityRole="link">
               <Text style={{ color: colors.primary, fontWeight: '700' }}>{t('chat.askOutcall')}</Text>
             </Pressable>
+            {outcall && outcallAvailable && (
+              <View style={{ gap: 8 }}>
+                <Field label={t('repair.address')} value={address} onChangeText={setAddress} placeholder={t('repair.addressPh')} />
+                <Pressable onPress={addLocation} disabled={locBusy} style={styles.locBtn} accessibilityRole="button">
+                  {locBusy ? <ActivityIndicator color={colors.primary} /> : <MaterialCommunityIcons name={loc ? 'map-marker-check' : 'crosshairs-gps'} size={20} color={colors.primary} />}
+                  <Text style={{ color: colors.primary, fontWeight: '700' }}>{loc ? t('repair.locationOk') : t('repair.myLocation')}</Text>
+                </Pressable>
+              </View>
+            )}
+            <VisitPicker value={visitAt} onChange={setVisitAt} labels={[t('repair.today'), t('repair.tomorrow'), t('repair.dayAfter')]} dayLabel={t('repair.when')} timeLabel={t('repair.whenTime')} />
             <Field label={t('repair.problem')} value={problem} onChangeText={setProblem} multiline placeholder={t('repair.problemPh')} />
+            <View style={{ gap: 8 }}>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: '600' }}>{t('repair.photos')}</Text>
+              <PhotoStrip photos={photos} size={76} onRemove={(i) => setPhotos((p) => p.filter((_, k) => k !== i))} />
+              {photos.length < 3 && (
+                <Pressable onPress={addPhoto} disabled={uploading} style={styles.locBtn} accessibilityRole="button">
+                  {uploading ? <ActivityIndicator color={colors.primary} /> : <MaterialCommunityIcons name="camera-plus" size={20} color={colors.primary} />}
+                  <Text style={{ color: colors.primary, fontWeight: '700' }}>{t('repair.addPhoto')}</Text>
+                </Pressable>
+              )}
+            </View>
             {error && <Text style={{ color: colors.danger, textAlign: 'center', fontWeight: '600' }}>{error}</Text>}
             <Button title={t('repair.send')} icon="whatsapp" variant="whatsapp" disabled={!valid || sending} onPress={submit} />
             <Button title={t('repair.call')} icon="phone" variant="outline" onPress={callShop} />
@@ -227,6 +299,7 @@ const styles = StyleSheet.create({
   serviceOn: { borderColor: colors.primary, backgroundColor: '#F0FDFA' },
   outcall: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.primarySoft, borderRadius: 14, padding: 12 },
   masterBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#B45309', borderRadius: 16, padding: 14 },
+  locBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', borderWidth: 1.5, borderColor: colors.primary, borderStyle: 'dashed', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
   masterLink: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1.5, borderColor: '#B45309', backgroundColor: '#FFFBEB' },
   cta: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.primarySoft, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: colors.primary },
   ctaTitle: { fontSize: 16, fontWeight: '800', color: colors.text },

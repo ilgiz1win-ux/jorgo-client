@@ -8,7 +8,9 @@ import { colors, radius } from '../../config/theme';
 import { useAccount } from '../../context/AccountContext';
 import { TKey, useT } from '../../i18n';
 import { useContent } from '../../context/ContentContext';
-import { fetchMasterRepairs, fetchRepairs, myMasterId, Repair, RepairStatus, updateRepair } from '../../lib/repairs';
+import { fetchMasterRepairs, fetchRepairs, fmtVisit, myMasterId, Repair, RepairStatus, updateRepair } from '../../lib/repairs';
+import { mapLink } from '../../lib/rentRequests';
+import { PhotoStrip } from '../repair/PhotoStrip';
 
 const LOGO = require('../../../assets/brand/logo.png');
 
@@ -53,11 +55,44 @@ function RepairCard({ r, mine, onChange, onTake }: { r: Repair; mine: boolean; o
         <MaterialCommunityIcons name="phone" size={18} color={colors.primary} />
         <Text style={styles.phone}>{r.phone}</Text>
       </Pressable>
-      {!!r.bike && <Text style={styles.text}>🚲 {r.bike}</Text>}
-      {r.services.length > 0 && <Text style={styles.text}>🔧 {r.services.join(', ')}</Text>}
-      {!!r.problem && <Text style={styles.text}>💬 {r.problem}</Text>}
-      {r.outcall && <Text style={[styles.text, { color: colors.primary, fontWeight: '800' }]}>{t('mp.outcall')}</Text>}
-      {!!r.branch && <Text style={styles.muted}>📍 {r.branch}</Text>}
+      <PhotoStrip photos={r.photos} size={96} />
+      {(!!r.problem || r.services.length > 0 || !!r.bike) && (
+        <View style={styles.block}>
+          <Text style={styles.blockLabel}>❓ {t('mp.what')}</Text>
+          {!!r.bike && <Text style={styles.text}>🚲 {r.bike}</Text>}
+          {r.services.length > 0 && <Text style={styles.text}>🔧 {r.services.join(', ')}</Text>}
+          {!!r.problem && <Text style={styles.text}>💬 {r.problem}</Text>}
+        </View>
+      )}
+      <View style={styles.block}>
+        <Text style={styles.blockLabel}>📍 {t('mp.where')}</Text>
+        {r.outcall ? (
+          <>
+            <Text style={[styles.text, { color: colors.primary, fontWeight: '800' }]}>{t('mp.outcall')}</Text>
+            {!!r.address && <Text style={[styles.text, { fontWeight: '700' }]}>🏠 {r.address}</Text>}
+            {r.lat != null && r.lng != null && (
+              <Pressable onPress={() => Linking.openURL(mapLink(r.lat!, r.lng!))} style={styles.mapBtn}>
+                <MaterialCommunityIcons name="map-marker-radius" size={18} color="#fff" />
+                <Text style={{ color: '#fff', fontWeight: '800' }}>{t('mp.map')}</Text>
+              </Pressable>
+            )}
+          </>
+        ) : (
+          <Text style={styles.text}>🏪 {t('mp.atShop')}{r.branch ? `: ${r.branch}` : ''}</Text>
+        )}
+      </View>
+      {!!r.visitAt && (
+        <View style={styles.block}>
+          <Text style={styles.blockLabel}>🕘 {t('mp.whenVisit')}</Text>
+          <Text style={[styles.text, { fontWeight: '900', fontSize: 16 }]}>{fmtVisit(r.visitAt)}</Text>
+        </View>
+      )}
+      {!!r.bring && (
+        <View style={[styles.block, { backgroundColor: '#FEF3C7', borderColor: '#F59E0B' }]}>
+          <Text style={[styles.blockLabel, { color: '#92400E' }]}>🧰 {t('mp.bring')}</Text>
+          <Text style={[styles.text, { fontWeight: '700' }]}>{r.bring}</Text>
+        </View>
+      )}
 
       {!mine ? (
         <Pressable disabled={busy} onPress={onTake} style={[styles.action, { backgroundColor: colors.primary, borderColor: colors.primary }]}>
@@ -169,7 +204,30 @@ function Panel() {
       <View style={{ alignItems: 'center' }}>
         <Image source={LOGO} style={styles.logo} resizeMode="contain" accessibilityLabel="Jorgo" />
       </View>
+      <View style={styles.summary}>
+        <Text style={{ fontWeight: '900', color: colors.text, fontSize: 16 }}>👷 {me?.name ?? ''}</Text>
+        <Text style={styles.muted}>⭐ {rating.toFixed(1)} · {t('mp.stat.today')}: {today} · {t('mp.stat.month')}: {month}</Text>
+      </View>
 
+      {free.length > 0 && <SectionTitle>{`${t('mp.free')} (${free.length})`}</SectionTitle>}
+      {free.map((r) => (
+        <RepairCard
+          key={r.id}
+          r={r}
+          mine={false}
+          onChange={replace}
+          onTake={() => masterId && updateRepair(r.id, { masterId, status: 'accepted' }).then((n) => n && replace(n)).catch(() => load())}
+        />
+      ))}
+      <SectionTitle>{`${t('mp.mine')} (${active.length})`}</SectionTitle>
+      {!loading && active.length === 0 && <Text style={styles.muted}>{t('mp.empty')}</Text>}
+      {active.map((r) => (
+        <RepairCard key={r.id} r={r} mine onChange={replace} onTake={() => {}} />
+      ))}
+      {closed.length > 0 && <SectionTitle>{`${t('mp.status.done')} / ${t('mp.status.cancelled')} (${closed.length})`}</SectionTitle>}
+      {closed.slice(0, 20).map((r) => (
+        <RepairCard key={r.id} r={r} mine onChange={replace} onTake={() => {}} />
+      ))}
       <SectionTitle>{t('mp.myAccount')}</SectionTitle>
       <View style={styles.profile}>
         <View style={styles.photo}>
@@ -198,25 +256,6 @@ function Panel() {
         <Stat n={active.length} label={t('mp.stat.active')} color="#D97706" />
       </View>
 
-      {free.length > 0 && <SectionTitle>{`${t('mp.free')} (${free.length})`}</SectionTitle>}
-      {free.map((r) => (
-        <RepairCard
-          key={r.id}
-          r={r}
-          mine={false}
-          onChange={replace}
-          onTake={() => masterId && updateRepair(r.id, { masterId, status: 'accepted' }).then((n) => n && replace(n)).catch(() => load())}
-        />
-      ))}
-      <SectionTitle>{`${t('mp.mine')} (${active.length})`}</SectionTitle>
-      {!loading && active.length === 0 && <Text style={styles.muted}>{t('mp.empty')}</Text>}
-      {active.map((r) => (
-        <RepairCard key={r.id} r={r} mine onChange={replace} onTake={() => {}} />
-      ))}
-      {closed.length > 0 && <SectionTitle>{`${t('mp.status.done')} / ${t('mp.status.cancelled')} (${closed.length})`}</SectionTitle>}
-      {closed.slice(0, 20).map((r) => (
-        <RepairCard key={r.id} r={r} mine onChange={replace} onTake={() => {}} />
-      ))}
     </ScrollView>
   );
 }
@@ -250,6 +289,10 @@ const styles = StyleSheet.create({
   phone: { color: colors.primary, fontWeight: '700' },
   text: { color: colors.text, fontSize: 14, lineHeight: 20 },
   muted: { color: colors.muted, fontSize: 13 },
+  summary: { alignItems: 'center', gap: 2, marginTop: -6 },
+  block: { gap: 2, backgroundColor: colors.bg, borderRadius: radius.md, padding: 10, borderWidth: 1, borderColor: colors.border },
+  blockLabel: { fontSize: 12, fontWeight: '800', color: colors.muted, textTransform: 'uppercase' },
+  mapBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: '#2563EB', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginTop: 4 },
   action: { borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 8, alignItems: 'center' },
   input: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: colors.text, backgroundColor: colors.bg },
 });
