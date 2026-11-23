@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useChatUnread } from '../../hooks/useChatUnread';
 import { Link, router } from 'expo-router';
 import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,6 +30,7 @@ const HOME_TILES: { key: string; label: TKey; icon: IconName; color: string; hre
 const LOGO = require('../../../assets/brand/logo.png');
 
 export default function Home() {
+  const chatUnread = useChatUnread();
   const insets = useSafeAreaInsets();
   const { t } = useT();
   const { products, promos, loading, refresh } = useCatalog();
@@ -83,8 +85,16 @@ export default function Home() {
               {t('home.slogan')}
             </Text>
           </View>
-          <View style={[styles.side, { justifyContent: 'flex-end', zIndex: 20 }]}>
+          <View style={[styles.side, { flexDirection: 'column', alignItems: 'flex-end', zIndex: 20 }]}>
             <LangSwitch />
+            <Pressable style={styles.iconBtn} onPress={() => router.push('/chat')} hitSlop={6} accessibilityRole="button" accessibilityLabel={t('chat.admin')}>
+              <MaterialCommunityIcons name="chat-processing-outline" size={23} color="#7C3AED" />
+              {chatUnread > 0 && (
+                <View style={styles.bellBadge}>
+                  <Text style={styles.bellBadgeText}>{chatUnread > 9 ? '9+' : chatUnread}</Text>
+                </View>
+              )}
+            </Pressable>
           </View>
         </View>
       </View>

@@ -503,4 +503,8 @@ export const en: Record<TKey, string> = {
   'w.codeTitle': "Your code for transferring {v}:",
   'w.codeHow': "Transfer to these details and be sure to put the code above in the transfer COMMENT:",
   'w.another': "Another top-up",
+  'chat.admin': "Chat with admin",
+  'chat.adminSub': "Got a question? Write — we'll answer here",
+  'chat.newReply': "New replies: {n}",
+  'chat.q.topup': "I have a question about topping up",
 };

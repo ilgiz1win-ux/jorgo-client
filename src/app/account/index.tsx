@@ -9,6 +9,7 @@ import { useIsMaster } from '../../hooks/useIsMaster';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { fmtSom, myBalance } from '../../lib/wallet';
+import { ChatButton } from '../../components/chat/ChatButton';
 
 // Меню: профиль, документтер, ижаралар, билдирмелер, төлөм, жөндөөлөр
 export default function AccountMenu() {
@@ -45,9 +46,10 @@ export default function AccountMenu() {
           />
           <MenuRow icon="wallet" label={t('w.menu', { v: balance === null ? '…' : fmtSom(balance) })} sub={t('w.menuSub')} onPress={() => router.push('/wallet')} />
           <MenuRow icon="bicycle-electric" label={t('acc.myRents')} onPress={() => router.push('/account/rentals')} />
-          <MenuRow icon="chat-processing-outline" label={t('chat.menu')} sub={t('chat.menuSub')} onPress={() => router.push('/chat')} />
         </MenuGroup>
       )}
+
+      <ChatButton />
 
       <MenuGroup>
         <MenuRow first icon="account-hard-hat" label={isMaster ? t('mp.title') : t('mp.entry')} sub={isMaster ? undefined : t('mp.entrySub')} onPress={() => router.push(isMaster ? '/master' : '/master-panel')} />

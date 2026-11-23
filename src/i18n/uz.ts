@@ -503,4 +503,8 @@ export const uz: Record<TKey, string> = {
   'w.codeTitle': "{v} o'tkazish uchun kodingiz:",
   'w.codeHow': "Shu rekvizitlarga o'tkazing va o'tkazma IZOHIGA yuqoridagi kodni albatta yozing:",
   'w.another': "Yana to'ldirish",
+  'chat.admin': "Administrator bilan chat",
+  'chat.adminSub': "Savol bo'lsa yozing — shu yerda javob beramiz",
+  'chat.newReply': "Yangi javob: {n}",
+  'chat.q.topup': "Balansni to'ldirish bo'yicha savolim bor",
 };

@@ -3,6 +3,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { RequireAccount } from '../components/account/RequireAccount';
+import { ChatButton } from '../components/chat/ChatButton';
 import { Button, Card, Chip, Field, SectionTitle } from '../components/ui';
 import { colors, radius } from '../config/theme';
 import { useAccount } from '../context/AccountContext';
@@ -139,6 +140,7 @@ function Wallet() {
           </Card>
         )}
 
+        <ChatButton compact q={t('chat.q.topup')} />
         {tops.length > 0 && <SectionTitle>{t('w.requests')}</SectionTitle>}
         {tops.slice(0, 10).map((r) => (
           <View key={r.id} style={styles.row}>

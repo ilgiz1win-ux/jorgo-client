@@ -412,3 +412,14 @@ export const fmtVisit = (iso?: string) => {
   const d = new Date(iso);
   return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
+
+// Админ: мастерлердин аккаунттары (user_id → мастердин аты) — чатта «👷 Мастер» деп белгилөө үчүн
+export async function fetchMasterUsers(names: Record<string, string>): Promise<Record<string, string>> {
+  if (!supabase) {
+    const links = await read<Record<string, string>>(LOCAL_LINKS, {});
+    return Object.fromEntries(Object.entries(links).map(([m, u]) => [u, names[m] ?? '']));
+  }
+  const { data, error } = await supabase.rpc('admin_master_accounts');
+  if (error) return {};
+  return Object.fromEntries((data as { master_id: string; user_id: string }[]).map((r) => [r.user_id, names[r.master_id] ?? '']));
+}

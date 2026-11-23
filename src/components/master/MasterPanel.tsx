@@ -11,6 +11,7 @@ import { useContent } from '../../context/ContentContext';
 import { fetchMasterRepairs, fetchRepairs, fmtVisit, myMasterId, Repair, RepairStatus, updateRepair } from '../../lib/repairs';
 import { mapLink } from '../../lib/rentRequests';
 import { PhotoStrip } from '../repair/PhotoStrip';
+import { ChatButton } from '../chat/ChatButton';
 
 const LOGO = require('../../../assets/brand/logo.png');
 
@@ -214,6 +215,7 @@ function Panel() {
         <Text style={{ fontWeight: '900', color: colors.text, fontSize: 16 }}>👷 {me?.name ?? ''}</Text>
         <Text style={styles.muted}>⭐ {rating.toFixed(1)} · {t('mp.stat.today')}: {today} · {t('mp.stat.month')}: {month}</Text>
       </View>
+      <ChatButton compact />
 
       {free.length > 0 && <SectionTitle>{`${t('mp.free')} (${free.length})`}</SectionTitle>}
       {free.map((r) => (
