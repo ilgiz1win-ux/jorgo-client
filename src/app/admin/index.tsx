@@ -12,7 +12,7 @@ import { CATEGORIES, CategoryId, IconName } from '../../data/products';
 import { formatPrice } from '../../lib/format';
 import { useUnread } from '../../lib/useUnread';
 
-type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/masters' | '/admin/broadcast' | '/admin/branches' | '/admin/orders' | '/admin/customers' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery'; title: string; text: string; icon: IconName; color: string };
+type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/masters' | '/admin/broadcast' | '/admin/branches' | '/admin/orders' | '/admin/customers' | '/admin/repairs' | '/admin/applications' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery'; title: string; text: string; icon: IconName; color: string };
 
 // Ижара панели — дүкөндөн өзүнчө
 const RENT_SECTIONS: Tile[] = [
@@ -31,6 +31,8 @@ const SECTIONS: Tile[] = [
   { href: '/admin/home', title: 'Башкы бет', text: 'Чоң баннер жана сандар', icon: 'home-edit', color: '#2E7D32' },
   { href: '/admin/promos', title: 'Акциялар', text: 'Баннерлер жана слайдер', icon: 'bullhorn', color: '#7C3AED' },
   { href: '/admin/services', title: 'Оңдоо', text: 'Кызматтар жана баалар', icon: 'wrench', color: '#EA580C' },
+  { href: '/admin/repairs', title: 'Оңдоо өтүнмөлөрү', text: 'Кайсы мастерге түштү, абалы', icon: 'wrench-clock', color: '#9A3412' },
+  { href: '/admin/applications', title: 'Мастер болом дегендер', text: 'Жумушка өтүнмөлөр', icon: 'account-plus', color: '#4D7C0F' },
   { href: '/admin/masters', title: 'Мастерлер', text: 'Сүрөттөрү, адистиги, филиалы', icon: 'account-hard-hat', color: '#B45309' },
   { href: '/admin/reviews', title: 'Пикирлер', text: 'Кардарлардын сөздөрү', icon: 'star', color: '#CA8A04' },
   { href: '/admin/gallery', title: 'Галерея', text: 'Чейин / кийин сүрөттөр', icon: 'image-multiple', color: '#0284C7' },

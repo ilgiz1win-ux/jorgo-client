@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Button, Card, Chip, Field } from '../../components/ui';
 import { colors, radius } from '../../config/theme';
@@ -7,6 +7,7 @@ import { useContent } from '../../context/ContentContext';
 import type { Master } from '../../data/content';
 import { newId } from '../../lib/catalogApi';
 import { pickAndUploadImage } from '../../lib/pickImage';
+import { fetchMasterLinks, linkMaster } from '../../lib/repairs';
 
 const empty = (): Master => ({
   id: '',
@@ -50,6 +51,26 @@ export default function AdminMasters() {
   const [uploading, setUploading] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Мастердин аккаунту (мастер панелине кирүү үчүн)
+  const [links, setLinks] = useState<Record<string, boolean>>({});
+  const [linkLogin, setLinkLogin] = useState('');
+  const [linkMsg, setLinkMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  useEffect(() => {
+    fetchMasterLinks().then(setLinks).catch(() => {});
+  }, []);
+  const doLink = async (id: string, login: string) => {
+    setLinkMsg(null);
+    try {
+      const ok = await linkMaster(id, login);
+      if (!ok) return setLinkMsg({ ok: false, text: 'Мындай аккаунт табылган жок. Мастер алгач колдонмодо катталышы керек.' });
+      setLinks((l) => ({ ...l, [id]: !!login.trim() }));
+      setLinkLogin('');
+      setLinkMsg({ ok: true, text: login.trim() ? 'Байланды. Мастер эми колдонмодон «Мастер панелине» кире алат.' : 'Байланыш алынды.' });
+    } catch (e) {
+      const m = e instanceof Error ? e.message : '';
+      setLinkMsg({ ok: false, text: m.includes('admin_link_master') ? 'SQL иштетиле элек (016).' : m || 'Ката кетти' });
+    }
+  };
 
   const run = async (fn: () => Promise<void>) => {
     setError(null);
@@ -144,6 +165,27 @@ export default function AdminMasters() {
           <Field label="Выезд: убактысы жана баасы" value={draft.outcallNote} onChangeText={(t) => setDraft({ ...draft, outcallNote: t })} placeholder="Мисалы: 18:00–22:00, 500 сомдон" />
         )}
       </View>
+      {!!draft.id && (
+        <View style={styles.linkBox}>
+          <View style={styles.row}>
+            <MaterialCommunityIcons name="account-key" size={20} color={colors.primary} />
+            <Text style={{ flex: 1, color: colors.text, fontWeight: '700', marginLeft: 8 }}>
+              Мастер панели: {links[draft.id] ? '✅ аккаунт байланган' : 'аккаунт байлана элек'}
+            </Text>
+          </View>
+          <Text style={{ color: colors.muted, fontSize: 12 }}>Мастер колдонмодо катталгандан кийин анын телефонун жазыңыз — ошондо ал өзүнүн заказдарын көрөт.</Text>
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Field label="Мастердин телефону" value={linkLogin} onChangeText={setLinkLogin} placeholder="0700 123 456" keyboardType="phone-pad" />
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Button title="Байлоо" icon="link-variant" style={{ flex: 1 }} disabled={linkLogin.replace(/\D/g, '').length < 9} onPress={() => doLink(draft.id, linkLogin)} />
+            {links[draft.id] && <Button title="Алып салуу" variant="outline" style={{ flex: 1 }} onPress={() => doLink(draft.id, '')} />}
+          </View>
+          {linkMsg && <Text style={{ color: linkMsg.ok ? colors.success : colors.danger, fontSize: 13 }}>{linkMsg.text}</Text>}
+        </View>
+      )}
       <View style={styles.row}>
         <Text style={{ flex: 1, color: colors.text, fontWeight: '600' }}>Кардарларга көрсөтүү</Text>
         <Switch value={draft.active} onValueChange={(v) => setDraft({ ...draft, active: v })} trackColor={{ true: colors.primary, false: colors.border }} />
@@ -186,6 +228,7 @@ export default function AdminMasters() {
                 </Text>
                 {m.outcall && <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>🚗 Выезд{m.outcallNote ? `: ${m.outcallNote}` : ''}</Text>}
                 {!m.active && <Text style={{ color: colors.muted, fontSize: 12, fontWeight: '700' }}>Жашырылган</Text>}
+                <Text style={{ fontSize: 12, fontWeight: '700', color: links[m.id] ? colors.success : colors.muted }}>{links[m.id] ? '🔑 Панелге кире алат' : '🔑 Аккаунт байлана элек'}</Text>
               </View>
               <View style={{ gap: 16, alignItems: 'center' }}>
                 <Pressable hitSlop={8} onPress={() => setDraft(m)} accessibilityLabel="Өзгөртүү">
@@ -217,6 +260,7 @@ const styles = StyleSheet.create({
   empty: { color: colors.muted, textAlign: 'center', paddingVertical: 24 },
   photo: { height: 220, borderRadius: radius.lg, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   photoBtn: { position: 'absolute', bottom: 10, flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
+  linkBox: { gap: 8, backgroundColor: colors.bg, borderRadius: radius.md, padding: 12, borderWidth: 1, borderColor: colors.border },
   outcall: { gap: 10, backgroundColor: colors.primarySoft, borderRadius: radius.md, padding: 12 },
   thumb: { width: 64, height: 64, borderRadius: radius.md, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
 });

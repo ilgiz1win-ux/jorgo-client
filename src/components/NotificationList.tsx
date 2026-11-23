@@ -12,6 +12,7 @@ const ICON: Record<string, { icon: IconName; color: string }> = {
   admin: { icon: 'bell-ring-outline', color: '#2563EB' },
   message: { icon: 'message-text-outline', color: '#7C3AED' },
   order: { icon: 'truck-fast', color: '#D97706' },
+  repair: { icon: 'wrench', color: '#EA580C' },
 };
 
 const fmt = (iso: string) => {

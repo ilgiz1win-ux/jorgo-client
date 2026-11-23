@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MasterCard } from '../components/MastersList';
 import { colors } from '../config/theme';
 import { useContent } from '../context/ContentContext';
@@ -32,10 +32,20 @@ export default function Masters() {
           {row.length === 1 && <View style={{ flex: 1 }} />}
         </View>
       ))}
+      <Pressable style={styles.cta} onPress={() => router.push('/become-master')} accessibilityRole="button">
+        <MaterialCommunityIcons name="account-hard-hat-outline" size={30} color={colors.primary} />
+        <View style={{ flex: 1 }}>
+          <Text style={styles.ctaTitle}>{t('ma.cta')}</Text>
+          <Text style={styles.hint}>{t('ma.ctaSub')}</Text>
+        </View>
+        <MaterialCommunityIcons name="chevron-right" size={24} color={colors.primary} />
+      </Pressable>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   hint: { color: colors.muted, fontSize: 13 },
+  cta: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.primarySoft, borderRadius: 18, padding: 16, borderWidth: 1, borderColor: colors.primary, marginTop: 8 },
+  ctaTitle: { fontSize: 16, fontWeight: '800', color: colors.text },
 });
