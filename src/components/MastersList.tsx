@@ -1,18 +1,18 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import { colors } from '../config/theme';
 import type { Master } from '../data/content';
 import { useT } from '../i18n';
 import { FadeIn } from './anim';
 
-function MasterCard({ m, selected, onPress, index }: { m: Master; selected?: boolean; onPress?: () => void; index: number }) {
+export function MasterCard({ m, selected, onPress, index, style }: { m: Master; selected?: boolean; onPress?: () => void; index: number; style?: StyleProp<ViewStyle> }) {
   const { t } = useT();
   return (
     <FadeIn delay={index * 60}>
       <Pressable
         onPress={onPress}
         disabled={!onPress}
-        style={[styles.card, selected && styles.cardOn]}
+        style={[styles.card, selected && styles.cardOn, style]}
         accessibilityRole={onPress ? 'radio' : undefined}
         accessibilityState={onPress ? { selected } : undefined}
         accessibilityLabel={m.name}

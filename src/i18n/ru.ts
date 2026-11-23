@@ -394,4 +394,7 @@ export const ru: Record<TKey, string> = {
   'checkout.missPhone': "телефон (полный номер)",
   'checkout.missAddress': "область, город и адрес",
   'home.slogan': "С нами всё проще",
+  'home.products': "Товары",
+  'masters.empty': "Мастера пока не добавлены",
+  'masters.tapToBook': "Нажмите на мастера, чтобы записаться к нему на ремонт",
 };

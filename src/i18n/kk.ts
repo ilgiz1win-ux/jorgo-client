@@ -380,4 +380,7 @@ export const kk: Record<TKey, string> = {
   'checkout.missPhone': 'телефон (толық нөмір)',
   'checkout.missAddress': 'облыс, қала және мекенжай',
   'home.slogan': "Бізбен бәрі жеңілірек",
+  'home.products': "Тауарлар",
+  'masters.empty': "Әзірге шеберлер қосылмаған",
+  'masters.tapToBook': "Шеберді басып, оған жөндеуге жазылыңыз",
 };

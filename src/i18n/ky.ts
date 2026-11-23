@@ -405,6 +405,9 @@ export const ky = {
   'checkout.missPhone': "телефон (толук номер)",
   'checkout.missAddress': "облус, шаар жана дарек",
   'home.slogan': "Биз менен баары жеңилирээк",
+  'home.products': "Товарлар",
+  'masters.empty': "Азырынча мастерлер кошула элек",
+  'masters.tapToBook': "Мастерди басып, ага оңдоого жазылыңыз",
 };
 
 export type TKey = keyof typeof ky;

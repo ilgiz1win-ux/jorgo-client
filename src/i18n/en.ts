@@ -380,4 +380,7 @@ export const en: Record<TKey, string> = {
   'checkout.missPhone': 'phone (full number)',
   'checkout.missAddress': 'region, city and address',
   'home.slogan': "Everything's easier with us",
+  'home.products': "Products",
+  'masters.empty': "No mechanics added yet",
+  'masters.tapToBook': "Tap a mechanic to book a repair with them",
 };

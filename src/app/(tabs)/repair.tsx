@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PopIn } from '../../components/anim';
 import { BeforeAfter } from '../../components/HomeSections';
@@ -19,6 +20,11 @@ export default function Repair() {
   const { gallery, masters } = useContent();
   const [masterId, setMasterId] = useState<string | null>(null);
   const master = masters.find((m) => m.id === masterId);
+  // «Биздин мастерлер» барагынан мастер тандалып келсе
+  const params = useLocalSearchParams<{ master?: string }>();
+  useEffect(() => {
+    if (params.master && masters.some((m) => m.id === params.master)) chooseMaster(params.master);
+  }, [params.master, masters.length]); // eslint-disable-line react-hooks/exhaustive-deps
   const chooseMaster = (id: string | null) => {
     setMasterId(id);
     const m = masters.find((x) => x.id === id);

@@ -8,15 +8,23 @@ import { ProductGrid } from '../../components/ProductGrid';
 import { PromoCarousel } from '../../components/PromoCarousel';
 import { SkeletonGrid } from '../../components/Skeleton';
 import { SectionTitle } from '../../components/ui';
-import { MastersList } from '../../components/MastersList';
 import { RentBikeGrid } from '../../components/RentBikeGrid';
 import { useUnread } from '../../lib/useUnread';
 import { colors, radius } from '../../config/theme';
 import { useCatalog } from '../../context/CatalogContext';
 import { useContent } from '../../context/ContentContext';
-import { CATEGORIES } from '../../data/products';
-import { useT } from '../../i18n';
+import type { IconName } from '../../data/products';
+import { TKey, useT } from '../../i18n';
 import { LangSwitch } from '../../components/LangSwitch';
+
+// Башкы беттеги негизги бөлүмдөр
+const HOME_TILES: { key: string; label: TKey; icon: IconName; color: string; href: string | { pathname: string; params?: Record<string, string> } }[] = [
+  { key: 'ebike', label: 'cat.ebike', icon: 'bicycle-electric', color: '#2E7D32', href: { pathname: '/catalog', params: { category: 'ebike' } } },
+  { key: 'products', label: 'home.products', icon: 'view-grid', color: '#0284C7', href: '/catalog' },
+  { key: 'rent', label: 'tab.rent', icon: 'key-variant', color: '#0F766E', href: '/rent' },
+  { key: 'repair', label: 'tab.repair', icon: 'wrench', color: '#EA580C', href: '/repair' },
+  { key: 'masters', label: 'masters.title', icon: 'account-hard-hat', color: '#B45309', href: '/masters' },
+];
 
 const LOGO = require('../../../assets/brand/logo.png');
 
@@ -24,7 +32,7 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const { t } = useT();
   const { products, promos, loading, refresh } = useCatalog();
-  const { settings, reviews, masters, rentals, refreshContent } = useContent();
+  const { settings, reviews, rentals, refreshContent } = useContent();
   // Дүкөндүн коңгуроосу: жалпы жаңылыктар гана
   const unread = useUnread(true, true, false);
   const popular = products.filter((p) => p.popular);
@@ -89,30 +97,27 @@ export default function Home() {
 
         <SectionTitle>{t('home.categories')}</SectionTitle>
         <View style={styles.cats}>
-          {CATEGORIES.map((c) => (
-            <Pressable key={c.id} style={styles.cat} onPress={() => router.push({ pathname: '/catalog', params: { category: c.id } })}>
+          {HOME_TILES.map((c) => (
+            <Pressable key={c.key} style={styles.cat} onPress={() => router.push(c.href as never)} accessibilityRole="button">
               <View style={[styles.catIcon, { backgroundColor: c.color + '1A' }]}>
                 <MaterialCommunityIcons name={c.icon} size={28} color={c.color} />
               </View>
               <Text style={styles.catText} numberOfLines={2}>
-                {t(`cat.${c.id}`)}
+                {t(c.label)}
               </Text>
             </Pressable>
           ))}
-          {/* Ижара — категориялардын бири */}
-          <Pressable style={[styles.cat, styles.catRent]} onPress={() => router.push('/rent')} accessibilityRole="button">
-            <View style={[styles.catIcon, { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
-              <MaterialCommunityIcons name="bicycle-electric" size={28} color="#fff" />
-            </View>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Text style={styles.rentTitle}>{t('tab.rent')}</Text>
-              <Text style={styles.rentSub} numberOfLines={2}>
-                {t('rent.homeText')}
-              </Text>
-            </View>
-            <MaterialCommunityIcons name="chevron-right" size={26} color="#fff" />
-          </Pressable>
         </View>
+
+        {onSale.length > 0 && (
+          <>
+            <SectionTitle right={all}>{t('home.onSale')}</SectionTitle>
+            <ProductGrid products={onSale.slice(0, 6)} />
+          </>
+        )}
+
+        <SectionTitle right={all}>{t('home.popular')}</SectionTitle>
+        {showSkeleton ? <SkeletonGrid count={4} /> : <ProductGrid products={popular} />}
 
         {rentals.length > 0 && (
           <>
@@ -128,45 +133,6 @@ export default function Home() {
             <RentBikeGrid bikes={[...rentals].sort((a, b) => Number(b.available) - Number(a.available)).slice(0, 4)} />
           </>
         )}
-
-        {onSale.length > 0 && (
-          <>
-            <SectionTitle right={all}>{t('home.onSale')}</SectionTitle>
-            <ProductGrid products={onSale.slice(0, 6)} />
-          </>
-        )}
-
-        <Link href="/repair" asChild>
-          <Pressable style={styles.repair}>
-            <View style={styles.repairIcon}>
-              <MaterialCommunityIcons name="tools" size={28} color={colors.ink} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.repairTitle}>{t('home.repairTitle')}</Text>
-              <Text style={styles.repairText}>{t('home.repairText')}</Text>
-            </View>
-            <MaterialCommunityIcons name="chevron-right" size={26} color={colors.lime} />
-          </Pressable>
-        </Link>
-
-        {masters.some((m) => m.active) && (
-          <>
-            <SectionTitle
-              right={
-                <Link href="/repair" style={styles.link}>
-                  {t('common.allArrow')}
-                </Link>
-              }
-            >
-              {t('masters.title')}
-            </SectionTitle>
-            <MastersList masters={masters} />
-          </>
-        )}
-
-
-        <SectionTitle right={all}>{t('home.popular')}</SectionTitle>
-        {showSkeleton ? <SkeletonGrid count={4} /> : <ProductGrid products={popular} />}
 
         {reviews.length > 0 && (
           <>
