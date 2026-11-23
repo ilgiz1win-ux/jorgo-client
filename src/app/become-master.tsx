@@ -57,6 +57,10 @@ export default function BecomeMaster() {
             <Text style={{ color: colors.primarySoft }}>{t('ma.ctaSub')}</Text>
           </View>
         </View>
+        <View style={styles.info}>
+          <MaterialCommunityIcons name="information-outline" size={22} color={colors.primary} />
+          <Text style={{ flex: 1, color: colors.text, fontSize: 14, lineHeight: 20 }}>{t('ma.trialInfo')}</Text>
+        </View>
         <Card style={{ gap: 12 }}>
           <Field label={t('common.name')} value={name} onChangeText={setName} placeholder={t('checkout.namePh')} />
           <Field label={t('common.phone')} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
@@ -82,6 +86,7 @@ export default function BecomeMaster() {
 const styles = StyleSheet.create({
   hero: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.primary, borderRadius: 18, padding: 16 },
   heroTitle: { color: '#fff', fontSize: 18, fontWeight: '900' },
+  info: { flexDirection: 'row', gap: 10, backgroundColor: colors.primarySoft, borderRadius: 14, padding: 12 },
   label: { fontSize: 13, fontWeight: '600', color: colors.muted },
   done: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 32 },
   doneText: { fontSize: 18, fontWeight: '800', color: colors.text, textAlign: 'center' },

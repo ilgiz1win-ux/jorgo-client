@@ -5,7 +5,7 @@ import { Image, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text
 import { Card, Chip } from '../../../components/ui';
 import { colors, radius } from '../../../config/theme';
 import { useContent } from '../../../context/ContentContext';
-import { fetchMasterAccount, fetchMasterRepairs, Repair, RepairStatus } from '../../../lib/repairs';
+import { fetchHires, fetchMasterAccount, fetchMasterRepairs, MasterHire, openMasterPanel, Repair, RepairStatus, trialDaysLeft } from '../../../lib/repairs';
 
 const LABEL: Record<RepairStatus, string> = { new: 'Жаңы', accepted: 'Кабыл алды', in_progress: 'Иштеп жатат', done: 'Бүттү', cancelled: 'Отказ' };
 const COLOR: Record<RepairStatus, string> = { new: '#2563EB', accepted: '#0D9488', in_progress: '#D97706', done: colors.success, cancelled: colors.danger };
@@ -55,14 +55,32 @@ export default function AdminMasterAccount() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<RepairStatus | 'all'>('all');
+  const [hire, setHire] = useState<MasterHire | null>(null);
+  const [showPass, setShowPass] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const toggle = async (open: boolean) => {
+    if (!id) return;
+    setBusy(true);
+    try {
+      await openMasterPanel(id, open);
+      setConfirmOpen(false);
+      await load();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setError(msg.includes('admin_open_master_panel') ? 'SQL иштетиле элек (018).' : msg);
+    }
+    setBusy(false);
+  };
 
   const load = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     try {
-      const [l, a] = await Promise.all([fetchMasterRepairs(id), fetchMasterAccount(id)]);
+      const [l, a, h] = await Promise.all([fetchMasterRepairs(id), fetchMasterAccount(id), fetchHires()]);
       setList(l);
       setAccount(a);
+      setHire(h[id] ?? null);
       setError(null);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -112,6 +130,56 @@ export default function AdminMasterAccount() {
       </Card>
       {error && <Text style={{ color: colors.danger }}>{error}</Text>}
 
+      {hire && (
+        <Card style={[{ gap: 6, borderWidth: 1.5 }, { borderColor: hire.panelOpen ? colors.success : '#D97706' }]}>
+          {hire.panelOpen ? (
+            <Text style={{ fontWeight: '900', color: colors.success, fontSize: 15 }}>🔓 Мастер панели ачык · выездге чыгат</Text>
+          ) : (
+            <Text style={{ fontWeight: '900', color: '#B45309', fontSize: 15 }}>
+              🧪 Сынак мөөнөтү: точкада иштейт ·{' '}
+              {trialDaysLeft(hire.trialUntil) > 0 ? `${trialDaysLeft(hire.trialUntil)} күн калды` : 'мөөнөт бүттү ✅'}
+            </Text>
+          )}
+          <Text style={styles.text}>📅 Ишке алынган: {new Date(hire.hiredAt).toLocaleDateString('ru-RU')} · сынак {new Date(hire.trialUntil + 'T00:00:00').toLocaleDateString('ru-RU')} чейин</Text>
+          <View style={styles.cred}>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: '700' }}>🔒 Админдер гана көрөт</Text>
+            <Text selectable style={styles.text}>Логин: <Text style={{ fontWeight: '800' }}>{hire.login}</Text></Text>
+            {hire.password ? (
+              <Pressable onPress={() => setShowPass(!showPass)}>
+                <Text selectable style={styles.text}>
+                  Сырсөз: <Text style={{ fontWeight: '800' }}>{showPass ? hire.password : '••••••••'}</Text>  <Text style={{ color: colors.primary }}>{showPass ? 'жашыруу' : 'көрсөтүү'}</Text>
+                </Text>
+              </Pressable>
+            ) : (
+              <Text style={{ color: colors.muted, fontSize: 13 }}>Номер мурунтан катталган — мастер өзүнүн сырсөзү менен кирет.</Text>
+            )}
+          </View>
+          {!hire.panelOpen &&
+            (confirmOpen ? (
+              <View style={{ gap: 8 }}>
+                <Text style={styles.text}>Мастерге логин-сырсөзүн берип, панелди ачасызбы? Ал заказдарды көрүп, выездге чыга баштайт.</Text>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Pressable style={[styles.btn, { borderColor: colors.muted }]} onPress={() => setConfirmOpen(false)}>
+                    <Text style={{ fontWeight: '800', color: colors.muted }}>Жок</Text>
+                  </Pressable>
+                  <Pressable style={[styles.btn, { backgroundColor: colors.success, borderColor: colors.success, flex: 1 }]} disabled={busy} onPress={() => toggle(true)}>
+                    <Text style={{ fontWeight: '800', color: '#fff' }}>Ооба, панелди ачуу</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : (
+              <Pressable style={[styles.btn, { backgroundColor: colors.success, borderColor: colors.success }]} onPress={() => setConfirmOpen(true)}>
+                <Text style={{ fontWeight: '800', color: '#fff' }}>🔓 Панелди ачуу жана выездге чыгаруу</Text>
+              </Pressable>
+            ))}
+          {hire.panelOpen && (
+            <Pressable style={[styles.btn, { borderColor: colors.danger }]} disabled={busy} onPress={() => toggle(false)}>
+              <Text style={{ fontWeight: '800', color: colors.danger }}>🔒 Панелди кайра жабуу</Text>
+            </Pressable>
+          )}
+        </Card>
+      )}
+
       <View style={styles.stats}>
         <Stat n={list.length} label="Бардык заказ" color={colors.text} />
         <Stat n={count('done')} label="Бүткөргөн" color={colors.success} />
@@ -150,5 +218,7 @@ const styles = StyleSheet.create({
   badge: { color: '#fff', fontWeight: '800', fontSize: 12, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
   h: { fontSize: 17, fontWeight: '900', color: colors.text, marginTop: 4 },
   text: { color: colors.text, fontSize: 14 },
+  cred: { gap: 2, backgroundColor: colors.bg, borderRadius: radius.md, padding: 10, borderWidth: 1, borderColor: colors.border },
+  btn: { borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 10, alignItems: 'center' },
   empty: { color: colors.muted, textAlign: 'center', paddingVertical: 12 },
 });

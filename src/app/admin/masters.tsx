@@ -8,7 +8,7 @@ import { useContent } from '../../context/ContentContext';
 import type { Master } from '../../data/content';
 import { newId } from '../../lib/catalogApi';
 import { pickAndUploadImage } from '../../lib/pickImage';
-import { fetchMasterLinks, linkMaster } from '../../lib/repairs';
+import { fetchHires, fetchMasterLinks, linkMaster, MasterHire, trialDaysLeft } from '../../lib/repairs';
 
 const empty = (): Master => ({
   id: '',
@@ -56,8 +56,10 @@ export default function AdminMasters() {
   const [links, setLinks] = useState<Record<string, boolean>>({});
   const [linkLogin, setLinkLogin] = useState('');
   const [linkMsg, setLinkMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [hires, setHires] = useState<Record<string, MasterHire>>({});
   useEffect(() => {
     fetchMasterLinks().then(setLinks).catch(() => {});
+    fetchHires().then(setHires).catch(() => {});
   }, []);
   const doLink = async (id: string, login: string) => {
     setLinkMsg(null);
@@ -229,7 +231,13 @@ export default function AdminMasters() {
                 </Text>
                 {m.outcall && <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '700' }}>🚗 Выезд{m.outcallNote ? `: ${m.outcallNote}` : ''}</Text>}
                 {!m.active && <Text style={{ color: colors.muted, fontSize: 12, fontWeight: '700' }}>Жашырылган</Text>}
-                <Text style={{ fontSize: 12, fontWeight: '700', color: links[m.id] ? colors.success : colors.muted }}>{links[m.id] ? '🔑 Панелге кире алат' : '🔑 Аккаунт байлана элек'}</Text>
+                {hires[m.id] && !hires[m.id].panelOpen ? (
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: '#B45309' }}>
+                    🧪 Сынак айы · {trialDaysLeft(hires[m.id].trialUntil) > 0 ? `${trialDaysLeft(hires[m.id].trialUntil)} күн калды` : 'бүттү — панелди ачсаңыз болот'}
+                  </Text>
+                ) : (
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: links[m.id] ? colors.success : colors.muted }}>{links[m.id] ? '🔑 Панелге кире алат' : '🔑 Аккаунт байлана элек'}</Text>
+                )}
                 <Pressable onPress={() => router.push({ pathname: '/admin/master/[id]', params: { id: m.id } })} style={styles.accBtn} accessibilityRole="button">
                   <MaterialCommunityIcons name="chart-box-outline" size={16} color="#fff" />
                   <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13 }}>Аккаунту: заказдары</Text>

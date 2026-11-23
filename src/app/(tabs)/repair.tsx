@@ -118,6 +118,14 @@ export default function Repair() {
             <Text style={{ color: colors.primarySoft }}>{t('repair.subtitle')}</Text>
           </View>
         </Card>
+        <Pressable style={styles.cta} onPress={() => router.push('/become-master')} accessibilityRole="button">
+          <MaterialCommunityIcons name="account-hard-hat-outline" size={30} color={colors.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.ctaTitle}>{t('ma.cta')}</Text>
+            <Text style={{ color: colors.muted, fontSize: 13 }}>{t('ma.ctaSub')}</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={24} color={colors.primary} />
+        </Pressable>
 
         {masters.some((m) => m.active) && (
           <>
@@ -205,14 +213,6 @@ export default function Repair() {
           </Card>
         )}
 
-        <Pressable style={styles.cta} onPress={() => router.push('/become-master')} accessibilityRole="button">
-          <MaterialCommunityIcons name="account-hard-hat-outline" size={30} color={colors.primary} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.ctaTitle}>{t('ma.cta')}</Text>
-            <Text style={{ color: colors.muted, fontSize: 13 }}>{t('ma.ctaSub')}</Text>
-          </View>
-          <MaterialCommunityIcons name="chevron-right" size={24} color={colors.primary} />
-        </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
   );
