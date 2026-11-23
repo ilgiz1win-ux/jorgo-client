@@ -91,9 +91,25 @@ export async function fetchTx(userId?: string): Promise<WalletTx[]> {
   return (data as TxRow[]).map(txFrom);
 }
 
-// Чектин сүрөтү (жабык бакет — кардардын өз папкасы)
-export async function pickReceipt(userId: string): Promise<string | null> {
-  const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.6, base64: true });
+// Скриншоттун «бармак изи» — бир эле сүрөттү кайра жүктөөнү кармоо үчүн
+function fingerprint(b64: string): string {
+  let h1 = 0xdeadbeef ^ b64.length,
+    h2 = 0x41c6ce57 ^ b64.length;
+  for (let i = 0; i < b64.length; i++) {
+    const ch = b64.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return `${(h2 >>> 0).toString(16).padStart(8, '0')}${(h1 >>> 0).toString(16).padStart(8, '0')}-${b64.length.toString(36)}`;
+}
+
+export type Receipt = { path: string; hash: string; preview: string };
+
+// Которуунун скриншоту (жабык бакет — кардардын өз папкасы)
+export async function pickReceipt(userId: string): Promise<Receipt | null> {
+  const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 1, base64: true });
   if (res.canceled || !res.assets?.length) return null;
   const a = res.assets[0];
   let b64 = a.base64 ?? '';
@@ -103,29 +119,36 @@ export async function pickReceipt(userId: string): Promise<string | null> {
     if (m) [, mime, b64] = m;
   }
   if (!b64) return null;
-  if (!supabase) return `data:${mime};base64,${b64}`;
+  const hash = fingerprint(b64);
+  const preview = `data:${mime};base64,${b64}`;
+  if (!supabase) return { path: preview, hash, preview };
   const path = `${userId}/receipt-${Date.now()}.${mime.includes('png') ? 'png' : 'jpg'}`;
   const { error } = await supabase.storage.from(DOCS_BUCKET).upload(path, base64ToBytes(b64), { contentType: mime });
   if (error) throw error;
-  return path;
+  return { path, hash, preview: a.uri || preview };
 }
 
-export async function sendTopup(t: { amount: number; method: string; senderName: string; senderAccount: string; comment: string }): Promise<{ id: string; code: string }> {
+// Ката: 'duplicate' — бул скриншот мурда жүктөлгөн
+export async function sendTopup(t: { amount: number; method: string; senderName: string; senderAccount: string; comment: string; receipt: Receipt }): Promise<{ id: string; code: string }> {
   if (!supabase) {
     const u = await localUserId();
     if (!u) throw new Error('login');
-    const l = await read<Topup[]>(L_TOPUP, []);
-    const r: Topup = { id: String(Date.now()), createdAt: new Date().toISOString(), userId: u, code: `J${1001 + l.length}`, amount: t.amount, method: t.method, senderName: t.senderName.trim(), senderAccount: t.senderAccount.trim(), comment: t.comment.trim(), status: 'new', name: 'Демо кардар', phone: u.replace('local-', '+') };
+    const l = await read<(Topup & { hash?: string })[]>(L_TOPUP, []);
+    if (l.some((x) => x.hash === t.receipt.hash)) throw new Error('duplicate');
+    const r = { id: String(Date.now()), createdAt: new Date().toISOString(), userId: u, code: `J${1001 + l.length}`, amount: t.amount, method: t.method, senderName: t.senderName.trim(), senderAccount: t.senderAccount.trim(), comment: t.comment.trim(), receipt: t.receipt.path, hash: t.receipt.hash, status: 'new' as const, name: 'Демо кардар', phone: u.replace('local-', '+') };
     l.unshift(r);
     await write(L_TOPUP, l);
     return { id: r.id, code: r.code };
   }
   const { data, error } = await supabase
     .from('topup_requests')
-    .insert({ amount: t.amount, method: t.method, sender_name: t.senderName.trim(), sender_account: t.senderAccount.trim(), comment: t.comment.trim() })
+    .insert({ amount: t.amount, method: t.method, sender_name: t.senderName.trim(), sender_account: t.senderAccount.trim(), comment: t.comment.trim(), receipt: t.receipt.path, receipt_hash: t.receipt.hash })
     .select('id,code')
     .single();
-  if (error) throw error;
+  if (error) {
+    if (error.code === '23505' || /receipt_hash/.test(error.message)) throw new Error('duplicate');
+    throw error;
+  }
   return data as { id: string; code: string };
 }
 

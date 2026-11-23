@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Image, KeyboardAvoidingView, Linking, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button, Card, Chip, Field } from '../../components/ui';
 import { colors, radius } from '../../config/theme';
@@ -32,6 +32,17 @@ export default function AdminWallets() {
   const [adjAmount, setAdjAmount] = useState('');
   const [adjNote, setAdjNote] = useState('');
   const [search, setSearch] = useState('');
+  const [shots, setShots] = useState<Record<string, string>>({});
+  // Скриншоттор жабык бакетте — убактылуу шилтеме алабыз
+  useEffect(() => {
+    tops
+      .filter((t) => t.receipt && !shots[t.id])
+      .slice(0, 30)
+      .forEach((t) => {
+        if (t.receipt!.startsWith('data:')) return setShots((m) => ({ ...m, [t.id]: t.receipt! }));
+        docUrl(t.receipt).then((u) => u && setShots((m) => ({ ...m, [t.id]: u })));
+      });
+  }, [tops]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -119,7 +130,7 @@ export default function AdminWallets() {
         {(tab === 'new' || tab === 'all') && (
           <>
             <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>
-              Банк колдонмосунан түшкөн акчанын комментарийиндеги КОДду (мисалы J1027) караңыз — ушул жерден ошол кодду издеп, ырастаңыз.
+              Кардардын скриншотундагы сумманы, убакытты жана атын банк колдонмосунан түшкөн акча менен салыштырыңыз. Акча чындап түшкөндө гана ырастаңыз.
             </Text>
             <Field label="Издөө: код, сумма, аты же номери" value={search} onChangeText={setSearch} placeholder="J1027" autoCapitalize="characters" />
             {!loading && shownTops.length === 0 && <Text style={styles.empty}>Толуктоо өтүнмөсү жок</Text>}
@@ -144,11 +155,14 @@ export default function AdminWallets() {
                 )}
                 {!!t.comment && <Text style={styles.text}>💬 {t.comment}</Text>}
                 {!!t.receipt &&
-                  (t.receipt.startsWith('data:') ? (
-                    <Image source={{ uri: t.receipt }} style={{ width: 120, height: 120, borderRadius: 10 }} />
+                  (shots[t.id] ? (
+                    <Pressable onPress={() => (shots[t.id].startsWith('data:') ? null : Linking.openURL(shots[t.id]))}>
+                      <Image source={{ uri: shots[t.id] }} style={styles.shot} resizeMode="contain" />
+                      <Text style={{ color: '#2563EB', fontWeight: '700', marginTop: 4 }}>🧾 Скриншотту чоң ачуу</Text>
+                    </Pressable>
                   ) : (
                     <Pressable onPress={() => showReceipt(t.receipt)}>
-                      <Text style={{ color: '#2563EB', fontWeight: '700' }}>🧾 Чекти көрүү</Text>
+                      <Text style={{ color: '#2563EB', fontWeight: '700' }}>🧾 Скриншотту көрүү</Text>
                     </Pressable>
                   ))}
                 {t.status === 'new' && (
@@ -236,6 +250,7 @@ export default function AdminWallets() {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  shot: { width: 220, height: 320, borderRadius: 10, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border },
   code: { fontSize: 18, fontWeight: '900', color: '#fff', backgroundColor: colors.primary, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden', letterSpacing: 1 },
   badge: { color: '#fff', fontWeight: '800', fontSize: 12, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
   text: { color: colors.text, fontSize: 14 },

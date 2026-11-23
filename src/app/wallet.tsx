@@ -1,14 +1,14 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { RequireAccount } from '../components/account/RequireAccount';
 import { ChatButton } from '../components/chat/ChatButton';
 import { Button, Card, Chip, Field, SectionTitle } from '../components/ui';
 import { colors, radius } from '../config/theme';
 import { useAccount } from '../context/AccountContext';
 import { TKey, useT } from '../i18n';
-import { attachReceipt, fetchTopups, fetchTx, fmtSom, getWalletSettings, myBalance, pickReceipt, sendTopup, Topup, WalletSettings, WalletTx, DEFAULT_WALLET } from '../lib/wallet';
+import { fetchTopups, fetchTx, fmtSom, getWalletSettings, myBalance, pickReceipt, Receipt, sendTopup, Topup, WalletSettings, WalletTx, DEFAULT_WALLET } from '../lib/wallet';
 
 const AMOUNTS = [500, 1000, 2000, 5000];
 const METHODS = ['MBank', 'O!Деньги', 'Бакай', 'Элсом', 'Накталай'];
@@ -33,7 +33,9 @@ function Wallet() {
   const [senderName, setSenderName] = useState('');
   const [senderAccount, setSenderAccount] = useState('');
   // Акыркы түзүлгөн толуктоо (коду менен)
-  const [made, setMade] = useState<{ id: string; code: string; amount: number; receipt?: string } | null>(null);
+  const [made, setMade] = useState<{ id: string; code: string; amount: number } | null>(null);
+  const [shot, setShot] = useState<Receipt | null>(null);
+  const [shotBusy, setShotBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -59,28 +61,32 @@ function Wallet() {
 
   const num = parseInt(amount.replace(/\D/g, ''), 10) || 0;
   const submit = async () => {
+    if (!shot) return;
     setBusy(true);
     setMsg(null);
     try {
-      const r = await sendTopup({ amount: num, method, senderName, senderAccount, comment });
+      const r = await sendTopup({ amount: num, method, senderName, senderAccount, comment, receipt: shot });
       setMade({ ...r, amount: num });
       setComment('');
+      setShot(null);
       load();
-    } catch {
-      setMsg({ ok: false, text: t('chat.error') });
+    } catch (e) {
+      const m = e instanceof Error ? e.message : '';
+      setMsg({ ok: false, text: m === 'duplicate' ? t('w.dupShot') : t('chat.error') });
     }
     setBusy(false);
   };
-  const addReceipt = async () => {
-    if (!profile || !made) return;
+  const addShot = async () => {
+    if (!profile) return;
+    setMsg(null);
+    setShotBusy(true);
     try {
-      const path = await pickReceipt(profile.id);
-      if (!path) return;
-      await attachReceipt(made.id, path);
-      setMade({ ...made, receipt: path });
+      const r = await pickReceipt(profile.id);
+      if (r) setShot(r);
     } catch {
       setMsg({ ok: false, text: t('repair.photoErr') });
     }
+    setShotBusy(false);
   };
 
   return (
@@ -100,27 +106,18 @@ function Wallet() {
 
         <SectionTitle>{t('w.topup')}</SectionTitle>
         {made ? (
-          <Card style={{ gap: 12, borderColor: colors.primary, borderWidth: 2 }}>
-            <Text style={{ color: colors.text, fontWeight: '800', fontSize: 16 }}>{t('w.codeTitle', { v: fmtSom(made.amount) })}</Text>
-            <View style={styles.codeBox}>
-              <Text selectable style={styles.code}>{made.code}</Text>
-            </View>
-            <Text style={{ color: colors.text, lineHeight: 21 }}>{t('w.codeHow')}</Text>
-            <Text selectable style={styles.info}>{cfg.topupInfo}</Text>
-            {made.receipt ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                {made.receipt.startsWith('data:') ? <Image source={{ uri: made.receipt }} style={styles.receipt} /> : <MaterialCommunityIcons name="receipt" size={28} color={colors.success} />}
-                <Text style={{ color: colors.success, fontWeight: '700', flex: 1 }}>{t('w.receiptOk')}</Text>
-              </View>
-            ) : (
-              <Button title={t('w.receipt')} icon="camera" variant="outline" onPress={addReceipt} />
-            )}
-            <Text style={{ color: colors.muted, fontSize: 13 }}>{t('w.sent')}</Text>
+          <Card style={{ gap: 12, borderColor: colors.success, borderWidth: 2, alignItems: 'center' }}>
+            <MaterialCommunityIcons name="check-circle" size={52} color={colors.success} />
+            <Text style={{ color: colors.text, fontWeight: '800', fontSize: 16, textAlign: 'center' }}>{t('w.sentTitle', { v: fmtSom(made.amount) })}</Text>
+            <Text style={{ color: colors.muted, textAlign: 'center', lineHeight: 20 }}>{t('w.sent')}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12 }}>{t('w.ref', { v: made.code })}</Text>
             <Button title={t('w.another')} variant="outline" onPress={() => setMade(null)} />
           </Card>
         ) : (
           <Card style={{ gap: 12 }}>
-            <Text style={{ color: colors.muted, lineHeight: 20 }}>{t('w.howTo')}</Text>
+            <Text style={{ color: colors.text, fontWeight: '700' }}>1. {t('w.step1')}</Text>
+            <Text selectable style={styles.info}>{cfg.topupInfo}</Text>
+            <Text style={{ color: colors.text, fontWeight: '700' }}>2. {t('w.stepAmount')}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {AMOUNTS.map((a) => (
                 <Chip key={a} label={`${a} сом`} active={num === a} onPress={() => setAmount(String(a))} />
@@ -132,11 +129,23 @@ function Wallet() {
                 <Chip key={m} label={m} active={method === m} onPress={() => setMethod(m)} />
               ))}
             </View>
-            <Field label={t('w.senderName')} value={senderName} onChangeText={setSenderName} placeholder={t('w.senderNamePh')} />
-            <Field label={t('w.senderAccount')} value={senderAccount} onChangeText={setSenderAccount} placeholder={t('w.senderAccountPh')} keyboardType="phone-pad" />
+            <Text style={{ color: colors.text, fontWeight: '700' }}>3. {t('w.stepShot')}</Text>
+            {shot ? (
+              <View style={{ gap: 8, alignItems: 'flex-start' }}>
+                <Image source={{ uri: shot.preview }} style={styles.shot} resizeMode="contain" />
+                <Button title={t('w.changeShot')} icon="image-edit" variant="outline" onPress={addShot} />
+              </View>
+            ) : (
+              <Pressable onPress={addShot} disabled={shotBusy} style={styles.shotPick} accessibilityRole="button">
+                {shotBusy ? <ActivityIndicator color={colors.primary} /> : <MaterialCommunityIcons name="cellphone-screenshot" size={36} color={colors.primary} />}
+                <Text style={{ color: colors.primary, fontWeight: '800' }}>{t('w.addShot')}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12, textAlign: 'center' }}>{t('w.shotHint')}</Text>
+              </Pressable>
+            )}
+            <Field label={t('w.senderNameOpt')} value={senderName} onChangeText={setSenderName} placeholder={t('w.senderNamePh')} />
             <Field label={t('w.comment')} value={comment} onChangeText={setComment} placeholder={t('w.commentPh')} />
             {msg && <Text style={{ color: msg.ok ? colors.success : colors.danger, fontWeight: '600' }}>{msg.text}</Text>}
-            <Button title={t('w.getCode')} icon="qrcode" disabled={busy || num < 50 || senderName.trim().length < 2} onPress={submit} />
+            <Button title={t('w.send')} icon="send" disabled={busy || num < 50 || !shot} onPress={submit} />
           </Card>
         )}
 
@@ -187,6 +196,8 @@ const styles = StyleSheet.create({
   note: { flexDirection: 'row', gap: 10, backgroundColor: '#FEF3C7', borderRadius: radius.md, padding: 12, borderWidth: 1, borderColor: '#F59E0B' },
   info: { backgroundColor: colors.bg, borderRadius: radius.md, padding: 12, fontSize: 15, fontWeight: '700', color: colors.text, borderWidth: 1, borderColor: colors.border },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.card, borderRadius: radius.md, padding: 12, borderWidth: 1, borderColor: colors.border },
+  shot: { width: 200, height: 300, borderRadius: radius.md, backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border },
+  shotPick: { alignItems: 'center', gap: 6, borderWidth: 2, borderStyle: 'dashed', borderColor: colors.primary, borderRadius: radius.lg, padding: 20, backgroundColor: '#F0FDF4' },
   codeBox: { alignSelf: 'center', backgroundColor: '#ECFDF5', borderRadius: radius.lg, paddingHorizontal: 28, paddingVertical: 12, borderWidth: 2, borderColor: colors.primary, borderStyle: 'dashed' },
   code: { fontSize: 40, fontWeight: '900', color: colors.primary, letterSpacing: 4 },
   receipt: { width: 48, height: 48, borderRadius: 8 },

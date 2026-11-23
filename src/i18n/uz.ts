@@ -507,4 +507,13 @@ export const uz: Record<TKey, string> = {
   'chat.adminSub': "Savol bo'lsa yozing — shu yerda javob beramiz",
   'chat.newReply': "Yangi javob: {n}",
   'chat.q.topup': "Balansni to'ldirish bo'yicha savolim bor",
+  'w.stepAmount': "Qancha o'tkazganingizni tanlang:",
+  'w.stepShot': "O'tkazma skrinshotini biriktiring (majburiy):",
+  'w.addShot': "Skrinshot tanlash",
+  'w.shotHint': "Bank ilovasidagi «O'tkazma bajarildi» sahifasi: summa, vaqt va ism ko'rinib tursin",
+  'w.changeShot': "Boshqa skrinshot",
+  'w.senderNameOpt': "Kim o'tkazdi (ixtiyoriy)",
+  'w.dupShot': "Bu skrinshot avval yuklangan. Yangi o'tkazma skrinshotini biriktiring.",
+  'w.sentTitle': "{v} to'ldirish yuborildi",
+  'w.ref': "So'rov raqami: {v}",
 };

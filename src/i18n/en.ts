@@ -507,4 +507,13 @@ export const en: Record<TKey, string> = {
   'chat.adminSub': "Got a question? Write — we'll answer here",
   'chat.newReply': "New replies: {n}",
   'chat.q.topup': "I have a question about topping up",
+  'w.stepAmount': "Choose the amount you sent:",
+  'w.stepShot': "Attach a screenshot of the transfer (required):",
+  'w.addShot': "Choose screenshot",
+  'w.shotHint': "The 'transfer successful' screen in your bank app, showing amount, time and name",
+  'w.changeShot': "Another screenshot",
+  'w.senderNameOpt': "Sender (optional)",
+  'w.dupShot': "This screenshot was already uploaded. Please attach the screenshot of a new transfer.",
+  'w.sentTitle': "Top-up of {v} sent",
+  'w.ref': "Request no.: {v}",
 };
