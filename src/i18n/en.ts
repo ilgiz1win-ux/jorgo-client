@@ -425,4 +425,5 @@ export const en: Record<TKey, string> = {
   'chat.q.stock': "Is this item in stock?",
   'chat.q.repairTime': "How long will the repair take?",
   'chat.askOutcall': "💬 Outcall price? Ask in chat",
+  'ma.trialInfo': "If you're hired, you'll first work at one of our shops for 1 month. After that you'll start doing outcalls and taking jobs in the mechanic panel — we'll give you your login then.",
 };

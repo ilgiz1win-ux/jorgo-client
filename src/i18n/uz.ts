@@ -425,4 +425,5 @@ export const uz: Record<TKey, string> = {
   'chat.q.stock': "Bu mahsulot bormi?",
   'chat.q.repairTime': "Ta'mirlash qancha vaqt oladi?",
   'chat.askOutcall': "💬 Chiqish narxi? Chatda so'rang",
+  'ma.trialInfo': "Ishga qabul qilinsangiz, avval 1 oy bizning shoxobchada ishlaysiz. Keyin mijozlarga chiqib, usta panelidan buyurtma olasiz — login va parolni o'shanda beramiz.",
 };
