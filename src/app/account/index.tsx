@@ -40,10 +40,13 @@ export default function AccountMenu() {
             onPress={() => router.push('/account/documents')}
           />
           <MenuRow icon="bicycle-electric" label={t('acc.myRents')} onPress={() => router.push('/account/rentals')} />
-          {isMaster && <MenuRow icon="account-hard-hat" label={t('mp.title')} onPress={() => router.push('/master-panel')} />}
           <MenuRow icon="chat-processing-outline" label={t('chat.menu')} sub={t('chat.menuSub')} onPress={() => router.push('/chat')} />
         </MenuGroup>
       )}
+
+      <MenuGroup>
+        <MenuRow first icon="account-hard-hat" label={isMaster ? t('mp.title') : t('mp.entry')} sub={isMaster ? undefined : t('mp.entrySub')} onPress={() => router.push('/master-panel')} />
+      </MenuGroup>
 
       <MenuGroup>
         <MenuRow first icon="bell-outline" label={t('acc.notifications')} onPress={() => router.push('/account/notifications')} />

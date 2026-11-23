@@ -19,6 +19,7 @@ export type Repair = {
   outcall: boolean;
   status: RepairStatus;
   masterNote: string;
+  updatedAt?: string;
 };
 type Row = {
   id: string;
@@ -34,6 +35,7 @@ type Row = {
   outcall: boolean;
   status: RepairStatus;
   master_note: string;
+  updated_at?: string;
 };
 const fromRow = (r: Row): Repair => ({
   id: r.id,
@@ -49,6 +51,7 @@ const fromRow = (r: Row): Repair => ({
   outcall: r.outcall,
   status: r.status,
   masterNote: r.master_note,
+  updatedAt: r.updated_at,
 });
 
 const LOCAL = 'jorgo.local.repairs';
@@ -99,7 +102,7 @@ export async function updateRepair(id: string, patch: { status?: RepairStatus; m
   if (!supabase) {
     const l = (await read<Repair[]>(LOCAL, [])).map((x) =>
       x.id === id
-        ? { ...x, status: patch.status ?? x.status, masterNote: patch.masterNote ?? x.masterNote, masterId: patch.masterId === undefined ? x.masterId : patch.masterId ?? undefined }
+        ? { ...x, updatedAt: new Date().toISOString(), status: patch.status ?? x.status, masterNote: patch.masterNote ?? x.masterNote, masterId: patch.masterId === undefined ? x.masterId : patch.masterId ?? undefined }
         : x,
     );
     await write(LOCAL, l);
@@ -241,7 +244,15 @@ export function genPassword(len = 8): string {
 
 // Мастерге аккаунт түзүү (админдин сессиясына тийбейт — өзүнчө убактылуу клиент)
 export async function createMasterLogin(phone9: string, password: string, fullName: string): Promise<'created' | 'exists' | 'error'> {
-  if (!supabase) return 'created';
+  if (!supabase) {
+    // Демо: жергиликтүү профиль (мастер ушул номер менен кире алсын)
+    const all = await read<Record<string, unknown>>('jorgo.local.profiles', {});
+    const id = `local-996${phone9}`;
+    if (all[id]) return 'exists';
+    all[id] = { id, fullName: fullName, phone: `+996 ${phone9.slice(0, 3)} ${phone9.slice(3, 6)} ${phone9.slice(6)}`, birthDate: '', address: '', passportNo: '', relatives: [], verified: false };
+    await write('jorgo.local.profiles', all);
+    return 'created';
+  }
   const tmp = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'jorgo-hire-tmp' } });
   const phone = '996' + phone9;
   const { data, error } = await tmp.auth.signUp({ email: `${phone}@phone.jorgo.app`, password, options: { data: { phone, full_name: fullName } } });
@@ -305,4 +316,38 @@ export function trialDaysLeft(trialUntil: string): number {
   const end = new Date(trialUntil + 'T00:00:00').getTime();
   const today = new Date(new Date().toDateString()).getTime();
   return Math.round((end - today) / 86400000);
+}
+
+// Админ: мастерге аккаунт түзүү (же мурунтан катталган номерди байлоо). Панел дароо ачык.
+export async function createMasterAccount(masterId: string, phone9: string, password: string, fullName: string): Promise<{ ok: boolean; existed: boolean }> {
+  const res = await createMasterLogin(phone9, password, fullName);
+  if (res === 'error') throw new Error('Аккаунт түзүлгөн жок. Интернетти текшерип, кайра аракет кылыңыз.');
+  const pass = res === 'exists' ? null : password;
+  if (!supabase) {
+    const hires = await read<Record<string, MasterHire>>(LOCAL_HIRES, {});
+    const now = new Date().toISOString();
+    hires[masterId] = { masterId, login: '+996' + phone9, password: pass, hiredAt: now, trialUntil: now.slice(0, 10), openedAt: now, panelOpen: true };
+    await write(LOCAL_HIRES, hires);
+    const links = await read<Record<string, string>>(LOCAL_LINKS, {});
+    links[masterId] = `local-996${phone9}`;
+    await write(LOCAL_LINKS, links);
+    return { ok: true, existed: res === 'exists' };
+  }
+  const { data, error } = await supabase.rpc('admin_create_master_account', { p_master: masterId, p_phone: phone9, p_password: pass ?? '' });
+  if (error) throw error;
+  return { ok: data === true, existed: res === 'exists' };
+}
+
+export async function unlinkMaster(masterId: string): Promise<void> {
+  if (!supabase) {
+    const links = await read<Record<string, string>>(LOCAL_LINKS, {});
+    delete links[masterId];
+    await write(LOCAL_LINKS, links);
+    const hires = await read<Record<string, MasterHire>>(LOCAL_HIRES, {});
+    delete hires[masterId];
+    await write(LOCAL_HIRES, hires);
+    return;
+  }
+  const { error } = await supabase.rpc('admin_unlink_master', { p_master: masterId });
+  if (error) throw error;
 }

@@ -13,12 +13,13 @@ import { openWhatsApp } from '../../lib/format';
 const LOGO = require('../../../assets/brand/logo.png');
 
 // Кирүү / катталуу: телефон номери + сырсөз
-export function LoginForm({ onDone, subtitle }: { onDone: () => void; subtitle?: string }) {
+// masterOnly: мастерлер үчүн кирүү — катталуу жок (аккаунтту админ гана түзөт)
+export function LoginForm({ onDone, subtitle, masterOnly }: { onDone: () => void; subtitle?: string; masterOnly?: boolean }) {
   const { t } = useT();
   const { signIn, signUp } = useAccount();
   const [mode, setMode] = useState<'in' | 'up'>('in');
   // Негизги жол — почта (Gmail) коду; телефон + сырсөз да калды
-  const [method, setMethod] = useState<'email' | 'phone'>(SHOP.authMethods[0] ?? 'phone');
+  const [method, setMethod] = useState<'email' | 'phone'>(masterOnly ? 'phone' : (SHOP.authMethods[0] ?? 'phone'));
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -49,8 +50,8 @@ export function LoginForm({ onDone, subtitle }: { onDone: () => void; subtitle?:
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.title}>{method === 'email' ? t('acc.signInUp') : mode === 'in' ? t('acc.signIn') : t('acc.signUp')}</Text>
-          {SHOP.authMethods.length > 1 && (
+          <Text style={styles.title}>{masterOnly ? t('mp.login') : method === 'email' ? t('acc.signInUp') : mode === 'in' ? t('acc.signIn') : t('acc.signUp')}</Text>
+          {SHOP.authMethods.length > 1 && !masterOnly && (
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <Chip label={`✉️ ${t('acc.byEmail')}`} active={method === 'email'} onPress={() => setMethod('email')} />
               <Chip label={`📱 ${t('acc.byPhone')}`} active={method === 'phone'} onPress={() => setMethod('phone')} />
@@ -118,6 +119,8 @@ export function LoginForm({ onDone, subtitle }: { onDone: () => void; subtitle?:
             <Button title={mode === 'in' ? t('acc.signIn') : t('acc.signUp')} icon={mode === 'in' ? 'login' : 'account-plus'} disabled={!valid} onPress={submit} style={styles.pill} />
           )}
 
+          {!masterOnly && (
+            <>
           <View style={styles.or}>
             <View style={styles.line} />
             <MaterialCommunityIcons name="bicycle-electric" size={18} color={colors.muted} />
@@ -133,6 +136,8 @@ export function LoginForm({ onDone, subtitle }: { onDone: () => void; subtitle?:
             }}
             style={styles.pill}
           />
+            </>
+          )}
           {mode === 'in' && (
             <Pressable onPress={() => openWhatsApp(t('acc.forgot')).catch(() => {})} hitSlop={6}>
               <Text style={styles.forgot}>{t('acc.forgot')}</Text>

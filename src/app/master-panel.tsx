@@ -1,13 +1,16 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { RequireAccount } from '../components/account/RequireAccount';
+import { ActivityIndicator, Image, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { LoginForm } from '../components/account/LoginForm';
 import { SectionTitle } from '../components/ui';
 import { colors, radius } from '../config/theme';
 import { useAccount } from '../context/AccountContext';
 import { TKey, useT } from '../i18n';
-import { fetchRepairs, myMasterId, Repair, RepairStatus, updateRepair } from '../lib/repairs';
+import { useContent } from '../context/ContentContext';
+import { fetchMasterRepairs, fetchRepairs, myMasterId, Repair, RepairStatus, updateRepair } from '../lib/repairs';
+
+const LOGO = require('../../assets/brand/logo.png');
 
 const COLOR: Record<RepairStatus, string> = { new: '#2563EB', accepted: '#0D9488', in_progress: '#D97706', done: colors.success, cancelled: colors.danger };
 const NEXT: Record<RepairStatus, RepairStatus[]> = {
@@ -87,18 +90,35 @@ function RepairCard({ r, mine, onChange, onTake }: { r: Repair; mine: boolean; o
   );
 }
 
+function Stat({ n, label, color }: { n: number; label: string; color: string }) {
+  return (
+    <View style={[styles.stat, { borderColor: color }]}>
+      <Text style={[styles.statN, { color }]}>{n}</Text>
+      <Text style={styles.statL}>{label}</Text>
+    </View>
+  );
+}
+
+const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+
 function Panel() {
   const { t } = useT();
-  const { profile } = useAccount();
+  const { profile, signOut } = useAccount();
+  const { masters } = useContent();
   const [masterId, setMasterId] = useState<string | null | undefined>(undefined);
   const [list, setList] = useState<Repair[]>([]);
+  const [own, setOwn] = useState<Repair[]>([]);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     const id = await myMasterId(profile?.id);
     setMasterId(id);
-    if (id) setList(await fetchRepairs().catch(() => []));
+    if (id) {
+      const [l, o] = await Promise.all([fetchRepairs().catch(() => []), fetchMasterRepairs(id).catch(() => [])]);
+      setList(l);
+      setOwn(o);
+    }
     setLoading(false);
   }, [profile]);
   useFocusEffect(
@@ -107,22 +127,77 @@ function Panel() {
     }, [load]),
   );
 
+  if (masterId === undefined) {
+    return <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />;
+  }
   if (masterId === null) {
     return (
-      <View style={{ padding: 24, alignItems: 'center', gap: 10 }}>
+      <View style={{ padding: 24, alignItems: 'center', gap: 14 }}>
+        <Image source={LOGO} style={styles.logo} resizeMode="contain" accessibilityLabel="Jorgo" />
         <MaterialCommunityIcons name="account-hard-hat" size={44} color={colors.muted} />
-        <Text style={{ color: colors.muted, textAlign: 'center' }}>{t('mp.notMaster')}</Text>
+        <Text style={{ color: colors.muted, textAlign: 'center', fontSize: 15, lineHeight: 21 }}>{t('mp.notMaster2')}</Text>
+        <Pressable onPress={() => signOut()} style={[styles.action, { borderColor: colors.primary, paddingHorizontal: 18 }]}>
+          <Text style={{ color: colors.primary, fontWeight: '800' }}>{t('mp.otherAccount')}</Text>
+        </Pressable>
       </View>
     );
   }
-  const mine = list.filter((r) => r.masterId === masterId);
+  const me = masters.find((m) => m.id === masterId);
+  const replace = (n: Repair) => {
+    setList((l) => l.map((x) => (x.id === n.id ? n : x)));
+    setOwn((l) => (l.some((x) => x.id === n.id) ? l.map((x) => (x.id === n.id ? n : x)) : [n, ...l]));
+  };
+  // Менин заказдарым — эки булактан бириктирилет
+  const byId = new Map<string, Repair>();
+  [...own, ...list.filter((r) => r.masterId === masterId)].forEach((r) => byId.set(r.id, r));
+  const mine = [...byId.values()].sort((x, y) => y.createdAt.localeCompare(x.createdAt));
   const free = list.filter((r) => !r.masterId);
   const active = mine.filter((r) => r.status !== 'done' && r.status !== 'cancelled');
   const closed = mine.filter((r) => r.status === 'done' || r.status === 'cancelled');
-  const replace = (n: Repair) => setList((l) => l.map((x) => (x.id === n.id ? n : x)));
+  const done = mine.filter((r) => r.status === 'done');
+  const now = new Date();
+  const doneAt = (r: Repair) => new Date(r.updatedAt ?? r.createdAt);
+  const today = done.filter((r) => sameDay(doneAt(r), now)).length;
+  const month = done.filter((r) => {
+    const d = doneAt(r);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+  const rating = me?.rating ?? 0;
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}>
+      <View style={{ alignItems: 'center' }}>
+        <Image source={LOGO} style={styles.logo} resizeMode="contain" accessibilityLabel="Jorgo" />
+      </View>
+
+      <SectionTitle>{t('mp.myAccount')}</SectionTitle>
+      <View style={styles.profile}>
+        <View style={styles.photo}>
+          {me?.photoUrl ? <Image source={{ uri: me.photoUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : <MaterialCommunityIcons name="account-hard-hat" size={40} color={colors.primary} />}
+        </View>
+        <View style={{ flex: 1, gap: 3 }}>
+          <Text style={styles.meName}>{me?.name ?? profile?.fullName ?? ''}</Text>
+          {!!me?.specialty && <Text style={{ color: colors.primary, fontWeight: '600' }}>{me.specialty}</Text>}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+            {[1, 2, 3, 4, 5].map((k) => (
+              <MaterialCommunityIcons key={k} name={rating >= k ? 'star' : rating >= k - 0.5 ? 'star-half-full' : 'star-outline'} size={18} color="#F59E0B" />
+            ))}
+            <Text style={{ marginLeft: 4, fontWeight: '800', color: colors.text }}>{rating.toFixed(1)}</Text>
+          </View>
+          <Text style={styles.muted}>{[me?.branch && `📍 ${me.branch}`, me?.hoursFrom && me?.hoursTo && `🕘 ${me.hoursFrom}–${me.hoursTo}`, profile?.phone && `📞 ${profile.phone}`].filter(Boolean).join(' · ')}</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 }}>
+            <Text style={styles.pill}>{me?.active === false ? t('mp.st.hidden') : t('mp.st.active')}</Text>
+            <Text style={styles.pill}>{me?.outcall ? t('mp.outcallOn') : t('mp.outcallOff')}</Text>
+          </View>
+        </View>
+      </View>
+      <View style={styles.stats}>
+        <Stat n={today} label={t('mp.stat.today')} color={colors.success} />
+        <Stat n={month} label={t('mp.stat.month')} color={colors.primary} />
+        <Stat n={done.length} label={t('mp.stat.total')} color={colors.text} />
+        <Stat n={active.length} label={t('mp.stat.active')} color="#D97706" />
+      </View>
+
       {free.length > 0 && <SectionTitle>{`${t('mp.free')} (${free.length})`}</SectionTitle>}
       {free.map((r) => (
         <RepairCard
@@ -146,16 +221,26 @@ function Panel() {
   );
 }
 
-// Мастердин панели: ага түшкөн оңдоо заказдары жана точкасындагы бош заказдар
+// Мастердин панели: логотип, мастердин аккаунту, статистика, заказдар.
+// Кирбесе — мастерлер үчүн кирүү (катталуу жок: аккаунтту админ гана түзөт).
 export default function MasterPanel() {
-  return (
-    <RequireAccount next="/master-panel">
-      <Panel />
-    </RequireAccount>
-  );
+  const { t } = useT();
+  const { ready, profile } = useAccount();
+  if (!ready) return <ActivityIndicator color={colors.primary} style={{ marginTop: 40 }} />;
+  if (!profile) return <LoginForm masterOnly subtitle={t('mp.loginSub')} onDone={() => {}} />;
+  return <Panel />;
 }
 
 const styles = StyleSheet.create({
+  logo: { width: 200, height: 110 },
+  profile: { flexDirection: 'row', gap: 14, backgroundColor: colors.card, borderRadius: radius.lg, padding: 14, borderWidth: 1, borderColor: colors.border },
+  photo: { width: 84, height: 84, borderRadius: 42, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  meName: { fontSize: 19, fontWeight: '900', color: colors.text },
+  pill: { fontSize: 12, fontWeight: '700', color: colors.text, backgroundColor: colors.bg, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, overflow: 'hidden', borderWidth: 1, borderColor: colors.border },
+  stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  stat: { flexGrow: 1, flexBasis: '45%', backgroundColor: colors.card, borderRadius: radius.md, borderWidth: 1.5, padding: 12, alignItems: 'center' },
+  statN: { fontSize: 26, fontWeight: '900' },
+  statL: { fontSize: 12, color: colors.muted, textAlign: 'center' },
   card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: 14, gap: 8, borderWidth: 1, borderColor: colors.border, borderLeftWidth: 5 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   num: { fontSize: 16, fontWeight: '900', color: colors.text },
