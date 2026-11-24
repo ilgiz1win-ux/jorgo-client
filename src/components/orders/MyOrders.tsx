@@ -104,6 +104,11 @@ function RepairOrder({ r, onChange }: { r: Repair; onChange: () => void }) {
           {cancelled && !r.arrivedAt ? ` · ${t('my.refunded')}` : ''}
         </Text>
       )}
+      {r.status === 'done' && (
+        <Pressable onPress={() => router.push({ pathname: '/review', params: { about: 'repair', ref: `№${r.number}${m ? ` · ${m.name}` : ''}` } })} style={[styles.btn, { borderColor: '#F59E0B', alignSelf: 'flex-start' }]}>
+          <Text style={{ color: '#B45309', fontWeight: '800' }}>{t('rv.cta')}</Text>
+        </Pressable>
+      )}
       {canCancel &&
         (confirm ? (
           <View style={{ gap: 8 }}>

@@ -145,12 +145,11 @@ export default function Home() {
           </>
         )}
 
-        {reviews.length > 0 && (
-          <>
-            <SectionTitle>{t('home.reviews')}</SectionTitle>
-            <ReviewsCarousel reviews={reviews} />
-          </>
-        )}
+        <SectionTitle>{t('home.reviews')}</SectionTitle>
+        {reviews.length > 0 && <ReviewsCarousel reviews={reviews} />}
+        <Pressable style={styles.reviewBtn} onPress={() => router.push('/review')} accessibilityRole="button">
+          <Text style={{ color: colors.primary, fontWeight: '800', fontSize: 15 }}>{t('rv.cta')}</Text>
+        </Pressable>
       </View>
     </ScrollView>
   );
@@ -164,6 +163,7 @@ const styles = StyleSheet.create({
   logo: { width: 120, height: 64 },
   slogan: { fontSize: 12, fontWeight: '700', color: colors.primary, textAlign: 'center', marginTop: 2 },
   iconBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
+  reviewBtn: { alignSelf: 'stretch', alignItems: 'center', borderWidth: 1.5, borderColor: colors.primary, borderStyle: 'dashed', borderRadius: 14, paddingVertical: 12 },
   bellBadge: { position: 'absolute', top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   bellBadgeText: { color: '#fff', fontSize: 10, fontWeight: '900' },
   body: { padding: 16, gap: 14 },

@@ -14,7 +14,7 @@ import { useUnread } from '../../lib/useUnread';
 import { fetchThreads } from '../../lib/chat';
 import { fetchRepairs } from '../../lib/repairs';
 
-type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/masters' | '/admin/broadcast' | '/admin/branches' | '/admin/orders' | '/admin/customers' | '/admin/repairs' | '/admin/applications' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery' | '/admin/chats' | '/admin/assistant' | '/admin/wallets'; title: string; text: string; icon: IconName; color: string };
+type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/masters' | '/admin/broadcast' | '/admin/branches' | '/admin/orders' | '/admin/customers' | '/admin/repairs' | '/admin/applications' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery' | '/admin/chats' | '/admin/assistant' | '/admin/wallets' | '/admin/finance'; title: string; text: string; icon: IconName; color: string };
 
 // Ижара панели — дүкөндөн өзүнчө
 const RENT_SECTIONS: Tile[] = [
@@ -27,6 +27,7 @@ const RENT_SECTIONS: Tile[] = [
 const SECTIONS: Tile[] = [
   { href: '/admin/chats', title: 'Чат', text: 'Кардарлар жана мастерлер жазат — жооп бериңиз', icon: 'chat-processing', color: '#7C3AED' },
   // ИИ жардамчы кийин кошулат (код даяр: /admin/assistant, supabase/functions/admin-assistant)
+  { href: '/admin/finance', title: 'Каржы жана абал', text: 'Акча кайдан түштү, соода, ижарадагы велосипеддер', icon: 'finance', color: '#0F172A' },
   { href: '/admin/wallets', title: 'Баланс жана выезд акысы', text: 'Толуктоолорду ырастоо, баланстар, выезд баасы', icon: 'wallet', color: '#15803D' },
   { href: '/admin/orders', title: 'Заказдар', text: 'Алып кетти / отказ, экспресс жол акысы', icon: 'truck-fast', color: '#D97706' },
   { href: '/admin/customers', title: 'Кардарлар', text: 'Катталгандар жана кара тизме', icon: 'account-group', color: '#334155' },
@@ -39,7 +40,7 @@ const SECTIONS: Tile[] = [
   { href: '/admin/repairs', title: 'Оңдоо жана выезд заказдары', text: 'Кайсы мастерге түштү, абалы', icon: 'wrench-clock', color: '#9A3412' },
   { href: '/admin/applications', title: 'Мастер болом дегендер', text: 'Жумушка өтүнмөлөр', icon: 'account-plus', color: '#4D7C0F' },
   { href: '/admin/masters', title: 'Мастерлер', text: 'Сүрөттөрү, адистиги, филиалы', icon: 'account-hard-hat', color: '#B45309' },
-  { href: '/admin/reviews', title: 'Пикирлер', text: 'Кардарлардын сөздөрү', icon: 'star', color: '#CA8A04' },
+  { href: '/admin/reviews', title: 'Пикирлер', text: 'Кардарлар жазган пикирлерди ырастоо', icon: 'star', color: '#CA8A04' },
   { href: '/admin/gallery', title: 'Галерея', text: 'Чейин / кийин сүрөттөр', icon: 'image-multiple', color: '#0284C7' },
 ];
 

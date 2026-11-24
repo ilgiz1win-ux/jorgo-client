@@ -45,6 +45,7 @@ export default function AccountMenu() {
             onPress={() => router.push('/account/documents')}
           />
           <MenuRow icon="wallet" label={t('w.menu', { v: balance === null ? '…' : fmtSom(balance) })} sub={t('w.menuSub')} onPress={() => router.push('/wallet')} />
+          <MenuRow icon="star-outline" label={t('rv.title')} onPress={() => router.push('/review')} />
           <MenuRow icon="bicycle-electric" label={t('acc.myRents')} onPress={() => router.push('/account/rentals')} />
         </MenuGroup>
       )}

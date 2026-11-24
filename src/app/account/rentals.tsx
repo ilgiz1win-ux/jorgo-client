@@ -79,6 +79,9 @@ function List() {
           {!!r.contractNo && (
             <Button title={`${t('ct.view')} №${r.contractNo}`} variant="outline" onPress={() => router.push({ pathname: '/rental/contract/[id]', params: { id: r.id } })} style={{ borderRadius: 999 }} />
           )}
+          {r.status === 'returned' && (
+            <Button title={t('rv.cta')} variant="outline" onPress={() => router.push({ pathname: '/review', params: { about: 'rental', ref: r.bikeName } })} style={{ borderRadius: 999 }} />
+          )}
           {r.billing && r.status === 'returned' && (
             <Text style={styles.muted}>
               ✅ {t('rd.result', { n: r.chargedDays ?? 0, d: r.damageCharged ? t('rd.damage', { v: formatPrice(r.damageCharged) }) : '' })}

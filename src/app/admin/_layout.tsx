@@ -36,6 +36,7 @@ function Gate() {
       <Stack.Screen name="assistant" options={{ title: 'ИИ жардамчы' }} />
       <Stack.Screen name="wallets" options={{ title: 'Кардарлардын балансы' }} />
       <Stack.Screen name="contract/[id]" options={{ title: 'Ижара келишими' }} />
+      <Stack.Screen name="finance" options={{ title: 'Каржы жана абал' }} />
       <Stack.Screen name="branches" options={{ title: 'Точкалар' }} />
       <Stack.Screen name="orders" options={{ title: 'Заказдар' }} />
       <Stack.Screen name="customers" options={{ title: 'Кардарлар' }} />
