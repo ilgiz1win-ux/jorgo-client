@@ -240,8 +240,11 @@ export const rentalsApi = listTable<RentalBike, RentalRow>({
 // Демо режимде (сервер жок) бош болсо мисалды көрсөтөбүз
 export async function fetchRentals(): Promise<RentalBike[]> {
   const list = await rentalsApi.fetch();
-  if (!supabase && list.length === 0 && (await readJson<RentalBike[]>('jorgo.local.rentals')) === null) return DEMO_RENTALS;
-  return list;
+  if (supabase) return list;
+  // Демо: ижарада жүргөн велосипед «Ижарада» деп көрүнөт (серверде муну 032 триггери кылат)
+  const base = list.length === 0 && (await readJson<RentalBike[]>('jorgo.local.rentals')) === null ? DEMO_RENTALS : list;
+  const busy = new Set(((await readJson<{ bikeId: string; status: string }[]>('jorgo.local.rentRequests')) ?? []).filter((r) => r.status === 'active').map((r) => r.bikeId));
+  return busy.size ? base.map((b) => (busy.has(b.id) ? { ...b, available: false } : b)) : base;
 }
 
 // Ижаранын шарттары: settings таблицасында key = 'rent'
