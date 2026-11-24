@@ -549,4 +549,9 @@ export const en: Record<TKey, string> = {
   'rm.noOutcall': "No mechanics are doing outcalls right now. You can bring the bike in.",
   'rm.branchOutcall': "Nearest shop (the mechanic comes from there)",
   'rm.bookOutcall': "Book an outcall",
+  'rm.submitOutcall': "Book outcall",
+  'rm.submitShop': "Book",
+  'rm.sentOutcall': "Order received! Mechanics have been notified — you'll see who took it and when they'll come in the Cart.",
+  'rm.sentShop': "Order received! Once a mechanic confirms, you'll see it in the Cart.",
+  'rm.alsoWa': "You can also message us on WhatsApp if you like",
 };

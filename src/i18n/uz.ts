@@ -549,4 +549,9 @@ export const uz: Record<TKey, string> = {
   'rm.noOutcall': "Hozir chiqadigan usta yo'q. Velosipedni shoxobchaga olib kelishingiz mumkin.",
   'rm.branchOutcall': "Sizga yaqin shoxobcha (usta o'sha yerdan keladi)",
   'rm.bookOutcall': "Ustani chaqirish",
+  'rm.submitOutcall': "Chiqishga buyurtma berish",
+  'rm.submitShop': "Buyurtma berish",
+  'rm.sentOutcall': "Buyurtma qabul qilindi! Ustalarga xabar ketdi — kim olgani va qachon kelishini «Savat»da ko'rasiz.",
+  'rm.sentShop': "Buyurtma qabul qilindi! Usta tasdiqlagach «Savat»da ko'rasiz.",
+  'rm.alsoWa': "Xohlasangiz, WhatsApp'ga ham yozishingiz mumkin",
 };

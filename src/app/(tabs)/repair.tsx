@@ -66,6 +66,7 @@ export default function Repair() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [lastMsg, setLastMsg] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [visitAt, setVisitAt] = useState<string | undefined>();
@@ -180,8 +181,9 @@ export default function Repair() {
       return;
     }
     if (wantsOutcall) myBalance().then(setBalance).catch(() => {});
-    // Өтүнмө тандалган точканын өз номерине да кетет
-    openWhatsApp(msg, branch?.whatsapp).catch(() => {});
+    // Заказ базага жазылды: мастердин панелине түшөт, мастерге жана админге билдирме кетет.
+    // WhatsApp'ка өзү өтпөйт — кааласа, кардар кийин өзү жаза алат.
+    setLastMsg(msg);
     track('repair', undefined, branch?.name);
     setSent(true);
   };
@@ -272,8 +274,11 @@ export default function Repair() {
             <PopIn>
               <MaterialCommunityIcons name="check-circle" size={48} color={colors.success} />
             </PopIn>
-            <Text style={{ fontSize: 16, fontWeight: '700', textAlign: 'center' }}>{t('repair.sent')}</Text>
+            <Text style={{ fontSize: 16, fontWeight: '700', textAlign: 'center' }}>{!profile ? t('repair.sent') : outcall ? t('rm.sentOutcall') : t('rm.sentShop')}</Text>
             {!!profile && <Button title={t('my.see')} icon="cart-check" onPress={() => router.push('/cart')} />}
+            <Pressable onPress={() => openWhatsApp(lastMsg, branch?.whatsapp).catch(() => {})} accessibilityRole="link">
+              <Text style={{ color: colors.muted, fontSize: 13, textDecorationLine: 'underline' }}>{t('rm.alsoWa')}</Text>
+            </Pressable>
             <Button
               title={t('repair.new')}
               variant="outline"
@@ -353,7 +358,7 @@ export default function Repair() {
               )}
             </View>
             {error && <Text style={{ color: colors.danger, textAlign: 'center', fontWeight: '600' }}>{error}</Text>}
-            <Button title={t('repair.send')} icon="whatsapp" variant="whatsapp" disabled={!valid || sending} onPress={submit} />
+            <Button title={outcall ? t('rm.submitOutcall') : t('rm.submitShop')} icon="check-circle" disabled={!valid || sending} onPress={submit} />
             <Button title={t('repair.call')} icon="phone" variant="outline" onPress={callShop} />
           </Card>
         )}
