@@ -1,6 +1,4 @@
--- 1) Админдин «Каржы жана абал» панели: акча кайдан түштү, сатуулар, ижарадагы велосипеддер.
--- 2) Кардарлардын пикирлери: кардар жазат, админ ырастаса башкы беттеги пикирлерге чыгат.
--- 029 иштетилгенден кийин иштетиңиз. Кайра иштетсе зыяны жок.
+-- 030 SQL'дин 1-бөлүгү (үчөөнү тең ушул тартипте иштетиңиз: 030a, 030b, 030c). Кайра иштетсе зыяны жок.
 
 create or replace function public.admin_finance(p_days integer default 30)
 returns jsonb
@@ -74,63 +72,3 @@ end $$;
 revoke all on function public.admin_finance(integer) from public, anon;
 grant execute on function public.admin_finance(integer) to authenticated;
 
--- 2) Кардарлардын пикирлери
-create table if not exists public.review_submissions (
-  id         uuid primary key default gen_random_uuid(),
-  created_at timestamptz not null default now(),
-  user_id    uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  name       text not null check (char_length(name) between 1 and 80),
-  rating     integer not null check (rating between 1 and 5),
-  text       text not null check (char_length(trim(text)) between 3 and 1000),
-  about      text not null default 'shop' check (about in ('shop', 'repair', 'rental', 'product', 'master')),
-  ref_title  text not null default '' check (char_length(ref_title) <= 120),
-  status     text not null default 'new' check (status in ('new', 'approved', 'rejected')),
-  review_id  text
-);
-create index if not exists review_submissions_created_idx on public.review_submissions (created_at desc);
-alter table public.review_submissions enable row level security;
-drop policy if exists "review subs read"   on public.review_submissions;
-drop policy if exists "review subs insert" on public.review_submissions;
-drop policy if exists "review subs admin"  on public.review_submissions;
-create policy "review subs read"   on public.review_submissions for select to authenticated using (user_id = auth.uid() or public.is_admin());
-create policy "review subs insert" on public.review_submissions for insert to authenticated with check (user_id = auth.uid() and status = 'new' and review_id is null);
-create policy "review subs admin"  on public.review_submissions for update to authenticated using (public.is_admin()) with check (public.is_admin());
-
-create or replace function public.review_submissions_notify()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  perform public.notify_admins('⭐ Жаңы пикир: ' || repeat('★', new.rating), new.name || ' · ' || left(new.text, 200), '/admin/reviews');
-  return new;
-end $$;
-drop trigger if exists review_submissions_notify on public.review_submissions;
-create trigger review_submissions_notify after insert on public.review_submissions for each row execute function public.review_submissions_notify();
-
--- Админ: ырастоо (башкы беттеги пикирлерге кошулат) же четке кагуу
-create or replace function public.admin_review_decide(p_id uuid, p_approve boolean)
-returns void
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare r public.review_submissions; rid text;
-begin
-  if not public.is_admin() then raise exception 'admin only'; end if;
-  select * into r from public.review_submissions where id = p_id for update;
-  if r.id is null or r.status <> 'new' then return; end if;
-  if p_approve then
-    rid := 'rv-' || replace(r.id::text, '-', '');
-    insert into public.reviews (id, name, text, rating, sort)
-    values (rid, r.name, r.text, r.rating, coalesce((select min(sort) from public.reviews), 0) - 1)
-    on conflict (id) do nothing;
-    update public.review_submissions set status = 'approved', review_id = rid where id = p_id;
-    perform public.notify_user(r.user_id, 'Пикириңиз жарыяланды ⭐', 'Рахмат! Пикириңиз башкы бетте көрүнөт.', 'info');
-  else
-    update public.review_submissions set status = 'rejected' where id = p_id;
-  end if;
-end $$;
-revoke all on function public.admin_review_decide(uuid, boolean) from public, anon;
-grant execute on function public.admin_review_decide(uuid, boolean) to authenticated;

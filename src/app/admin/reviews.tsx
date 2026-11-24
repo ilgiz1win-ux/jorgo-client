@@ -20,7 +20,7 @@ function Pending() {
   const load = () =>
     fetchSubmissions()
       .then(setList)
-      .catch((e) => setErr(e instanceof Error && e.message.includes('review_submissions') ? 'SQL иштетиле элек (030).' : null));
+      .catch((e) => setErr(e instanceof Error && e.message.includes('review_submissions') ? 'SQL иштетиле элек (030a–030c).' : null));
   useEffect(() => {
     load();
   }, []);

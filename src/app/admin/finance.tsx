@@ -49,7 +49,7 @@ export default function AdminFinance() {
       setF(await fetchFinance(days));
     } catch (e) {
       const m = e instanceof Error ? e.message : String(e);
-      setError(m.includes('admin_finance') ? 'SQL иштетиле элек (030).' : m);
+      setError(m.includes('admin_finance') ? 'SQL иштетиле элек (030a–030c).' : m);
     }
     setLoading(false);
   }, [days]);
