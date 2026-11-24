@@ -618,4 +618,6 @@ export const uz: Record<TKey, string> = {
   'mr.charged': "yechildi: {v}",
   'mr.minLeft': "Kamida 1 haftaga yana {n} kun qoldi",
   'mr.contract': "Shartnoma",
+  'mr.soon': "Balans faqat {n} kunga yetadi — oldindan to'ldiring",
+  'mr.overdue': "Ijara muddati o'tdi: qarzingiz {v}. Bugun to'ldiring yoki velosipedni qaytaring",
 };

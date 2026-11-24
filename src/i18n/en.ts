@@ -618,4 +618,6 @@ export const en: Record<TKey, string> = {
   'mr.charged': "charged: {v}",
   'mr.minLeft': "{n} days left to the 1-week minimum",
   'mr.contract': "Contract",
+  'mr.soon': "Balance covers only {n} days — top up in advance",
+  'mr.overdue': "Rental overdue: you owe {v}. Top up today or return the bike",
 };
