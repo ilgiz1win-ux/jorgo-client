@@ -32,7 +32,7 @@ export function LoginForm({ onDone, subtitle, masterOnly }: { onDone: () => void
   const submit = async () => {
     setBusy(true);
     setError(null);
-    const e = mode === 'in' ? await signIn(phone, password) : await signUp(phone, password, name);
+    const e = mode === 'in' ? await signIn(phone, password, masterOnly) : await signUp(phone, password, name);
     setBusy(false);
     if (e) {
       setError(t(`acc.err.${e}` as TKey));

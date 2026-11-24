@@ -155,7 +155,7 @@ export default function AdminApplications() {
                 <View style={styles.result}>
                   <Text style={{ fontWeight: '800', color: colors.text }}>Ишке алынды ✅ Аккаунт даяр (мастерге азырынча бербеңиз)</Text>
                   <Text selectable style={styles.text}>Логин: {d.login}</Text>
-                  <Text selectable style={styles.text}>{d.password ? `Сырсөз: ${d.password}` : 'Бул номер мурунтан катталган — мастер өзүнүн сырсөзү менен кирет.'}</Text>
+                  <Text selectable style={styles.text}>{d.password ? `Сырсөз: ${d.password}` : 'Бул номерге мастер аккаунту мурда түзүлгөн — сырсөзү мурдагыдай.'}</Text>
                   <Text style={styles.muted}>Сынак {d.until} чейин. Анан «Мастердин аккаунту» бөлүмүнөн панелди ачасыз.</Text>
                 </View>
               )}

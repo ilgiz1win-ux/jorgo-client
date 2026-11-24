@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
 type Account = {
   ready: boolean;
   profile: Profile | null;
-  signIn: (phone: string, password: string) => Promise<AuthError | null>;
+  signIn: (phone: string, password: string, master?: boolean) => Promise<AuthError | null>;
   signUp: (phone: string, password: string, name: string) => Promise<AuthError | null>;
   sendEmailCode: (email: string) => Promise<AuthError | null>;
   verifyEmailCode: (email: string, code: string) => Promise<AuthError | null>;
@@ -57,8 +57,8 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     () => ({
       ready,
       profile,
-      signIn: async (phone, password) => {
-        const e = await api.signIn(phone, password);
+      signIn: async (phone, password, master) => {
+        const e = await api.signIn(phone, password, master);
         if (!e) await load();
         return e;
       },

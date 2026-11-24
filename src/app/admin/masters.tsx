@@ -74,7 +74,7 @@ export default function AdminMasters() {
       if (!r.ok) throw new Error('Аккаунт табылган жок.');
       setLinkLogin('');
       setLinkPass(genPassword());
-      setLinkMsg({ ok: true, text: r.existed ? 'Бул номер мурунтан катталган экен — ошол аккаунт байланды. Мастер өзүнүн сырсөзү менен кирет.' : 'Аккаунт түзүлдү. Логин менен сырсөздү мастерге бериңиз.' });
+      setLinkMsg({ ok: true, text: r.existed ? 'Бул номерге мастер аккаунту мурда түзүлгөн экен — ошол аккаунт байланды, сырсөзү мурдагыдай.' : 'Аккаунт түзүлдү. Логин менен сырсөздү мастерге бериңиз.' });
       reloadLinks();
     } catch (e) {
       const msg = e instanceof Error ? e.message : '';
@@ -201,7 +201,7 @@ export default function AdminMasters() {
                 <View style={{ gap: 2 }}>
                   <Text selectable style={{ color: colors.text }}>Логин: <Text style={{ fontWeight: '800' }}>{hires[draft.id].login}</Text></Text>
                   <Text selectable style={{ color: colors.text }}>
-                    {hires[draft.id].password ? <>Сырсөз: <Text style={{ fontWeight: '800' }}>{hires[draft.id].password}</Text></> : 'Сырсөз: мастер өзүнүкү менен кирет'}
+                    {hires[draft.id].password ? <>Сырсөз: <Text style={{ fontWeight: '800' }}>{hires[draft.id].password}</Text></> : 'Сырсөз: мурда түзүлгөн (бул жерде сакталган эмес)'}
                   </Text>
                   {!hires[draft.id].panelOpen && <Text style={{ color: '#B45309', fontWeight: '700', fontSize: 12 }}>🧪 Сынак айы — панел жабык («Аккаунту» барагынан ачасыз)</Text>}
                 </View>
@@ -210,7 +210,7 @@ export default function AdminMasters() {
             </>
           ) : (
             <>
-              <Text style={{ color: colors.muted, fontSize: 12 }}>Мастердин аккаунтун админ гана түзөт. Телефонун жазыңыз — сырсөз өзү түзүлөт. Логин-сырсөздү мастерге өзүңүз бересиз.</Text>
+              <Text style={{ color: colors.muted, fontSize: 12 }}>Мастердин аккаунтун админ гана түзөт. Ал кардардын аккаунтунан өзүнчө: мастер ушул эле номер менен кардар катары да катталып жүрсө, ага тийбейт. Телефонун жазыңыз — сырсөз өзү түзүлөт, логин-сырсөздү мастерге өзүңүз бересиз.</Text>
               <Field label="Мастердин телефону (логин)" value={linkLogin} onChangeText={setLinkLogin} placeholder="0700 123 456" keyboardType="phone-pad" />
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 8 }}>
                 <View style={{ flex: 1 }}>
