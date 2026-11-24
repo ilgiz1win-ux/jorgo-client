@@ -1,5 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
 import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { DEFAULT_LESSOR, getLessor, Lessor } from '../../lib/lessor';
 import { colors } from '../../config/theme';
 import { RENT_MIN_DAYS } from '../../data/rentals';
 import type { Profile } from '../../lib/account';
@@ -23,6 +25,11 @@ function Line({ label, value }: { label: string; value?: string | number | null 
 // Электрондук «Договор аренды велосипеда» — кагаз келишимдей. Кардар да, админ да көрөт жана басып чыгарат.
 export function RentContract({ r, p, printLabel }: { r: RentRequest; p?: Profile | null; printLabel: string }) {
   const daily = r.dailyPrice ?? 0;
+  const [l, setL] = useState<Lessor>(DEFAULT_LESSOR);
+  useEffect(() => {
+    getLessor().then(setL).catch(() => {});
+  }, []);
+  const lessorLine = [l.name, l.inn && `ИНН ${l.inn}`, l.address, l.phone && `тел. ${l.phone}`].filter(Boolean).join(', ');
   const sections: [string, string[]][] = [
     [
       '2. Срок и оплата',
@@ -50,7 +57,31 @@ export function RentContract({ r, p, printLabel }: { r: RentRequest; p?: Profile
         '4.3. Залог не покрывает полную стоимость ущерба и идёт в счёт его оплаты.',
       ],
     ],
-    ['5. Прочее', ['5.1. Арендодатель не несёт ответственности за травмы Арендатора во время катания.', '5.2. Арендатор согласен на передачу паспортных данных и местоположения (GPS) для целей аренды.']],
+    ['5. Ответственность за травмы', ['5.1. Арендодатель не несёт ответственности за травмы Арендатора и вред, причинённый Арендатором третьим лицам во время катания.']],
+    [
+      '6. Расчёты и задолженность',
+      [
+        '6.1. Арендатор поручает Арендодателю ежедневно списывать арендную плату, а также суммы ущерба по разделу 4, с баланса Арендатора в приложении Jorgo. История списаний доступна Арендатору в приложении.',
+        '6.2. Если баланса недостаточно, образовавшаяся сумма является задолженностью Арендатора перед Арендодателем и подлежит оплате в течение 3 (трёх) календарных дней с момента уведомления.',
+        '6.3. Арендатор обязан вернуть велосипед в течение 1 (одних) суток после требования Арендодателя при задолженности по оплате.',
+      ],
+    ],
+    [
+      '7. Порядок разрешения споров',
+      [
+        '7.1. Споры по настоящему договору стороны решают путём переговоров. Претензия направляется письменно (в том числе через приложение Jorgo или мессенджер по указанным телефонам) и рассматривается в течение 10 (десяти) календарных дней.',
+        `7.2. При недостижении согласия спор рассматривается в суде по месту нахождения Арендодателя (${l.city}) в соответствии с законодательством Кыргызской Республики.`,
+        '7.3. Во всём, что не предусмотрено договором, стороны руководствуются Гражданским кодексом Кыргызской Республики и иным законодательством Кыргызской Республики.',
+      ],
+    ],
+    [
+      '8. Персональные данные и заключительные положения',
+      [
+        '8.1. В соответствии с Законом Кыргызской Республики «Об информации персонального характера» Арендатор даёт согласие Арендодателю на сбор, хранение и обработку своих персональных данных (ФИО, паспортные данные, адрес, телефоны, фото документов, местоположение GPS) в целях заключения и исполнения настоящего договора, а также их передачу в суд и правоохранительные органы при неисполнении договора.',
+        '8.2. Договор вступает в силу с момента выдачи велосипеда и действует до его возврата и полного расчёта сторон.',
+        '8.3. Договор составлен в двух экземплярах, имеющих одинаковую юридическую силу, по одному для каждой стороны. Электронная копия договора хранится в приложении Jorgo; принятие условий Арендатором в приложении фиксируется с датой и временем.',
+      ],
+    ],
   ];
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }}>
@@ -58,8 +89,14 @@ export function RentContract({ r, p, printLabel }: { r: RentRequest; p?: Profile
         <View style={{ alignItems: 'center', gap: 4 }}>
           <Image source={LOGO} style={{ width: 140, height: 76 }} resizeMode="contain" />
           <Text style={styles.title}>ДОГОВОР АРЕНДЫ ВЕЛОСИПЕДА № {r.contractNo ?? '—'}</Text>
-          <Text style={styles.muted}>г. Бишкек · Дата: {d(r.startedAt ?? r.createdAt)}</Text>
+          <Text style={styles.muted}>
+            {l.city} · Дата: {d(r.startedAt ?? r.createdAt)}
+          </Text>
         </View>
+
+        <Text style={styles.text}>
+          {lessorLine || 'Jorgo Eco Service'}, именуемый в дальнейшем «Арендодатель», с одной стороны, и {p?.fullName || r.name}, именуемый(ая) в дальнейшем «Арендатор», с другой стороны, заключили настоящий договор в соответствии с Гражданским кодексом Кыргызской Республики (договор имущественного найма) о нижеследующем.
+        </Text>
 
         <Text style={styles.h}>Арендатор</Text>
         <Line label="ФИО" value={p?.fullName || r.name} />
@@ -110,12 +147,16 @@ export function RentContract({ r, p, printLabel }: { r: RentRequest; p?: Profile
         )}
         <View style={styles.signs}>
           <View style={styles.sign}>
+            <Text style={styles.text}>Арендодатель: {l.name}</Text>
+            {!!r.staffName && <Text style={styles.muted}>в лице: {r.staffName}</Text>}
             <View style={styles.signLine} />
-            <Text style={styles.muted}>Арендодатель</Text>
+            <Text style={styles.muted}>(подпись) · М.П.</Text>
           </View>
           <View style={styles.sign}>
+            <Text style={styles.text}>Арендатор: {p?.fullName || r.name}</Text>
+            <Text style={styles.muted}>паспорт {p?.passportNo || r.passport}</Text>
             <View style={styles.signLine} />
-            <Text style={styles.muted}>Арендатор</Text>
+            <Text style={styles.muted}>(подпись)</Text>
           </View>
         </View>
       </View>
