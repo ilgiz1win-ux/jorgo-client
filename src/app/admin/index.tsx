@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router, Stack, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { router, Stack } from 'expo-router';
+import { useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { ProductImage } from '../../components/ProductCard';
 import { Button, Card, Chip } from '../../components/ui';
@@ -10,64 +10,18 @@ import { useAdminAuth } from '../../context/AdminAuthContext';
 import { useCatalog } from '../../context/CatalogContext';
 import { CATEGORIES, CategoryId, IconName } from '../../data/products';
 import { formatPrice } from '../../lib/format';
-import { useUnread } from '../../lib/useUnread';
-import { fetchThreads } from '../../lib/chat';
-import { fetchRepairs } from '../../lib/repairs';
 import { AdminOverview } from '../../components/admin/AdminOverview';
 import { FinancePanel } from '../../components/admin/FinancePanel';
 import { StatsPanel } from '../../components/admin/StatsPanel';
-
-type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/masters' | '/admin/broadcast' | '/admin/branches' | '/admin/orders' | '/admin/customers' | '/admin/repairs' | '/admin/applications' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery' | '/admin/chats' | '/admin/assistant' | '/admin/wallets' | '/admin/finance'; title: string; text: string; icon: IconName; color: string };
-
-// Ижара панели — дүкөндөн өзүнчө
-const RENT_SECTIONS: Tile[] = [
-  { href: '/admin/rent-requests', title: 'Ижаралар жана төлөмдөр', text: 'Өтүнмөлөр, ким төлөдү, ким кечиктирди', icon: 'clipboard-account', color: '#2563EB' },
-  { href: '/admin/rentals', title: 'Велосипеддер', text: 'Баалар, GPS жана батарея номерлери', icon: 'bicycle-electric', color: '#0F766E' },
-  { href: '/admin/notifications', title: 'Билдирмелер', text: 'Жаңы өтүнмөлөр, төлөм күнү', icon: 'bell-ring', color: '#D97706' },
-  { href: '/admin/admins', title: 'Админдер', text: 'Админ кошуу жана алып салуу', icon: 'shield-account', color: '#475569' },
-];
-
-const SECTIONS: Tile[] = [
-  { href: '/admin/chats', title: 'Чат', text: 'Кардарлар жана мастерлер жазат — жооп бериңиз', icon: 'chat-processing', color: '#7C3AED' },
-  // ИИ жардамчы кийин кошулат (код даяр: /admin/assistant, supabase/functions/admin-assistant)
-  { href: '/admin/finance', title: 'Каржы жана абал', text: 'Акча кайдан түштү, соода, ижарадагы велосипеддер', icon: 'finance', color: '#0F172A' },
-  { href: '/admin/wallets', title: 'Баланс жана выезд акысы', text: 'Толуктоолорду ырастоо, баланстар, выезд баасы', icon: 'wallet', color: '#15803D' },
-  { href: '/admin/orders', title: 'Заказдар', text: 'Алып кетти / отказ, экспресс жол акысы', icon: 'truck-fast', color: '#D97706' },
-  { href: '/admin/customers', title: 'Кардарлар', text: 'Катталгандар жана кара тизме', icon: 'account-group', color: '#334155' },
-  { href: '/admin/broadcast', title: 'Билдирме жөнөтүү', text: 'Акция, арзандатуу — бардык кардарларга', icon: 'send', color: '#DB2777' },
-  { href: '/admin/stats', title: 'Статистика', text: 'Канча адам кирди, кайсы точкага канча заказ', icon: 'chart-bar', color: '#111827' },
-  { href: '/admin/branches', title: 'Точкалар', text: 'Точкалардын жана экспресстин номерлери', icon: 'store-marker', color: '#0D9488' },
-  { href: '/admin/home', title: 'Башкы бет', text: 'Чоң баннер жана сандар', icon: 'home-edit', color: '#2E7D32' },
-  { href: '/admin/promos', title: 'Акциялар', text: 'Баннерлер жана слайдер', icon: 'bullhorn', color: '#7C3AED' },
-  { href: '/admin/services', title: 'Оңдоо', text: 'Кызматтар жана баалар', icon: 'wrench', color: '#EA580C' },
-  { href: '/admin/repairs', title: 'Оңдоо жана выезд заказдары', text: 'Кайсы мастерге түштү, абалы', icon: 'wrench-clock', color: '#9A3412' },
-  { href: '/admin/applications', title: 'Мастер болом дегендер', text: 'Жумушка өтүнмөлөр', icon: 'account-plus', color: '#4D7C0F' },
-  { href: '/admin/masters', title: 'Мастерлер', text: 'Сүрөттөрү, адистиги, филиалы', icon: 'account-hard-hat', color: '#B45309' },
-  { href: '/admin/reviews', title: 'Пикирлер', text: 'Кардарлар жазган пикирлерди ырастоо', icon: 'star', color: '#CA8A04' },
-  { href: '/admin/gallery', title: 'Галерея', text: 'Чейин / кийин сүрөттөр', icon: 'image-multiple', color: '#0284C7' },
-];
+import { RENT_SECTIONS, SECTIONS } from '../../components/admin/sections';
+import { useAdminBadges } from '../../components/admin/useAdminBadges';
+import { useWide } from '../../components/admin/useWide';
 
 export default function AdminHome() {
   const { products, promos, loading, refresh, saveProduct, seedProducts } = useCatalog();
   const { logout, email } = useAdminAuth();
-  const unread = useUnread(isRemote);
-  const [chatUnread, setChatUnread] = useState(0);
-  const [newRepairs, setNewRepairs] = useState(0);
-  useFocusEffect(
-    useCallback(() => {
-      const tick = () => {
-        fetchThreads()
-          .then((l) => setChatUnread(l.reduce((n, x) => n + x.unread, 0)))
-          .catch(() => {});
-        fetchRepairs()
-          .then((l) => setNewRepairs(l.filter((r) => r.status === 'new').length))
-          .catch(() => {});
-      };
-      tick();
-      const id = setInterval(tick, 30000);
-      return () => clearInterval(id);
-    }, []),
-  );
+  const { unread, chatUnread, newRepairs } = useAdminBadges();
+  const wide = useWide();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<CategoryId | 'all'>('all');
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +60,7 @@ export default function AdminHome() {
         }}
       />
       <ScrollView
-        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 100 }}
+        contentContainerStyle={[{ padding: 16, gap: 12, paddingBottom: 100 }, wide && { padding: 24, width: '100%', maxWidth: 1500, alignSelf: 'center' }]}
         keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={loading} onRefresh={refresh} />}
       >
@@ -121,13 +75,18 @@ export default function AdminHome() {
 
         <AdminOverview />
 
-        <Text style={styles.group}>💼 КАРЖЫ ЖАНА АБАЛ</Text>
-        <FinancePanel embedded />
+        <View style={[{ gap: 12 }, wide && { flexDirection: 'row', alignItems: 'flex-start', gap: 16 }]}>
+          <View style={[{ gap: 12 }, wide && { flex: 1 }]}>
+            <Text style={styles.group}>💼 КАРЖЫ ЖАНА АБАЛ</Text>
+            <FinancePanel embedded />
+          </View>
+          <View style={[{ gap: 12 }, wide && { flex: 1 }]}>
+            <Text style={styles.group}>📈 САЙТКА КИРҮҮЛӨР</Text>
+            <StatsPanel embedded />
+          </View>
+        </View>
 
-        <Text style={styles.group}>📈 САЙТКА КИРҮҮЛӨР</Text>
-        <StatsPanel embedded />
-
-        <Text style={styles.group}>⚙️ БӨЛҮМДӨР</Text>
+        {!wide && <Text style={styles.group}>⚙️ БӨЛҮМДӨР</Text>}
 
         <View style={styles.stats}>
           <Stat icon="package-variant" label="Товар" value={stats.total} color={colors.primary} />
@@ -136,8 +95,8 @@ export default function AdminHome() {
           <Stat icon="bullhorn" label="Акция" value={stats.promos} color="#7C3AED" />
         </View>
 
-        <Text style={styles.group}>🚲 ИЖАРА</Text>
-        <View style={styles.tiles}>
+        {!wide && <Text style={styles.group}>🚲 ИЖАРА</Text>}
+        <View style={[styles.tiles, wide && { display: 'none' }]}>
           {RENT_SECTIONS.map((t) => (
             <Pressable key={t.href} style={[styles.tile, { backgroundColor: t.color }]} onPress={() => router.push(t.href)}>
               <MaterialCommunityIcons name={t.icon} size={26} color="#fff" />
@@ -154,8 +113,8 @@ export default function AdminHome() {
           ))}
         </View>
 
-        <Text style={styles.group}>🛒 ДҮКӨН</Text>
-        <View style={styles.tiles}>
+        {!wide && <Text style={styles.group}>🛒 ДҮКӨН</Text>}
+        <View style={[styles.tiles, wide && { display: 'none' }]}>
           {SECTIONS.map((t) => (
             <Pressable key={t.href} style={[styles.tile, { backgroundColor: t.color }]} onPress={() => router.push(t.href)}>
               <MaterialCommunityIcons name={t.icon} size={26} color="#fff" />
@@ -197,8 +156,10 @@ export default function AdminHome() {
           </Card>
         )}
 
+        {wide && <Text style={styles.group}>📦 ТОВАРЛАР ({list.length})</Text>}
+        <View style={wide ? { flexDirection: 'row', flexWrap: 'wrap', gap: 12 } : { gap: 12 }}>
         {list.map((p) => (
-          <Pressable key={p.id} onPress={() => router.push(`/admin/product/${p.id}`)}>
+          <Pressable key={p.id} onPress={() => router.push(`/admin/product/${p.id}`)} style={wide ? { width: '32.5%' } : undefined}>
             <Card style={styles.row}>
               <View style={{ width: 64 }}>
                 <ProductImage product={p} size={30} height={64} />
@@ -225,6 +186,7 @@ export default function AdminHome() {
             </Card>
           </Pressable>
         ))}
+        </View>
       </ScrollView>
 
       <Pressable style={styles.fab} onPress={() => router.push('/admin/product/new')} accessibilityLabel="Жаңы товар">

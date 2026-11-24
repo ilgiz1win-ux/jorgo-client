@@ -2,11 +2,14 @@ import { Redirect, Stack } from 'expo-router';
 import { APP_VARIANT } from '../../config/variant';
 import { ActivityIndicator, View } from 'react-native';
 import { AdminLogin } from '../../components/admin/AdminLogin';
+import { AdminSidebar } from '../../components/admin/AdminSidebar';
+import { useWide } from '../../components/admin/useWide';
 import { adminColors, colors } from '../../config/theme';
 import { AdminAuthProvider, useAdminAuth } from '../../context/AdminAuthContext';
 
 function Gate() {
   const { ready, authed } = useAdminAuth();
+  const wide = useWide();
   if (!ready) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -15,7 +18,7 @@ function Gate() {
     );
   }
   if (!authed) return <AdminLogin />;
-  return (
+  const stack = (
     <Stack
       screenOptions={{
         headerStyle: { backgroundColor: adminColors.header },
@@ -53,6 +56,14 @@ function Gate() {
       <Stack.Screen name="reviews" options={{ title: 'Пикирлер' }} />
       <Stack.Screen name="gallery" options={{ title: 'Галерея: чейин / кийин' }} />
     </Stack>
+  );
+  if (!wide) return stack;
+  // Ноутбук: сол жакта меню, оң жакта бөлүм
+  return (
+    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.bg }}>
+      <AdminSidebar />
+      <View style={{ flex: 1 }}>{stack}</View>
+    </View>
   );
 }
 

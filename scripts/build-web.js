@@ -31,7 +31,9 @@ const html = build(out, BASE_URL, { APP_VARIANT: 'client' });
 
 // 2) Админ панель
 const panelTmp = path.resolve(__dirname, '..', 'dist-panel');
-const panelHtml = build(panelTmp, PANEL, { APP_VARIANT: 'admin' }).replace(/<title>[^<]*<\/title>/, '<title>Jorgo Админ</title>');
+const panelHtml = build(panelTmp, PANEL, { APP_VARIANT: 'admin' }).replace(/<title>[^<]*<\/title>/, '<title>Jorgo Админ</title>')
+  // Оператор ноутбук менен иштейт: админ панелде телефон өлчөмүндөгү тилке жок, бүт экран
+  .replace('</head>', '<style>@media (min-width: 600px){body{background:#F5F7F8}#root{max-width:none;margin:0;box-shadow:none}}</style></head>');
 fs.writeFileSync(path.join(panelTmp, 'index.html'), panelHtml);
 fs.cpSync(panelTmp, path.join(out, 'panel'), { recursive: true });
 fs.rmSync(panelTmp, { recursive: true, force: true });
