@@ -106,9 +106,6 @@ export function AdminOverview() {
               <Text style={styles.dayS}>{formatPrice(d.sum)}</Text>
             </View>
           ))}
-        <Pressable onPress={() => router.push('/admin/finance')}>
-          <Text style={styles.link}>Толук каржы отчету →</Text>
-        </Pressable>
       </View>
 
       {/* Мастерлер */}

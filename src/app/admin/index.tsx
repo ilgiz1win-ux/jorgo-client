@@ -14,6 +14,8 @@ import { useUnread } from '../../lib/useUnread';
 import { fetchThreads } from '../../lib/chat';
 import { fetchRepairs } from '../../lib/repairs';
 import { AdminOverview } from '../../components/admin/AdminOverview';
+import { FinancePanel } from '../../components/admin/FinancePanel';
+import { StatsPanel } from '../../components/admin/StatsPanel';
 
 type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/masters' | '/admin/broadcast' | '/admin/branches' | '/admin/orders' | '/admin/customers' | '/admin/repairs' | '/admin/applications' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery' | '/admin/chats' | '/admin/assistant' | '/admin/wallets' | '/admin/finance'; title: string; text: string; icon: IconName; color: string };
 
@@ -118,6 +120,14 @@ export default function AdminHome() {
         </View>
 
         <AdminOverview />
+
+        <Text style={styles.group}>💼 КАРЖЫ ЖАНА АБАЛ</Text>
+        <FinancePanel embedded />
+
+        <Text style={styles.group}>📈 САЙТКА КИРҮҮЛӨР</Text>
+        <StatsPanel embedded />
+
+        <Text style={styles.group}>⚙️ БӨЛҮМДӨР</Text>
 
         <View style={styles.stats}>
           <Stat icon="package-variant" label="Товар" value={stats.total} color={colors.primary} />
