@@ -39,7 +39,7 @@ function Gate() {
       <Stack.Screen name="orders" options={{ title: 'Заказдар' }} />
       <Stack.Screen name="customers" options={{ title: 'Кардарлар' }} />
       <Stack.Screen name="customer/[id]" options={{ title: 'Кардар' }} />
-      <Stack.Screen name="repairs" options={{ title: 'Оңдоо өтүнмөлөрү' }} />
+      <Stack.Screen name="repairs" options={{ title: 'Оңдоо жана выезд заказдары' }} />
       <Stack.Screen name="applications" options={{ title: 'Мастер болом дегендер' }} />
       <Stack.Screen name="stats" options={{ title: 'Статистика' }} />
       <Stack.Screen name="rentals" options={{ title: 'Аренда' }} />

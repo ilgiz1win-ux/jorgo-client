@@ -43,6 +43,9 @@ export default function AdminRepairs() {
   }, []);
   useEffect(() => {
     load();
+    // Жаңы заказдар өзү чыксын
+    const id = setInterval(() => fetchRepairs().then(setList).catch(() => {}), 30000);
+    return () => clearInterval(id);
   }, [load]);
 
   const apply = async (id: string, patch: { status?: RepairStatus; masterId?: string | null; visitAt?: string | null; bring?: string }) => {
@@ -90,7 +93,8 @@ export default function AdminRepairs() {
               <Text style={{ color: '#2563EB', fontWeight: '700' }}>🗺 Картадан ачуу</Text>
             </Pressable>
           )}
-          {!!r.visitAt && <Text style={[styles.text, { fontWeight: '800' }]}>🕘 {fmtVisit(r.visitAt)}</Text>}
+          {!!r.visitAt && <Text style={[styles.text, { fontWeight: '800' }]}>🕘 Кардар каалаган убакыт: {fmtVisit(r.visitAt)}</Text>}
+          {!!r.etaAt && <Text style={[styles.text, { fontWeight: '900', color: colors.primary }]}>✅ Мастер айткан убакыт: {fmtVisit(r.etaAt)}</Text>}
           {!!r.outcallFee && (
             <Text style={[styles.text, { color: '#92400E' }]}>
               💰 Выезд акысы {r.outcallFee} сом балансынан алынды{r.status === 'cancelled' ? (r.arrivedAt ? ' · мастер барган — кайтарылбайт' : ' · кайтарылды') : ''}

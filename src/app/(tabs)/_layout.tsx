@@ -8,6 +8,7 @@ import { APP_VARIANT } from '../../config/variant';
 import { useCart } from '../../context/CartContext';
 import type { IconName } from '../../data/products';
 import { useIsMaster } from '../../hooks/useIsMaster';
+import { useMasterNewJobs } from '../../hooks/useMasterNewJobs';
 import { useT } from '../../i18n';
 
 const icon =
@@ -18,6 +19,7 @@ export default function TabsLayout() {
   const { count } = useCart();
   const { t } = useT();
   const isMaster = useIsMaster();
+  const newJobs = useMasterNewJobs(isMaster);
   // Ижара бөлүмү дүкөндөн өзүнчө: ал жерде дүкөндүн менюсу жана WhatsApp баскычы көрүнбөйт
   const path = usePathname();
   const inRent = path === '/rent';
@@ -50,7 +52,7 @@ export default function TabsLayout() {
           tabBarBadgeStyle: { backgroundColor: colors.accent },
         }}
       />
-      <Tabs.Screen name="master" options={{ title: t('mp.tab'), href: isMaster ? '/master' : null, tabBarIcon: icon('account-hard-hat') }} />
+      <Tabs.Screen name="master" options={{ title: t('mp.tab'), href: isMaster ? '/master' : null, tabBarIcon: icon('account-hard-hat'), tabBarBadge: newJobs > 0 ? newJobs : undefined, tabBarBadgeStyle: { backgroundColor: colors.danger } }} />
       <Tabs.Screen name="contacts" options={{ title: t('tab.contacts'), tabBarIcon: icon('phone') }} />
     </Tabs>
       {/* Ылдыйкы меню (болжол менен 50px) үстүндө */}

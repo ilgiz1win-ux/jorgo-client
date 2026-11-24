@@ -11,6 +11,8 @@ import { useContent } from '../../context/ContentContext';
 import { fetchMasterRepairs, fetchRepairs, fmtVisit, myMasterId, Repair, RepairStatus, updateRepair } from '../../lib/repairs';
 import { mapLink } from '../../lib/rentRequests';
 import { PhotoStrip } from '../repair/PhotoStrip';
+import { VisitPicker } from '../repair/VisitPicker';
+import { Chip } from '../ui';
 import { ChatButton } from '../chat/ChatButton';
 
 const LOGO = require('../../../assets/brand/logo.png');
@@ -29,11 +31,44 @@ const fmt = (iso: string) => {
   return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-function RepairCard({ r, mine, onChange, onTake }: { r: Repair; mine: boolean; onChange: (n: Repair) => void; onTake: () => void }) {
+function RepairCard({ r, mine, onChange, onTake }: { r: Repair; mine: boolean; onChange: (n: Repair) => void; onTake: (etaAt: string) => void }) {
   const { t } = useT();
   const [note, setNote] = useState(r.masterNote);
   const [busy, setBusy] = useState(false);
-  const apply = async (patch: { status?: RepairStatus; masterNote?: string; arrived?: boolean }) => {
+  // Кабыл алууда качан барарын тандайт: 'take' — бош заказды алуу, 'accept' — өзүнө түшкөндү кабыл алуу, 'change' — убакытты өзгөртүү
+  const [etaFor, setEtaFor] = useState<'take' | 'accept' | 'change' | null>(null);
+  const [eta, setEta] = useState<string | undefined>();
+  const quick = [30, 60, 90, 120, 180];
+  const confirmEta = async () => {
+    if (!eta) return;
+    const mode = etaFor;
+    setEtaFor(null);
+    if (mode === 'take') onTake(eta);
+    else await apply(mode === 'accept' ? { status: 'accepted', etaAt: eta } : { etaAt: eta });
+  };
+  const etaBox = etaFor && (
+    <View style={styles.etaBox}>
+      <Text style={{ fontWeight: '900', color: colors.text }}>🕘 {r.outcall ? t('mp.etaQ') : t('mp.etaShopQ')}</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        {quick.map((m) => {
+          const iso = new Date(Date.now() + m * 60000).toISOString();
+          const on = !!eta && Math.abs(new Date(eta).getTime() - new Date(iso).getTime()) < 90000;
+          return <Chip key={m} label={m < 60 ? t('mp.inMin', { n: m }) : t('mp.inHour', { n: String(m / 60).replace('.', ',') })} active={on} onPress={() => setEta(iso)} />;
+        })}
+      </View>
+      <VisitPicker value={eta} onChange={setEta} labels={[t('repair.today'), t('repair.tomorrow'), t('repair.dayAfter')]} dayLabel={t('mp.etaExact')} timeLabel={t('repair.whenTime')} />
+      {!!eta && <Text style={{ color: colors.primary, fontWeight: '800' }}>✅ {fmtVisit(eta)}</Text>}
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Pressable onPress={() => setEtaFor(null)} style={[styles.action, { borderColor: colors.muted }]}>
+          <Text style={{ color: colors.muted, fontWeight: '800' }}>{t('my.no')}</Text>
+        </Pressable>
+        <Pressable disabled={!eta || busy} onPress={confirmEta} style={[styles.action, { flex: 1, backgroundColor: colors.primary, borderColor: colors.primary, opacity: eta ? 1 : 0.5 }]}>
+          <Text style={{ color: '#fff', fontWeight: '800' }}>{etaFor === 'change' ? t('mp.etaSave') : t('mp.etaConfirm')}</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+  const apply = async (patch: { status?: RepairStatus; masterNote?: string; arrived?: boolean; etaAt?: string }) => {
     setBusy(true);
     try {
       const n = await updateRepair(r.id, patch);
@@ -101,16 +136,30 @@ function RepairCard({ r, mine, onChange, onTake }: { r: Repair; mine: boolean; o
         </View>
       )}
 
+      {!!r.etaAt && r.status !== 'done' && r.status !== 'cancelled' && (
+        <View style={[styles.block, { backgroundColor: '#ECFDF5', borderColor: colors.primary }]}>
+          <Text style={styles.blockLabel}>✅ {t('mp.myEta')}</Text>
+          <Text style={[styles.text, { fontWeight: '900', fontSize: 16 }]}>{fmtVisit(r.etaAt)}</Text>
+        </View>
+      )}
+      {etaBox}
       {!mine ? (
-        <Pressable disabled={busy} onPress={onTake} style={[styles.action, { backgroundColor: colors.primary, borderColor: colors.primary }]}>
-          <Text style={{ color: '#fff', fontWeight: '800' }}>✋ {t('mp.take')}</Text>
-        </Pressable>
+        !etaFor && (
+          <Pressable disabled={busy} onPress={() => { setEta(undefined); setEtaFor('take'); }} style={[styles.action, { backgroundColor: colors.primary, borderColor: colors.primary }]}>
+            <Text style={{ color: '#fff', fontWeight: '800' }}>✋ {t('mp.take')}</Text>
+          </Pressable>
+        )
       ) : (
         <>
-          {NEXT[r.status].length > 0 && (
+          {NEXT[r.status].length > 0 && !etaFor && (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {(r.status === 'accepted' || r.status === 'in_progress') && (
+                <Pressable disabled={busy} onPress={() => { setEta(r.etaAt); setEtaFor('change'); }} style={[styles.action, { borderColor: colors.primary }]}>
+                  <Text style={{ color: colors.primary, fontWeight: '800' }}>🕘 {t('mp.etaChange')}</Text>
+                </Pressable>
+              )}
               {NEXT[r.status].map((s) => (
-                <Pressable key={s} disabled={busy} onPress={() => apply({ status: s })} style={[styles.action, { borderColor: COLOR[s] }]}>
+                <Pressable key={s} disabled={busy} onPress={() => (s === 'accepted' ? (setEta(undefined), setEtaFor('accept')) : apply({ status: s }))} style={[styles.action, { borderColor: COLOR[s] }]}>
                   <Text style={{ color: COLOR[s], fontWeight: '800' }}>{t(ACTION[s])}</Text>
                 </Pressable>
               ))}
@@ -224,17 +273,17 @@ function Panel() {
           r={r}
           mine={false}
           onChange={replace}
-          onTake={() => masterId && updateRepair(r.id, { masterId, status: 'accepted' }).then((n) => n && replace(n)).catch(() => load())}
+          onTake={(etaAt) => masterId && updateRepair(r.id, { masterId, status: 'accepted', etaAt }).then((n) => n && replace(n)).catch(() => load())}
         />
       ))}
       <SectionTitle>{`${t('mp.mine')} (${active.length})`}</SectionTitle>
       {!loading && active.length === 0 && <Text style={styles.muted}>{t('mp.empty')}</Text>}
       {active.map((r) => (
-        <RepairCard key={r.id} r={r} mine onChange={replace} onTake={() => {}} />
+        <RepairCard key={r.id} r={r} mine onChange={replace} onTake={() => undefined} />
       ))}
       {closed.length > 0 && <SectionTitle>{`${t('mp.status.done')} / ${t('mp.status.cancelled')} (${closed.length})`}</SectionTitle>}
       {closed.slice(0, 20).map((r) => (
-        <RepairCard key={r.id} r={r} mine onChange={replace} onTake={() => {}} />
+        <RepairCard key={r.id} r={r} mine onChange={replace} onTake={() => undefined} />
       ))}
       <SectionTitle>{t('mp.myAccount')}</SectionTitle>
       <View style={styles.profile}>
@@ -298,6 +347,7 @@ const styles = StyleSheet.create({
   text: { color: colors.text, fontSize: 14, lineHeight: 20 },
   muted: { color: colors.muted, fontSize: 13 },
   summary: { alignItems: 'center', gap: 2, marginTop: -6 },
+  etaBox: { gap: 8, backgroundColor: '#F0FDF4', borderRadius: radius.md, padding: 12, borderWidth: 1.5, borderColor: colors.primary },
   block: { gap: 2, backgroundColor: colors.bg, borderRadius: radius.md, padding: 10, borderWidth: 1, borderColor: colors.border },
   blockLabel: { fontSize: 12, fontWeight: '800', color: colors.muted, textTransform: 'uppercase' },
   mapBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', backgroundColor: '#2563EB', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginTop: 4 },
