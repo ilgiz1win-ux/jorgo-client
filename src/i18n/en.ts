@@ -620,4 +620,7 @@ export const en: Record<TKey, string> = {
   'mr.contract': "Contract",
   'mr.soon': "Balance covers only {n} days — top up in advance",
   'mr.overdue': "Rental overdue: you owe {v}. Top up today or return the bike",
+  'mp.priceQ': "How much did you charge? (som)",
+  'mp.priceHint': "Enter 0 if it was free under warranty. The admin sees this in reports.",
+  'mp.priceGot': "Charged: {v}",
 };

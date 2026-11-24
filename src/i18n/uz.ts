@@ -620,4 +620,7 @@ export const uz: Record<TKey, string> = {
   'mr.contract': "Shartnoma",
   'mr.soon': "Balans faqat {n} kunga yetadi — oldindan to'ldiring",
   'mr.overdue': "Ijara muddati o'tdi: qarzingiz {v}. Bugun to'ldiring yoki velosipedni qaytaring",
+  'mp.priceQ': "Mijozdan qancha oldingiz? (som)",
+  'mp.priceHint': "Kafolat bo'yicha bepul bo'lsa 0 yozing. Bu summa adminga hisobotda ko'rinadi.",
+  'mp.priceGot': "Olindi: {v}",
 };
