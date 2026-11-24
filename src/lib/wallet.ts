@@ -235,7 +235,7 @@ export async function adjustWallet(userId: string, amount: number, note: string)
 }
 
 export const TX_LABEL: Record<WalletTx['kind'], string> = { topup: '💰 Толуктоо', outcall: '🚗 Выезд', refund: '↩️ Кайтарылды', adjust: '✏️ Админ', rent: '🚲 Ижара', damage: '⚠️ Зыян' };
-export const fmtSom = (n: number) => `${n.toLocaleString('ru-RU')} сом`;
+export const fmtSom = (n: number) => `${(n || 0).toLocaleString('ru-RU')} сом`;
 
 // Админ: бир кардардын балансы
 export async function balanceOf(userId: string): Promise<number> {
