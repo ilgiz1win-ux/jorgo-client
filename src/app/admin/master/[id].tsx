@@ -151,7 +151,7 @@ export default function AdminMasterAccount() {
                 </Text>
               </Pressable>
             ) : (
-              <Text style={{ color: colors.muted, fontSize: 13 }}>Номер мурунтан катталган — мастер өзүнүн сырсөзү менен кирет.</Text>
+              <Text style={{ color: colors.muted, fontSize: 13 }}>Аккаунт мурда түзүлгөн — сырсөзү бул жерде сакталган эмес.</Text>
             )}
           </View>
           {!hire.panelOpen &&

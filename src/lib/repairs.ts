@@ -177,21 +177,6 @@ export async function myMasterId(userId?: string): Promise<string | null> {
   return (data as string | null) ?? null;
 }
 
-// Админ: мастер → аккаунт (телефон же email). Бош — байланышты алып салуу.
-export async function linkMaster(masterId: string, login: string): Promise<boolean> {
-  if (!supabase) {
-    const links = await read<Record<string, string>>(LOCAL_LINKS, {});
-    const d = login.replace(/\D/g, '').slice(-9);
-    if (!login.trim()) delete links[masterId];
-    else links[masterId] = `local-996${d}`;
-    await write(LOCAL_LINKS, links);
-    return true;
-  }
-  const { data, error } = await supabase.rpc('admin_link_master', { p_master: masterId, p_login: login.trim() || null });
-  if (error) throw error;
-  return data === true;
-}
-
 // Админ: кайсы мастерлер аккаунтка байланган
 export async function fetchMasterLinks(): Promise<Record<string, boolean>> {
   if (!supabase) {
@@ -292,7 +277,7 @@ export async function createMasterLogin(phone9: string, password: string, fullNa
   if (!supabase) {
     // Демо: жергиликтүү профиль (мастер ушул номер менен кире алсын)
     const all = await read<Record<string, unknown>>('jorgo.local.profiles', {});
-    const id = `local-996${phone9}`;
+    const id = `local-master-996${phone9}`;
     if (all[id]) return 'exists';
     all[id] = { id, fullName: fullName, phone: `+996 ${phone9.slice(0, 3)} ${phone9.slice(3, 6)} ${phone9.slice(6)}`, birthDate: '', address: '', passportNo: '', relatives: [], verified: false };
     await write('jorgo.local.profiles', all);
@@ -300,7 +285,7 @@ export async function createMasterLogin(phone9: string, password: string, fullNa
   }
   const tmp = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'jorgo-hire-tmp' } });
   const phone = '996' + phone9;
-  const { data, error } = await tmp.auth.signUp({ email: `${phone}@phone.jorgo.app`, password, options: { data: { phone, full_name: fullName } } });
+  const { data, error } = await tmp.auth.signUp({ email: `${phone}@master.jorgo.app`, password, options: { data: { phone, full_name: fullName } } });
   if (error) return /already/i.test(error.message) ? 'exists' : 'error';
   if (data.user && data.user.identities?.length === 0) return 'exists';
   if (data.session && data.user) {
@@ -318,7 +303,7 @@ export async function hireMaster(p: { appId?: string; masterId: string; phone9: 
     hires[p.masterId] = { masterId: p.masterId, login: '+996' + p.phone9, password: p.password, hiredAt: new Date().toISOString(), trialUntil: until, openedAt: null, panelOpen: false };
     await write(LOCAL_HIRES, hires);
     const links = await read<Record<string, string>>(LOCAL_LINKS, {});
-    links[p.masterId] = `local-996${p.phone9}`;
+    links[p.masterId] = `local-master-996${p.phone9}`;
     await write(LOCAL_LINKS, links);
     if (p.appId) await write(LOCAL_APPS, (await read<MasterApplication[]>(LOCAL_APPS, [])).map((a) => (a.id === p.appId ? { ...a, status: 'hired' as const, masterId: p.masterId } : a)));
     return true;
@@ -374,7 +359,7 @@ export async function createMasterAccount(masterId: string, phone9: string, pass
     hires[masterId] = { masterId, login: '+996' + phone9, password: pass, hiredAt: now, trialUntil: now.slice(0, 10), openedAt: now, panelOpen: true };
     await write(LOCAL_HIRES, hires);
     const links = await read<Record<string, string>>(LOCAL_LINKS, {});
-    links[masterId] = `local-996${phone9}`;
+    links[masterId] = `local-master-996${phone9}`;
     await write(LOCAL_LINKS, links);
     return { ok: true, existed: res === 'exists' };
   }

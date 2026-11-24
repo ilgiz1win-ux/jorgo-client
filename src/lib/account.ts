@@ -95,6 +95,8 @@ export function normalizePhone(input: string): string | null {
 }
 export const formatPhone = (d: string) => (d.length === 12 ? `+${d.slice(0, 3)} ${d.slice(3, 6)} ${d.slice(6, 9)} ${d.slice(9)}` : d);
 const phoneEmail = (d: string) => `${d}@phone.jorgo.app`;
+// Мастердин аккаунту (админ гана түзөт) — кардардыкынан өзүнчө
+export const masterEmail = (d: string) => `${d}@master.jorgo.app`;
 
 export const emptyProfile = (id: string, phone = ''): Profile => ({
   id,
@@ -190,17 +192,17 @@ export async function verifyEmailCode(emailInput: string, code: string): Promise
   return null;
 }
 
-export async function signIn(phoneInput: string, password: string): Promise<AuthError | null> {
+export async function signIn(phoneInput: string, password: string, master = false): Promise<AuthError | null> {
   const phone = normalizePhone(phoneInput);
   if (!phone) return 'invalidPhone';
   if (!supabase) {
-    const id = `local-${phone}`;
+    const id = master ? `local-master-${phone}` : `local-${phone}`;
     const all = await readJson<Record<string, Profile>>(LOCAL_PROFILES, {});
     if (!all[id]) return 'wrongLogin';
     await AsyncStorage.setItem(LOCAL_USER, JSON.stringify(id));
     return null;
   }
-  const { error } = await supabase.auth.signInWithPassword({ email: phoneEmail(phone), password });
+  const { error } = await supabase.auth.signInWithPassword({ email: master ? masterEmail(phone) : phoneEmail(phone), password });
   return error ? mapError(error.message) : null;
 }
 
