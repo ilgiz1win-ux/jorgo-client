@@ -43,6 +43,9 @@ export default function AdminRepairs() {
   }, []);
   useEffect(() => {
     load();
+    // Жаңы заказдар өзү чыксын
+    const id = setInterval(() => fetchRepairs().then(setList).catch(() => {}), 30000);
+    return () => clearInterval(id);
   }, [load]);
 
   const apply = async (id: string, patch: { status?: RepairStatus; masterId?: string | null; visitAt?: string | null; bring?: string }) => {

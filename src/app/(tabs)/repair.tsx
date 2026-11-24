@@ -5,8 +5,8 @@ import { useIsMaster } from '../../hooks/useIsMaster';
 import { useAccount } from '../../context/AccountContext';
 import { DEFAULT_WALLET, fmtSom, getWalletSettings, myBalance } from '../../lib/wallet';
 import * as ImagePicker from 'expo-image-picker';
-import { createRepair, fmtVisit, uploadRepairPhoto } from '../../lib/repairs';
-import { getLocationOnce, mapLink } from '../../lib/rentRequests';
+import { createRepair, uploadRepairPhoto } from '../../lib/repairs';
+import { getLocationOnce } from '../../lib/rentRequests';
 import { PhotoStrip } from '../../components/repair/PhotoStrip';
 import { VisitPicker } from '../../components/repair/VisitPicker';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -18,7 +18,7 @@ import { branchLabel } from '../../lib/branches';
 import { useContent } from '../../context/ContentContext';
 import { colors } from '../../config/theme';
 import { useCatalog } from '../../context/CatalogContext';
-import { callShop, openWhatsApp } from '../../lib/format';
+import { callShop } from '../../lib/format';
 import { useT } from '../../i18n';
 import { track } from '../../lib/analytics';
 
@@ -66,7 +66,6 @@ export default function Repair() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
-  const [lastMsg, setLastMsg] = useState('');
   const [photos, setPhotos] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [visitAt, setVisitAt] = useState<string | undefined>();
@@ -124,26 +123,7 @@ export default function Repair() {
 
   const submit = async () => {
     const chosen = SERVICES.filter((s) => selected.includes(s.id));
-    const services = chosen.map((s) => `• ${s.title}`);
     const number = String(Date.now()).slice(-6);
-    const msg = [
-      `${t('msg.repair')} №${number}`,
-      '',
-      t('msg.name', { v: name.trim() }),
-      t('msg.phone', { v: phone.trim() }),
-      bike.trim() ? t('msg.bike', { v: bike.trim() }) : null,
-      branch ? t('msg.branch', { v: branchLabel(branch, t) }) : null,
-      master ? t('msg.master', { v: master.name }) : null,
-      outcall && outcallAvailable ? t('msg.outcall') : null,
-      outcall && outcallAvailable && address.trim() ? t('msg.address', { v: address.trim() }) : null,
-      outcall && outcallAvailable && loc ? `📍 ${mapLink(loc.lat, loc.lng)}` : null,
-      visitAt ? t('msg.when', { v: fmtVisit(visitAt) }) : null,
-      photos.length && !photos[0].startsWith('data:') ? `📷 ${photos.join('\n')}` : null,
-      services.length ? `${t('msg.services')}\n${services.join('\n')}` : null,
-      problem.trim() ? t('msg.problem', { v: problem.trim() }) : null,
-    ]
-      .filter(Boolean)
-      .join('\n');
     // Өтүнмө базага жазылат: мастердин панелине (же точканын мастерлерине) түшөт
     setSending(true);
     setError(null);
@@ -181,9 +161,7 @@ export default function Repair() {
       return;
     }
     if (wantsOutcall) myBalance().then(setBalance).catch(() => {});
-    // Заказ базага жазылды: мастердин панелине түшөт, мастерге жана админге билдирме кетет.
-    // WhatsApp'ка өзү өтпөйт — кааласа, кардар кийин өзү жаза алат.
-    setLastMsg(msg);
+    // Заказ базага жазылды: мастердин панелине жана админ панелге түшөт, билдирме кетет (WhatsApp жок).
     track('repair', undefined, branch?.name);
     setSent(true);
   };
@@ -276,9 +254,6 @@ export default function Repair() {
             </PopIn>
             <Text style={{ fontSize: 16, fontWeight: '700', textAlign: 'center' }}>{!profile ? t('repair.sent') : outcall ? t('rm.sentOutcall') : t('rm.sentShop')}</Text>
             {!!profile && <Button title={t('my.see')} icon="cart-check" onPress={() => router.push('/cart')} />}
-            <Pressable onPress={() => openWhatsApp(lastMsg, branch?.whatsapp).catch(() => {})} accessibilityRole="link">
-              <Text style={{ color: colors.muted, fontSize: 13, textDecorationLine: 'underline' }}>{t('rm.alsoWa')}</Text>
-            </Pressable>
             <Button
               title={t('repair.new')}
               variant="outline"

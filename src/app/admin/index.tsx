@@ -12,6 +12,7 @@ import { CATEGORIES, CategoryId, IconName } from '../../data/products';
 import { formatPrice } from '../../lib/format';
 import { useUnread } from '../../lib/useUnread';
 import { fetchThreads } from '../../lib/chat';
+import { fetchRepairs } from '../../lib/repairs';
 
 type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/masters' | '/admin/broadcast' | '/admin/branches' | '/admin/orders' | '/admin/customers' | '/admin/repairs' | '/admin/applications' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery' | '/admin/chats' | '/admin/assistant' | '/admin/wallets'; title: string; text: string; icon: IconName; color: string };
 
@@ -35,7 +36,7 @@ const SECTIONS: Tile[] = [
   { href: '/admin/home', title: 'Башкы бет', text: 'Чоң баннер жана сандар', icon: 'home-edit', color: '#2E7D32' },
   { href: '/admin/promos', title: 'Акциялар', text: 'Баннерлер жана слайдер', icon: 'bullhorn', color: '#7C3AED' },
   { href: '/admin/services', title: 'Оңдоо', text: 'Кызматтар жана баалар', icon: 'wrench', color: '#EA580C' },
-  { href: '/admin/repairs', title: 'Оңдоо өтүнмөлөрү', text: 'Кайсы мастерге түштү, абалы', icon: 'wrench-clock', color: '#9A3412' },
+  { href: '/admin/repairs', title: 'Оңдоо жана выезд заказдары', text: 'Кайсы мастерге түштү, абалы', icon: 'wrench-clock', color: '#9A3412' },
   { href: '/admin/applications', title: 'Мастер болом дегендер', text: 'Жумушка өтүнмөлөр', icon: 'account-plus', color: '#4D7C0F' },
   { href: '/admin/masters', title: 'Мастерлер', text: 'Сүрөттөрү, адистиги, филиалы', icon: 'account-hard-hat', color: '#B45309' },
   { href: '/admin/reviews', title: 'Пикирлер', text: 'Кардарлардын сөздөрү', icon: 'star', color: '#CA8A04' },
@@ -47,11 +48,20 @@ export default function AdminHome() {
   const { logout, email } = useAdminAuth();
   const unread = useUnread(isRemote);
   const [chatUnread, setChatUnread] = useState(0);
+  const [newRepairs, setNewRepairs] = useState(0);
   useFocusEffect(
     useCallback(() => {
-      fetchThreads()
-        .then((l) => setChatUnread(l.reduce((n, x) => n + x.unread, 0)))
-        .catch(() => {});
+      const tick = () => {
+        fetchThreads()
+          .then((l) => setChatUnread(l.reduce((n, x) => n + x.unread, 0)))
+          .catch(() => {});
+        fetchRepairs()
+          .then((l) => setNewRepairs(l.filter((r) => r.status === 'new').length))
+          .catch(() => {});
+      };
+      tick();
+      const id = setInterval(tick, 30000);
+      return () => clearInterval(id);
     }, []),
   );
   const [query, setQuery] = useState('');
@@ -142,6 +152,11 @@ export default function AdminHome() {
               {t.href === '/admin/chats' && chatUnread > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>{chatUnread > 99 ? '99+' : chatUnread}</Text>
+                </View>
+              )}
+              {t.href === '/admin/repairs' && newRepairs > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{newRepairs > 99 ? '99+' : newRepairs}</Text>
                 </View>
               )}
             </Pressable>
