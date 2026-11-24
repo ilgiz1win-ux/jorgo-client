@@ -5,6 +5,7 @@ import { Card, Chip } from '../../components/ui';
 import { colors, radius } from '../../config/theme';
 import { useContent } from '../../context/ContentContext';
 import { fetchRepairs, fmtVisit, Repair, RepairStatus, updateRepair } from '../../lib/repairs';
+import { formatPrice } from '../../lib/format';
 import { mapLink } from '../../lib/rentRequests';
 import { PhotoStrip } from '../../components/repair/PhotoStrip';
 import { VisitPicker } from '../../components/repair/VisitPicker';
@@ -29,6 +30,8 @@ export default function AdminRepairs() {
   const [planning, setPlanning] = useState<string | null>(null);
   const [bringDraft, setBringDraft] = useState('');
   const [visitDraft, setVisitDraft] = useState<string | undefined>();
+  const [pricing, setPricing] = useState<string | null>(null);
+  const [priceDraft, setPriceDraft] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,7 +51,7 @@ export default function AdminRepairs() {
     return () => clearInterval(id);
   }, [load]);
 
-  const apply = async (id: string, patch: { status?: RepairStatus; masterId?: string | null; visitAt?: string | null; bring?: string }) => {
+  const apply = async (id: string, patch: { status?: RepairStatus; masterId?: string | null; visitAt?: string | null; bring?: string; price?: number | null }) => {
     try {
       const n = await updateRepair(id, patch);
       if (n) setList((l) => l.map((x) => (x.id === n.id ? n : x)));
@@ -106,6 +109,37 @@ export default function AdminRepairs() {
             📍 {r.branch || '—'} · 👷 {masterName(r.masterId) ?? 'мастер тандала элек'}
           </Text>
           {!!r.masterNote && <Text style={styles.muted}>📝 {r.masterNote}</Text>}
+          {!!r.rating && (
+            <Text style={[styles.text, { color: '#B45309', fontWeight: '800' }]}>
+              {'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)} Кардардын баасы{r.ratingNote ? ` · «${r.ratingNote}»` : ''}
+            </Text>
+          )}
+          {r.status === 'done' && (
+            <Text style={[styles.text, { fontWeight: '900', color: r.price != null ? colors.success : colors.danger }]}>
+              💰 {r.price != null ? `Акысы: ${formatPrice(r.price)}` : 'Акысы жазылган эмес'}
+            </Text>
+          )}
+          {pricing === r.id && (
+            <View style={styles.plan}>
+              <Text style={styles.muted}>💰 Оңдоонун акысы (сом)</Text>
+              <TextInput value={priceDraft} onChangeText={(v) => setPriceDraft(v.replace(/\D/g, '').slice(0, 7))} keyboardType="number-pad" placeholder="0" placeholderTextColor={colors.muted} style={[styles.input, { minHeight: 44 }]} />
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Pressable onPress={() => setPricing(null)} style={[styles.action, { borderColor: colors.muted }]}>
+                  <Text style={{ color: colors.muted, fontWeight: '800', fontSize: 13 }}>Жокко чыгаруу</Text>
+                </Pressable>
+                <Pressable
+                  disabled={priceDraft === ''}
+                  onPress={() => {
+                    apply(r.id, { price: Number(priceDraft), ...(r.status === 'done' ? {} : { status: 'done' as const }) });
+                    setPricing(null);
+                  }}
+                  style={[styles.action, { borderColor: colors.success, backgroundColor: colors.success, opacity: priceDraft === '' ? 0.5 : 1 }]}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13 }}>{r.status === 'done' ? 'Сактоо' : 'Бүттү · сактоо'}</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
 
           {planning === r.id && (
             <View style={styles.plan}>
@@ -159,6 +193,17 @@ export default function AdminRepairs() {
               >
                 <Text style={{ color: colors.primary, fontWeight: '800', fontSize: 13 }}>🕘 Убакыт / 🧰 эмне ала барсын</Text>
               </Pressable>
+              {r.status !== 'cancelled' && (
+                <Pressable
+                  onPress={() => {
+                    setPricing(r.id);
+                    setPriceDraft(r.price != null ? String(r.price) : '');
+                  }}
+                  style={[styles.action, { borderColor: colors.success }]}
+                >
+                  <Text style={{ color: colors.success, fontWeight: '800', fontSize: 13 }}>{r.status === 'done' ? '💰 Акысын өзгөртүү' : '✅ Бүттү (акысы менен)'}</Text>
+                </Pressable>
+              )}
               {r.status !== 'cancelled' && r.status !== 'done' && (
                 <Pressable onPress={() => apply(r.id, { status: 'cancelled' })} style={[styles.action, { borderColor: colors.danger }]}>
                   <Text style={{ color: colors.danger, fontWeight: '800', fontSize: 13 }}>Отказ</Text>

@@ -32,6 +32,11 @@ export type Repair = {
   arrivedAt?: string;
   userId?: string;
   etaAt?: string;
+  price?: number;
+  doneAt?: string;
+  rating?: number;
+  ratingNote?: string;
+  ratedAt?: string;
 };
 type Row = {
   id: string;
@@ -58,6 +63,11 @@ type Row = {
   arrived_at?: string | null;
   user_id?: string | null;
   eta_at?: string | null;
+  price?: number | null;
+  done_at?: string | null;
+  rating?: number | null;
+  rating_note?: string | null;
+  rated_at?: string | null;
 };
 const fromRow = (r: Row): Repair => ({
   id: r.id,
@@ -84,6 +94,11 @@ const fromRow = (r: Row): Repair => ({
   arrivedAt: r.arrived_at ?? undefined,
   userId: r.user_id ?? undefined,
   etaAt: r.eta_at ?? undefined,
+  price: r.price ?? undefined,
+  doneAt: r.done_at ?? undefined,
+  rating: r.rating ?? undefined,
+  ratingNote: r.rating_note ?? '',
+  ratedAt: r.rated_at ?? undefined,
 });
 
 const LOCAL = 'jorgo.local.repairs';
@@ -144,11 +159,11 @@ export async function fetchRepairs(): Promise<Repair[]> {
   return (data as Row[]).map(fromRow);
 }
 
-export async function updateRepair(id: string, patch: { status?: RepairStatus; masterNote?: string; masterId?: string | null; visitAt?: string | null; bring?: string; arrived?: boolean; etaAt?: string }): Promise<Repair | null> {
+export async function updateRepair(id: string, patch: { status?: RepairStatus; masterNote?: string; masterId?: string | null; visitAt?: string | null; bring?: string; arrived?: boolean; etaAt?: string; price?: number | null }): Promise<Repair | null> {
   if (!supabase) {
     const l = (await read<Repair[]>(LOCAL, [])).map((x) =>
       x.id === id
-        ? { ...x, updatedAt: new Date().toISOString(), visitAt: patch.visitAt === undefined ? x.visitAt : patch.visitAt ?? undefined, bring: patch.bring ?? x.bring, arrivedAt: patch.arrived && !x.arrivedAt ? new Date().toISOString() : x.arrivedAt, etaAt: patch.etaAt ?? x.etaAt, status: patch.status ?? x.status, masterNote: patch.masterNote ?? x.masterNote, masterId: patch.masterId === undefined ? x.masterId : patch.masterId ?? undefined }
+        ? { ...x, updatedAt: new Date().toISOString(), visitAt: patch.visitAt === undefined ? x.visitAt : patch.visitAt ?? undefined, bring: patch.bring ?? x.bring, arrivedAt: patch.arrived && !x.arrivedAt ? new Date().toISOString() : x.arrivedAt, etaAt: patch.etaAt ?? x.etaAt, price: patch.price === undefined ? x.price : patch.price ?? undefined, doneAt: patch.status ? (patch.status === 'done' ? (x.status === 'done' ? x.doneAt : new Date().toISOString()) : undefined) : x.doneAt, status: patch.status ?? x.status, masterNote: patch.masterNote ?? x.masterNote, masterId: patch.masterId === undefined ? x.masterId : patch.masterId ?? undefined }
         : x,
     );
     await write(LOCAL, l);
@@ -164,6 +179,7 @@ export async function updateRepair(id: string, patch: { status?: RepairStatus; m
   if (patch.bring !== undefined) row.bring = patch.bring;
   if (patch.arrived) row.arrived_at = new Date().toISOString();
   if (patch.etaAt) row.eta_at = patch.etaAt;
+  if (patch.price !== undefined) row.price = patch.price;
   const { data, error } = await supabase.from('repair_requests').update(row).eq('id', id).select('*').single();
   if (error) throw error;
   return fromRow(data as Row);
@@ -422,6 +438,21 @@ export async function fetchMyRepairs(userId: string): Promise<Repair[]> {
   const { data, error } = await supabase.from('repair_requests').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
   if (error) throw error;
   return (data as Row[]).map(fromRow);
+}
+
+// Кардар бүткөн выезд/оңдоону бир жолу баалайт (1–5 жылдыз). Мастердин рейтинги серверде эсептелет.
+export async function rateRepair(id: string, stars: number, note: string): Promise<boolean> {
+  if (!supabase) {
+    const l = await read<Repair[]>(LOCAL, []);
+    const r = l.find((x) => x.id === id);
+    if (!r || r.status !== 'done' || r.ratedAt) return false;
+    Object.assign(r, { rating: stars, ratingNote: note.trim().slice(0, 500), ratedAt: new Date().toISOString() });
+    await write(LOCAL, l);
+    return true;
+  }
+  const { data, error } = await supabase.rpc('customer_rate_repair', { p_id: id, p_stars: stars, p_note: note.trim().slice(0, 500) });
+  if (error) throw error;
+  return data === true;
 }
 
 // Кардар мастер келгенге чейин жокко чыгарат (выезд акысы кайтарылат)

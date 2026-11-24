@@ -10,6 +10,7 @@ import { TKey, useT } from '../../i18n';
 import { useContent } from '../../context/ContentContext';
 import { fetchMasterRepairs, fetchRepairs, fmtVisit, myMasterId, Repair, RepairStatus, updateRepair } from '../../lib/repairs';
 import { mapLink } from '../../lib/rentRequests';
+import { formatPrice } from '../../lib/format';
 import { PhotoStrip } from '../repair/PhotoStrip';
 import { VisitPicker } from '../repair/VisitPicker';
 import { Chip } from '../ui';
@@ -38,6 +39,9 @@ function RepairCard({ r, mine, onChange, onTake }: { r: Repair; mine: boolean; o
   // Кабыл алууда качан барарын тандайт: 'take' — бош заказды алуу, 'accept' — өзүнө түшкөндү кабыл алуу, 'change' — убакытты өзгөртүү
   const [etaFor, setEtaFor] = useState<'take' | 'accept' | 'change' | null>(null);
   const [eta, setEta] = useState<string | undefined>();
+  // «Бүттү» басканда канча акы алганын жазат
+  const [priceOpen, setPriceOpen] = useState(false);
+  const [price, setPrice] = useState(r.price != null ? String(r.price) : '');
   const quick = [30, 60, 90, 120, 180];
   const confirmEta = async () => {
     if (!eta) return;
@@ -68,7 +72,7 @@ function RepairCard({ r, mine, onChange, onTake }: { r: Repair; mine: boolean; o
       </View>
     </View>
   );
-  const apply = async (patch: { status?: RepairStatus; masterNote?: string; arrived?: boolean; etaAt?: string }) => {
+  const apply = async (patch: { status?: RepairStatus; masterNote?: string; arrived?: boolean; etaAt?: string; price?: number | null }) => {
     setBusy(true);
     try {
       const n = await updateRepair(r.id, patch);
@@ -151,7 +155,39 @@ function RepairCard({ r, mine, onChange, onTake }: { r: Repair; mine: boolean; o
         )
       ) : (
         <>
-          {NEXT[r.status].length > 0 && !etaFor && (
+          {priceOpen && (
+            <View style={styles.etaBox}>
+              <Text style={{ fontWeight: '900', color: colors.text }}>💰 {t('mp.priceQ')}</Text>
+              <TextInput
+                value={price}
+                onChangeText={(v) => setPrice(v.replace(/\D/g, '').slice(0, 7))}
+                keyboardType="number-pad"
+                placeholder="0"
+                placeholderTextColor={colors.muted}
+                style={[styles.input, { fontSize: 18, fontWeight: '800' }]}
+                autoFocus
+              />
+              <Text style={styles.muted}>{t('mp.priceHint')}</Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Pressable onPress={() => setPriceOpen(false)} style={[styles.action, { borderColor: colors.muted }]}>
+                  <Text style={{ color: colors.muted, fontWeight: '800' }}>{t('my.no')}</Text>
+                </Pressable>
+                <Pressable
+                  disabled={busy || price === ''}
+                  onPress={() => {
+                    setPriceOpen(false);
+                    apply({ status: 'done', price: Number(price) });
+                  }}
+                  style={[styles.action, { flex: 1, backgroundColor: colors.success, borderColor: colors.success, opacity: price === '' ? 0.5 : 1 }]}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '900', textAlign: 'center' }}>✅ {t('mp.done')}</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
+          {r.status === 'done' && !!r.rating && <Text style={[styles.text, { color: '#B45309', fontWeight: '800' }]}>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)} {t('rate.client')}{r.ratingNote ? ` · «${r.ratingNote}»` : ''}</Text>}
+          {r.status === 'done' && r.price != null && <Text style={[styles.text, { color: colors.success, fontWeight: '900' }]}>💰 {t('mp.priceGot', { v: formatPrice(r.price) })}</Text>}
+          {NEXT[r.status].length > 0 && !etaFor && !priceOpen && (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {(r.status === 'accepted' || r.status === 'in_progress') && (
                 <Pressable disabled={busy} onPress={() => { setEta(r.etaAt); setEtaFor('change'); }} style={[styles.action, { borderColor: colors.primary }]}>
@@ -159,7 +195,7 @@ function RepairCard({ r, mine, onChange, onTake }: { r: Repair; mine: boolean; o
                 </Pressable>
               )}
               {NEXT[r.status].map((s) => (
-                <Pressable key={s} disabled={busy} onPress={() => (s === 'accepted' ? (setEta(undefined), setEtaFor('accept')) : apply({ status: s }))} style={[styles.action, { borderColor: COLOR[s] }]}>
+                <Pressable key={s} disabled={busy} onPress={() => (s === 'accepted' ? (setEta(undefined), setEtaFor('accept')) : s === 'done' ? setPriceOpen(true) : apply({ status: s }))} style={[styles.action, { borderColor: COLOR[s] }]}>
                   <Text style={{ color: COLOR[s], fontWeight: '800' }}>{t(ACTION[s])}</Text>
                 </Pressable>
               ))}
@@ -247,13 +283,16 @@ function Panel() {
   const closed = mine.filter((r) => r.status === 'done' || r.status === 'cancelled');
   const done = mine.filter((r) => r.status === 'done');
   const now = new Date();
-  const doneAt = (r: Repair) => new Date(r.updatedAt ?? r.createdAt);
+  const doneAt = (r: Repair) => new Date(r.doneAt ?? r.updatedAt ?? r.createdAt);
   const today = done.filter((r) => sameDay(doneAt(r), now)).length;
   const month = done.filter((r) => {
     const d = doneAt(r);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
   const rating = me?.rating ?? 0;
+  const earned = (f: (r: Repair) => boolean) => done.filter(f).reduce((s, r) => s + (r.price ?? 0), 0);
+  const earnedToday = earned((r) => sameDay(doneAt(r), now));
+  const earnedMonth = earned((r) => doneAt(r).getMonth() === now.getMonth() && doneAt(r).getFullYear() === now.getFullYear());
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }} keyboardShouldPersistTaps="handled" refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}>
@@ -263,6 +302,7 @@ function Panel() {
       <View style={styles.summary}>
         <Text style={{ fontWeight: '900', color: colors.text, fontSize: 16 }}>👷 {me?.name ?? ''}</Text>
         <Text style={styles.muted}>⭐ {rating.toFixed(1)} · {t('mp.stat.today')}: {today} · {t('mp.stat.month')}: {month}</Text>
+        <Text style={[styles.muted, { color: colors.success, fontWeight: '800' }]}>💰 {t('mp.stat.today')}: {formatPrice(earnedToday)} · {t('mp.stat.month')}: {formatPrice(earnedMonth)}</Text>
       </View>
       <ChatButton compact />
 
