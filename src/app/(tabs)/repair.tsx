@@ -249,6 +249,7 @@ export default function Repair() {
               <MaterialCommunityIcons name="check-circle" size={48} color={colors.success} />
             </PopIn>
             <Text style={{ fontSize: 16, fontWeight: '700', textAlign: 'center' }}>{t('repair.sent')}</Text>
+            {!!profile && <Button title={t('my.see')} icon="cart-check" onPress={() => router.push('/cart')} />}
             <Button
               title={t('repair.new')}
               variant="outline"
