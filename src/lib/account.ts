@@ -19,6 +19,9 @@ export type Profile = {
   birthDate: string;
   address: string;
   passportNo: string;
+  // Паспорт ким берген (Выдан) жана экинчи телефон — ижара келишими үчүн
+  passportIssuedBy?: string;
+  phone2?: string;
   // Почта менен катталса — почтасы (телефону кийин суралат)
   email?: string;
   selfiePath?: string;
@@ -41,6 +44,8 @@ type Row = {
   license_path: string | null;
   relatives?: Relative[] | null;
   verified: boolean;
+  passport_issued_by?: string | null;
+  phone2?: string | null;
 };
 
 export const DOCS_BUCKET = 'documents';
@@ -59,6 +64,8 @@ const fromRow = (r: Row): Profile => ({
   licensePath: r.license_path ?? undefined,
   relatives: Array.isArray(r.relatives) ? r.relatives : [],
   verified: r.verified,
+  passportIssuedBy: r.passport_issued_by ?? '',
+  phone2: r.phone2 ?? '',
 });
 
 const toRow = (p: Profile) => {
@@ -78,6 +85,9 @@ const toRow = (p: Profile) => {
     license_path: p.licensePath ?? null,
     // Бош болсо жибербейбиз (009_relatives.sql иштетилбесе да катталуу иштесин)
     ...(relatives.length ? { relatives } : {}),
+    // 028 иштетилбесе да катталуу иштесин — бош болсо жибербейбиз
+    ...(p.passportIssuedBy?.trim() ? { passport_issued_by: p.passportIssuedBy.trim().slice(0, 80) } : {}),
+    ...(p.phone2?.trim() ? { phone2: p.phone2.trim().slice(0, 30) } : {}),
   };
 };
 

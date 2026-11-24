@@ -41,6 +41,15 @@ export type RentRequest = {
   batterySwapped?: boolean;
   damageCharged?: number;
   returnNote?: string;
+  // Келишим (админ велосипедди бергенде толтурат)
+  contractNo?: number;
+  bikeNo?: string;
+  jorgoNo?: string;
+  batteryNo?: string;
+  bikeValue?: number;
+  deposit?: number;
+  collateral?: string;
+  kit?: string[];
 };
 
 type Row = {
@@ -72,6 +81,14 @@ type Row = {
   battery_swapped?: boolean;
   damage_charged?: number;
   return_note?: string;
+  contract_no?: number | null;
+  bike_no?: string;
+  jorgo_no?: string;
+  battery_no?: string;
+  bike_value?: number | null;
+  deposit?: number | null;
+  collateral?: string;
+  kit?: string[] | null;
 };
 
 const LOCAL = 'jorgo.local.rentRequests';
@@ -105,6 +122,14 @@ const fromRow = (r: Row): RentRequest => ({
   batterySwapped: r.battery_swapped ?? false,
   damageCharged: r.damage_charged ?? 0,
   returnNote: r.return_note ?? '',
+  contractNo: r.contract_no ?? undefined,
+  bikeNo: r.bike_no ?? '',
+  jorgoNo: r.jorgo_no ?? '',
+  batteryNo: r.battery_no ?? '',
+  bikeValue: r.bike_value ?? undefined,
+  deposit: r.deposit ?? undefined,
+  collateral: r.collateral ?? '',
+  kit: Array.isArray(r.kit) ? r.kit : [],
 });
 
 async function readLocal(): Promise<RentRequest[]> {
@@ -190,15 +215,23 @@ async function localBill(list: RentRequest[]): Promise<RentRequest[]> {
   return list;
 }
 
-// Админ: велосипедди берди — ижара башталды (бүгүн акысыз)
-export async function startRent(id: string): Promise<void> {
+export type ContractDetails = { bikeNo: string; jorgoNo: string; batteryNo: string; bikeValue?: number; deposit?: number; collateral: string; kit: string[] };
+
+// Админ: велосипедди берди — ижара башталды (бүгүн акысыз), келишимдин маалыматы менен. Келишимдин номерин кайтарат.
+export async function startRent(id: string, d?: ContractDetails): Promise<number | null> {
   if (!supabase) {
-    const list = (await readLocal()).map((x) => (x.id === id && x.status === 'new' ? { ...x, status: 'active' as const, startedAt: new Date().toISOString(), chargedDays: 0 } : x));
-    await AsyncStorage.setItem(LOCAL, JSON.stringify(list)).catch(() => {});
-    return;
+    const list = await readLocal();
+    const no = list.reduce((m, x) => Math.max(m, x.contractNo ?? 0), 0) + 1;
+    const next = list.map((x) => (x.id === id && x.status === 'new' ? { ...x, status: 'active' as const, startedAt: new Date().toISOString(), chargedDays: 0, contractNo: no, ...(d ?? {}) } : x));
+    await AsyncStorage.setItem(LOCAL, JSON.stringify(next)).catch(() => {});
+    return no;
   }
-  const { error } = await supabase.rpc('admin_rent_start', { p_id: id });
+  const { data, error } = await supabase.rpc('admin_rent_start', {
+    p_id: id,
+    p_details: d ? { ...d, bikeValue: d.bikeValue ?? '', deposit: d.deposit ?? '' } : {},
+  });
   if (error) throw error;
+  return (data as number | null) ?? null;
 }
 
 // Админ: кайтарылды — минимум 1 жума жана зыян (электроника 50%, механика 100%, жоголгон 100%) балансынан алынат

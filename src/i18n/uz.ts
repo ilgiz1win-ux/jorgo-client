@@ -591,4 +591,9 @@ export const uz: Record<TKey, string> = {
   'w.kind.damage': "⚠️ Zarar",
   'rd.consent': "Ijara shartlari bilan tanishdim va roziman. Pasport ma'lumotlarim va joylashuvimni (GPS) ijara uchun berishga roziman.",
   'rd.tariffSub': "To'lov har kuni balansdan yechiladi",
+  'acc.issuedBy': "Pasport kim tomonidan berilgan",
+  'acc.phone2': "Ikkinchi telefon",
+  'ct.view': "📄 Ijara shartnomasi",
+  'ct.print': "Chop etish / PDF",
+  'ct.notYet': "Shartnoma velosiped berilganda tuziladi",
 };

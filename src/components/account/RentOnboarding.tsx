@@ -44,17 +44,19 @@ export function RentOnboarding() {
   const [phone, setPhone] = useState(profile?.phone ?? '');
   const [passport, setPassport] = useState(profile?.passportNo ?? '');
   const [address, setAddress] = useState(profile?.address ?? '');
+  const [issuedBy, setIssuedBy] = useState(profile?.passportIssuedBy ?? '');
+  const [phone2, setPhone2] = useState(profile?.phone2 ?? '');
   const [relatives, setRelatives] = useState<Relative[]>(profile?.relatives ?? []);
   const [busy, setBusy] = useState(false);
   if (!profile) return null;
 
   const phoneNorm = normalizePhone(phone);
-  const valid = !!phoneNorm && name.trim().length > 1 && passport.trim().length >= 5 && !!profile.selfiePath && !!profile.passportPath && relativesReady(relatives);
+  const valid = !!phoneNorm && name.trim().length > 1 && passport.trim().length >= 5 && issuedBy.trim().length >= 3 && address.trim().length >= 3 && !!profile.selfiePath && !!profile.passportPath && relativesReady(relatives);
 
   const submit = async () => {
     setBusy(true);
     try {
-      await save({ ...profile, phone: phoneNorm ? formatPhone(phoneNorm) : phone.trim(), fullName: name.trim(), birthDate: birth.trim(), passportNo: passport.trim().toUpperCase(), address: address.trim(), relatives });
+      await save({ ...profile, phone: phoneNorm ? formatPhone(phoneNorm) : phone.trim(), fullName: name.trim(), birthDate: birth.trim(), passportNo: passport.trim().toUpperCase(), address: address.trim(), passportIssuedBy: issuedBy.trim(), phone2: phone2.trim(), relatives });
     } catch {
       toast.show(t('acc.err.unknown'));
     }
@@ -75,7 +77,9 @@ export function RentOnboarding() {
           <Field label={t('acc.phoneRequired')} value={phone} onChangeText={setPhone} placeholder="+996 700 123 456" keyboardType="phone-pad" autoComplete="tel" />
           <Field label={t('acc.birth')} value={birth} onChangeText={setBirth} placeholder={t('acc.birthPh')} keyboardType="numbers-and-punctuation" />
           <Field label={`${t('acc.passportNo')} *`} value={passport} onChangeText={setPassport} placeholder="ID1234567" autoCapitalize="characters" />
-          <Field label={t('acc.address')} value={address} onChangeText={setAddress} placeholder={t('acc.addressPh')} />
+          <Field label={`${t('acc.issuedBy')} *`} value={issuedBy} onChangeText={setIssuedBy} placeholder="МКК 216041" autoCapitalize="characters" />
+          <Field label={`${t('acc.address')} *`} value={address} onChangeText={setAddress} placeholder={t('acc.addressPh')} />
+          <Field label={t('acc.phone2')} value={phone2} onChangeText={setPhone2} placeholder="+996 555 123 456" keyboardType="phone-pad" />
         </View>
 
         <DocCard kind="selfie" />

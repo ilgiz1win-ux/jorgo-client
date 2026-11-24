@@ -70,7 +70,9 @@ function ProfileForm() {
               <EditRow label={t('acc.name')} value={p.fullName} onChange={set('fullName')} />
               <EditRow label={t('acc.birth')} value={p.birthDate} onChange={set('birthDate')} placeholder={t('acc.birthPh')} />
               <EditRow label={t('acc.passportNo')} value={p.passportNo} onChange={set('passportNo')} placeholder="ID1234567" upper />
+              <EditRow label={t('acc.issuedBy')} value={p.passportIssuedBy ?? ''} onChange={set('passportIssuedBy')} placeholder="МКК 216041" upper />
               <EditRow label={t('acc.address')} value={p.address} onChange={set('address')} placeholder={t('acc.addressPh')} />
+              <EditRow label={t('acc.phone2')} value={p.phone2 ?? ''} onChange={set('phone2')} placeholder="+996 555 123 456" />
             </View>
           </MenuGroup>
           <RelativesForm value={p.relatives} onChange={(relatives) => setP((x) => ({ ...x, relatives }))} />

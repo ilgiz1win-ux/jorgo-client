@@ -54,6 +54,7 @@ function RootStack() {
           name="rental/checkout"
           options={{ title: t('rent.checkout'), headerStyle: { backgroundColor: colors.bg }, headerTintColor: colors.text, headerShadowVisible: false }}
         />
+        <Stack.Screen name="rental/contract/[id]" options={{ title: t('ct.view').replace('📄 ', '') }} />
         <Stack.Screen name="admin" options={{ headerShown: false }} />
       </Stack>
       {showSplash && <SplashIntro />}

@@ -591,4 +591,9 @@ export const en: Record<TKey, string> = {
   'w.kind.damage': "⚠️ Damage",
   'rd.consent': "I have read and accept the rental terms, and agree to share my passport details and location (GPS) for the rental.",
   'rd.tariffSub': "Paid daily from your balance",
+  'acc.issuedBy': "Passport issued by",
+  'acc.phone2': "Second phone",
+  'ct.view': "📄 Rental contract",
+  'ct.print': "Print / PDF",
+  'ct.notYet': "The contract is made when the bike is handed over",
 };
