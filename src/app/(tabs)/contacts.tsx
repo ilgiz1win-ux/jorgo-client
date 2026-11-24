@@ -10,6 +10,7 @@ import { TKey, useT } from '../../i18n';
 import { LangSwitch } from '../../components/LangSwitch';
 import { useContent } from '../../context/ContentContext';
 import { branchLabel } from '../../lib/branches';
+import { ChatButton } from '../../components/chat/ChatButton';
 
 function Row({ icon, title, value, onPress, color = colors.primary }: { icon: IconName; title: string; value: string; onPress?: () => void; color?: string }) {
   return (
@@ -35,6 +36,7 @@ export default function Contacts() {
         <Text style={styles.langLabel}>{t('lang.label')}</Text>
         <LangSwitch />
       </View>
+      <ChatButton />
       <Card style={{ gap: 4, padding: 4 }}>
         <Row icon="phone" title={t('contacts.phone')} value={SHOP.phone} onPress={callShop} />
         <Row icon="whatsapp" title="WhatsApp" value={`+${SHOP.whatsapp}`} color={colors.whatsapp} onPress={() => openWhatsApp(t('common.hello'))} />

@@ -4,23 +4,28 @@ import { useCallback, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, radius } from '../../config/theme';
 import { ChatThread, fetchThreads, fmtChatTime } from '../../lib/chat';
+import { useContent } from '../../context/ContentContext';
+import { fetchMasterUsers } from '../../lib/repairs';
 
 // Кардарлардын суроолору: ким жазды, окула элек канча
 export default function AdminChats() {
   const [list, setList] = useState<ChatThread[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { masters } = useContent();
+  const [masterUsers, setMasterUsers] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     try {
       setList(await fetchThreads());
+      fetchMasterUsers(Object.fromEntries(masters.map((m) => [m.id, m.name]))).then(setMasterUsers).catch(() => {});
       setError(null);
     } catch (e) {
       const m = e instanceof Error ? e.message : String(e);
       setError(m.includes('admin_chat_threads') ? 'SQL иштетиле элек (017).' : m);
     }
     setLoading(false);
-  }, []);
+  }, [masters]);
   useFocusEffect(
     useCallback(() => {
       load();
@@ -33,7 +38,7 @@ export default function AdminChats() {
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 40 }} refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}>
       <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>
-        Кардарлар колдонмодон суроо жазат (выезддин баасы, товар барбы ж.б.). Жаңы билдирүү келгенде «Билдирмелерге» да түшөт.
+        Кардарлар жана мастерлер колдонмодон суроо жазат (выезддин баасы, товар барбы ж.б.). Жаңы билдирүү келгенде «Билдирмелерге» да түшөт.
         {unread > 0 ? `  Окула элек: ${unread}` : ''}
       </Text>
       {error && <Text style={{ color: colors.danger }}>{error}</Text>}
@@ -48,6 +53,7 @@ export default function AdminChats() {
               <Text style={styles.name} numberOfLines={1}>
                 {t.name !== '—' ? t.name : t.phone}
               </Text>
+              {t.userId in masterUsers && <Text style={styles.master}>👷 Мастер</Text>}
               <Text style={{ color: colors.muted, fontSize: 12, marginLeft: 'auto' }}>{fmtChatTime(t.lastAt)}</Text>
             </View>
             {t.name !== '—' && <Text style={{ color: colors.muted, fontSize: 12 }}>{t.phone}</Text>}
@@ -72,6 +78,7 @@ const styles = StyleSheet.create({
   unread: { borderColor: colors.primary },
   avatar: { width: 46, height: 46, borderRadius: 23, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   name: { fontWeight: '800', fontSize: 15, color: colors.text, flexShrink: 1 },
+  master: { fontSize: 11, fontWeight: '800', color: '#fff', backgroundColor: '#B45309', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, overflow: 'hidden' },
   badge: { minWidth: 24, height: 24, borderRadius: 12, backgroundColor: colors.danger, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   empty: { color: colors.muted, textAlign: 'center', paddingVertical: 24 },
 });

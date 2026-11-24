@@ -5,18 +5,23 @@ import { Button } from '../../components/ui';
 import { colors } from '../../config/theme';
 import { docsReady, useAccount } from '../../context/AccountContext';
 import { useT } from '../../i18n';
-import { useEffect, useState } from 'react';
-import { myMasterId } from '../../lib/repairs';
+import { useIsMaster } from '../../hooks/useIsMaster';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { fmtSom, myBalance } from '../../lib/wallet';
+import { ChatButton } from '../../components/chat/ChatButton';
 
 // Меню: профиль, документтер, ижаралар, билдирмелер, төлөм, жөндөөлөр
 export default function AccountMenu() {
   const { t } = useT();
   const { profile, ready } = useAccount();
-  const [isMaster, setIsMaster] = useState(false);
-  useEffect(() => {
-    if (!profile) return setIsMaster(false);
-    myMasterId(profile.id).then((m) => setIsMaster(!!m)).catch(() => setIsMaster(false));
-  }, [profile]);
+  const isMaster = useIsMaster(true);
+  const [balance, setBalance] = useState<number | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      if (profile) myBalance().then(setBalance).catch(() => setBalance(null));
+    }, [profile]),
+  );
 
   return (
     <ScrollView contentContainerStyle={styles.wrap}>
@@ -39,13 +44,15 @@ export default function AccountMenu() {
             sub={docsReady(profile) ? (profile.verified ? t('acc.verified') : t('acc.notVerified')) : t('acc.documentsSub')}
             onPress={() => router.push('/account/documents')}
           />
+          <MenuRow icon="wallet" label={t('w.menu', { v: balance === null ? '…' : fmtSom(balance) })} sub={t('w.menuSub')} onPress={() => router.push('/wallet')} />
           <MenuRow icon="bicycle-electric" label={t('acc.myRents')} onPress={() => router.push('/account/rentals')} />
-          <MenuRow icon="chat-processing-outline" label={t('chat.menu')} sub={t('chat.menuSub')} onPress={() => router.push('/chat')} />
         </MenuGroup>
       )}
 
+      <ChatButton />
+
       <MenuGroup>
-        <MenuRow first icon="account-hard-hat" label={isMaster ? t('mp.title') : t('mp.entry')} sub={isMaster ? undefined : t('mp.entrySub')} onPress={() => router.push('/master-panel')} />
+        <MenuRow first icon="account-hard-hat" label={isMaster ? t('mp.title') : t('mp.entry')} sub={isMaster ? undefined : t('mp.entrySub')} onPress={() => router.push(isMaster ? '/master' : '/master-panel')} />
       </MenuGroup>
 
       <MenuGroup>

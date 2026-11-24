@@ -4,7 +4,11 @@ import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View 
 import { Card, Chip } from '../../components/ui';
 import { colors, radius } from '../../config/theme';
 import { useContent } from '../../context/ContentContext';
-import { fetchRepairs, Repair, RepairStatus, updateRepair } from '../../lib/repairs';
+import { fetchRepairs, fmtVisit, Repair, RepairStatus, updateRepair } from '../../lib/repairs';
+import { mapLink } from '../../lib/rentRequests';
+import { PhotoStrip } from '../../components/repair/PhotoStrip';
+import { VisitPicker } from '../../components/repair/VisitPicker';
+import { TextInput } from 'react-native';
 
 const LABEL: Record<RepairStatus, string> = { new: 'Жаңы', accepted: 'Кабыл алынды', in_progress: 'Иштелүүдө', done: 'Бүттү', cancelled: 'Отказ' };
 const COLOR: Record<RepairStatus, string> = { new: '#2563EB', accepted: '#0D9488', in_progress: '#D97706', done: colors.success, cancelled: colors.danger };
@@ -22,6 +26,9 @@ export default function AdminRepairs() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [assigning, setAssigning] = useState<string | null>(null);
+  const [planning, setPlanning] = useState<string | null>(null);
+  const [bringDraft, setBringDraft] = useState('');
+  const [visitDraft, setVisitDraft] = useState<string | undefined>();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -38,7 +45,7 @@ export default function AdminRepairs() {
     load();
   }, [load]);
 
-  const apply = async (id: string, patch: { status?: RepairStatus; masterId?: string | null }) => {
+  const apply = async (id: string, patch: { status?: RepairStatus; masterId?: string | null; visitAt?: string | null; bring?: string }) => {
     try {
       const n = await updateRepair(id, patch);
       if (n) setList((l) => l.map((x) => (x.id === n.id ? n : x)));
@@ -75,12 +82,48 @@ export default function AdminRepairs() {
           {!!r.bike && <Text style={styles.text}>🚲 {r.bike}</Text>}
           {r.services.length > 0 && <Text style={styles.text}>🔧 {r.services.join(', ')}</Text>}
           {!!r.problem && <Text style={styles.text}>💬 {r.problem}</Text>}
+          <PhotoStrip photos={r.photos} size={72} />
           {r.outcall && <Text style={[styles.text, { color: colors.primary, fontWeight: '800' }]}>🚗 Выезд керек</Text>}
+          {!!r.address && <Text style={styles.text}>🏠 {r.address}</Text>}
+          {r.lat != null && r.lng != null && (
+            <Pressable onPress={() => Linking.openURL(mapLink(r.lat!, r.lng!))}>
+              <Text style={{ color: '#2563EB', fontWeight: '700' }}>🗺 Картадан ачуу</Text>
+            </Pressable>
+          )}
+          {!!r.visitAt && <Text style={[styles.text, { fontWeight: '800' }]}>🕘 {fmtVisit(r.visitAt)}</Text>}
+          {!!r.outcallFee && (
+            <Text style={[styles.text, { color: '#92400E' }]}>
+              💰 Выезд акысы {r.outcallFee} сом балансынан алынды{r.status === 'cancelled' ? (r.arrivedAt ? ' · мастер барган — кайтарылбайт' : ' · кайтарылды') : ''}
+            </Text>
+          )}
+          {!!r.arrivedAt && <Text style={[styles.text, { color: '#2563EB', fontWeight: '700' }]}>📍 Мастер келди: {fmtVisit(r.arrivedAt)}</Text>}
+          {!!r.bring && <Text style={[styles.text, { backgroundColor: '#FEF3C7', padding: 6, borderRadius: 8 }]}>🧰 Ала барсын: {r.bring}</Text>}
           <Text style={styles.muted}>
             📍 {r.branch || '—'} · 👷 {masterName(r.masterId) ?? 'мастер тандала элек'}
           </Text>
           {!!r.masterNote && <Text style={styles.muted}>📝 {r.masterNote}</Text>}
 
+          {planning === r.id && (
+            <View style={styles.plan}>
+              <VisitPicker value={visitDraft} onChange={setVisitDraft} labels={['Бүгүн', 'Эртең', 'Бүрсүгүнү']} dayLabel="Мастер качан барсын / кабыл алсын" timeLabel="Саат" />
+              <Text style={styles.muted}>🧰 Мастер эмне ала барсын</Text>
+              <TextInput value={bringDraft} onChangeText={setBringDraft} multiline placeholder="Мисалы: 48V контроллер, камера 20 дюйм, насос" placeholderTextColor={colors.muted} style={styles.input} maxLength={300} />
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <Pressable onPress={() => setPlanning(null)} style={[styles.action, { borderColor: colors.muted }]}>
+                  <Text style={{ color: colors.muted, fontWeight: '800', fontSize: 13 }}>Жокко чыгаруу</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    apply(r.id, { visitAt: visitDraft ?? null, bring: bringDraft.trim() });
+                    setPlanning(null);
+                  }}
+                  style={[styles.action, { borderColor: colors.primary, backgroundColor: colors.primary }]}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13 }}>Сактоо</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
           {assigning === r.id ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
               {masters
@@ -101,6 +144,16 @@ export default function AdminRepairs() {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               <Pressable onPress={() => setAssigning(r.id)} style={[styles.action, { borderColor: '#B45309' }]}>
                 <Text style={{ color: '#B45309', fontWeight: '800', fontSize: 13 }}>👷 Мастер дайындоо</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  setPlanning(r.id);
+                  setVisitDraft(r.visitAt);
+                  setBringDraft(r.bring);
+                }}
+                style={[styles.action, { borderColor: colors.primary }]}
+              >
+                <Text style={{ color: colors.primary, fontWeight: '800', fontSize: 13 }}>🕘 Убакыт / 🧰 эмне ала барсын</Text>
               </Pressable>
               {r.status !== 'cancelled' && r.status !== 'done' && (
                 <Pressable onPress={() => apply(r.id, { status: 'cancelled' })} style={[styles.action, { borderColor: colors.danger }]}>
@@ -123,5 +176,7 @@ const styles = StyleSheet.create({
   text: { color: colors.text, fontSize: 14 },
   muted: { color: colors.muted, fontSize: 13 },
   empty: { color: colors.muted, textAlign: 'center', paddingVertical: 24 },
+  plan: { gap: 8, backgroundColor: colors.bg, borderRadius: radius.md, padding: 10, borderWidth: 1, borderColor: colors.border },
+  input: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: 10, minHeight: 60, color: colors.text, backgroundColor: colors.card, fontSize: 14 },
   action: { borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 7 },
 });

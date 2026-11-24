@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router, Stack } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { router, Stack, useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { ProductImage } from '../../components/ProductCard';
 import { Button, Card, Chip } from '../../components/ui';
@@ -11,8 +11,9 @@ import { useCatalog } from '../../context/CatalogContext';
 import { CATEGORIES, CategoryId, IconName } from '../../data/products';
 import { formatPrice } from '../../lib/format';
 import { useUnread } from '../../lib/useUnread';
+import { fetchThreads } from '../../lib/chat';
 
-type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/masters' | '/admin/broadcast' | '/admin/branches' | '/admin/orders' | '/admin/customers' | '/admin/repairs' | '/admin/applications' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery' | '/admin/chats' | '/admin/assistant'; title: string; text: string; icon: IconName; color: string };
+type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/masters' | '/admin/broadcast' | '/admin/branches' | '/admin/orders' | '/admin/customers' | '/admin/repairs' | '/admin/applications' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery' | '/admin/chats' | '/admin/assistant' | '/admin/wallets'; title: string; text: string; icon: IconName; color: string };
 
 // Ижара панели — дүкөндөн өзүнчө
 const RENT_SECTIONS: Tile[] = [
@@ -23,8 +24,9 @@ const RENT_SECTIONS: Tile[] = [
 ];
 
 const SECTIONS: Tile[] = [
-  { href: '/admin/chats', title: 'Кардарлардын суроолору', text: 'Чат: выезд канча, товар барбы — жооп бериңиз', icon: 'chat-processing', color: '#7C3AED' },
+  { href: '/admin/chats', title: 'Чат', text: 'Кардарлар жана мастерлер жазат — жооп бериңиз', icon: 'chat-processing', color: '#7C3AED' },
   // ИИ жардамчы кийин кошулат (код даяр: /admin/assistant, supabase/functions/admin-assistant)
+  { href: '/admin/wallets', title: 'Баланс жана выезд акысы', text: 'Толуктоолорду ырастоо, баланстар, выезд баасы', icon: 'wallet', color: '#15803D' },
   { href: '/admin/orders', title: 'Заказдар', text: 'Алып кетти / отказ, экспресс жол акысы', icon: 'truck-fast', color: '#D97706' },
   { href: '/admin/customers', title: 'Кардарлар', text: 'Катталгандар жана кара тизме', icon: 'account-group', color: '#334155' },
   { href: '/admin/broadcast', title: 'Билдирме жөнөтүү', text: 'Акция, арзандатуу — бардык кардарларга', icon: 'send', color: '#DB2777' },
@@ -44,6 +46,14 @@ export default function AdminHome() {
   const { products, promos, loading, refresh, saveProduct, seedProducts } = useCatalog();
   const { logout, email } = useAdminAuth();
   const unread = useUnread(isRemote);
+  const [chatUnread, setChatUnread] = useState(0);
+  useFocusEffect(
+    useCallback(() => {
+      fetchThreads()
+        .then((l) => setChatUnread(l.reduce((n, x) => n + x.unread, 0)))
+        .catch(() => {});
+    }, []),
+  );
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<CategoryId | 'all'>('all');
   const [error, setError] = useState<string | null>(null);
@@ -129,6 +139,11 @@ export default function AdminHome() {
               <Text style={styles.tileText} numberOfLines={2}>
                 {t.text}
               </Text>
+              {t.href === '/admin/chats' && chatUnread > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{chatUnread > 99 ? '99+' : chatUnread}</Text>
+                </View>
+              )}
             </Pressable>
           ))}
         </View>
