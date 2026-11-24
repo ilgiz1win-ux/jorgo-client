@@ -49,9 +49,11 @@ export function MyRentalCard() {
         const charged = (r.chargedDays ?? 0) * daily;
         const left = daily > 0 && balance !== null ? Math.floor(balance / daily) : null;
         const low = r.status === 'active' && balance !== null && daily > 0 && balance <= daily;
+        const overdue = r.status === 'active' && balance !== null && balance < 0;
+        const soon = !low && r.status === 'active' && left !== null && left <= 2;
         const minLeft = Math.max(0, RENT_MIN_DAYS - days);
         return (
-          <Pressable key={r.id} style={[styles.card, low && styles.low]} onPress={() => router.push('/account/rentals')} accessibilityRole="button">
+          <Pressable key={r.id} style={[styles.card, low && styles.low, soon && styles.soonCard]} onPress={() => router.push('/account/rentals')} accessibilityRole="button">
             <View style={styles.row}>
               <MaterialCommunityIcons name="bicycle-electric" size={26} color={low ? colors.danger : colors.primary} />
               <View style={{ flex: 1 }}>
@@ -87,7 +89,13 @@ export function MyRentalCard() {
                   {r.startedAt ? ` · ${t('rd.started', { v: new Date(r.startedAt).toLocaleDateString('ru-RU') })}` : ''}
                 </Text>
                 {minLeft > 0 && <Text style={styles.muted}>{t('mr.minLeft', { n: minLeft })}</Text>}
-                {low && <Text style={styles.warn}>⚠️ {t('rd.lowNow')}</Text>}
+                {overdue ? (
+                  <Text style={styles.warn}>⚠️ {t('mr.overdue', { v: fmtSom(-(balance ?? 0)) })}</Text>
+                ) : low ? (
+                  <Text style={styles.warn}>⚠️ {t('rd.lowNow')}</Text>
+                ) : soon ? (
+                  <Text style={styles.soon}>⏰ {t('mr.soon', { n: left ?? 0 })}</Text>
+                ) : null}
               </>
             )}
 
@@ -113,6 +121,7 @@ export function MyRentalCard() {
 const styles = StyleSheet.create({
   card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: 14, gap: 10, borderWidth: 2, borderColor: colors.primary },
   low: { borderColor: colors.danger, backgroundColor: '#FEF2F2' },
+  soonCard: { borderColor: '#F59E0B', backgroundColor: '#FFFBEB' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   title: { fontSize: 12, fontWeight: '800', color: colors.muted, textTransform: 'uppercase' },
   bike: { fontSize: 16, fontWeight: '900', color: colors.text },
@@ -122,6 +131,7 @@ const styles = StyleSheet.create({
   statL: { fontSize: 11, color: colors.muted, textAlign: 'center' },
   muted: { fontSize: 12, color: colors.muted },
   warn: { fontSize: 14, fontWeight: '800', color: colors.danger },
+  soon: { fontSize: 14, fontWeight: '800', color: '#B45309' },
   wait: { fontSize: 14, fontWeight: '700', color: '#2563EB' },
   btn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderColor: colors.primary, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
 });
