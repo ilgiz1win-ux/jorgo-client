@@ -13,6 +13,7 @@ import { cancelMyRepair, fetchMyRepairs, fmtVisit, Repair, RepairStatus } from '
 import { fetchMyRentRequests, RentRequest } from '../../lib/rentRequests';
 import { OrderStatusCard } from '../OrderStatusCard';
 import { PhotoStrip } from '../repair/PhotoStrip';
+import { RateRepair } from '../repair/RateRepair';
 import { SectionTitle } from '../ui';
 
 const STEPS: RepairStatus[] = ['new', 'accepted', 'in_progress', 'done'];
@@ -104,7 +105,8 @@ function RepairOrder({ r, onChange }: { r: Repair; onChange: () => void }) {
           {cancelled && !r.arrivedAt ? ` · ${t('my.refunded')}` : ''}
         </Text>
       )}
-      {r.status === 'done' && (
+      {r.status === 'done' && <RateRepair r={r} masterName={m?.name} onDone={() => onChange()} />}
+      {r.status === 'done' && !!r.ratedAt && (
         <Pressable onPress={() => router.push({ pathname: '/review', params: { about: 'repair', ref: `№${r.number}${m ? ` · ${m.name}` : ''}` } })} style={[styles.btn, { borderColor: '#F59E0B', alignSelf: 'flex-start' }]}>
           <Text style={{ color: '#B45309', fontWeight: '800' }}>{t('rv.cta')}</Text>
         </Pressable>

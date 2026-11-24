@@ -5,6 +5,7 @@ import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ReviewsCarousel, StatsRow } from '../../components/HomeSections';
 import { MyRentalCard } from '../../components/rent/MyRentalCard';
+import { RateCard } from '../../components/repair/RateCard';
 import { InstallBanner } from '../../components/InstallApp';
 import { ProductGrid } from '../../components/ProductGrid';
 import { PromoCarousel } from '../../components/PromoCarousel';
@@ -103,6 +104,7 @@ export default function Home() {
 
       <View style={styles.body}>
         <InstallBanner />
+        <RateCard />
         <MyRentalCard />
         <StatsRow stats={settings.stats} />
 

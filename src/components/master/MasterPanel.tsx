@@ -185,6 +185,7 @@ function RepairCard({ r, mine, onChange, onTake }: { r: Repair; mine: boolean; o
               </View>
             </View>
           )}
+          {r.status === 'done' && !!r.rating && <Text style={[styles.text, { color: '#B45309', fontWeight: '800' }]}>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)} {t('rate.client')}{r.ratingNote ? ` · «${r.ratingNote}»` : ''}</Text>}
           {r.status === 'done' && r.price != null && <Text style={[styles.text, { color: colors.success, fontWeight: '900' }]}>💰 {t('mp.priceGot', { v: formatPrice(r.price) })}</Text>}
           {NEXT[r.status].length > 0 && !etaFor && !priceOpen && (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>

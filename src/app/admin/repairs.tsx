@@ -109,6 +109,11 @@ export default function AdminRepairs() {
             📍 {r.branch || '—'} · 👷 {masterName(r.masterId) ?? 'мастер тандала элек'}
           </Text>
           {!!r.masterNote && <Text style={styles.muted}>📝 {r.masterNote}</Text>}
+          {!!r.rating && (
+            <Text style={[styles.text, { color: '#B45309', fontWeight: '800' }]}>
+              {'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)} Кардардын баасы{r.ratingNote ? ` · «${r.ratingNote}»` : ''}
+            </Text>
+          )}
           {r.status === 'done' && (
             <Text style={[styles.text, { fontWeight: '900', color: r.price != null ? colors.success : colors.danger }]}>
               💰 {r.price != null ? `Акысы: ${formatPrice(r.price)}` : 'Акысы жазылган эмес'}

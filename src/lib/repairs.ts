@@ -34,6 +34,9 @@ export type Repair = {
   etaAt?: string;
   price?: number;
   doneAt?: string;
+  rating?: number;
+  ratingNote?: string;
+  ratedAt?: string;
 };
 type Row = {
   id: string;
@@ -62,6 +65,9 @@ type Row = {
   eta_at?: string | null;
   price?: number | null;
   done_at?: string | null;
+  rating?: number | null;
+  rating_note?: string | null;
+  rated_at?: string | null;
 };
 const fromRow = (r: Row): Repair => ({
   id: r.id,
@@ -90,6 +96,9 @@ const fromRow = (r: Row): Repair => ({
   etaAt: r.eta_at ?? undefined,
   price: r.price ?? undefined,
   doneAt: r.done_at ?? undefined,
+  rating: r.rating ?? undefined,
+  ratingNote: r.rating_note ?? '',
+  ratedAt: r.rated_at ?? undefined,
 });
 
 const LOCAL = 'jorgo.local.repairs';
@@ -429,6 +438,21 @@ export async function fetchMyRepairs(userId: string): Promise<Repair[]> {
   const { data, error } = await supabase.from('repair_requests').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
   if (error) throw error;
   return (data as Row[]).map(fromRow);
+}
+
+// Кардар бүткөн выезд/оңдоону бир жолу баалайт (1–5 жылдыз). Мастердин рейтинги серверде эсептелет.
+export async function rateRepair(id: string, stars: number, note: string): Promise<boolean> {
+  if (!supabase) {
+    const l = await read<Repair[]>(LOCAL, []);
+    const r = l.find((x) => x.id === id);
+    if (!r || r.status !== 'done' || r.ratedAt) return false;
+    Object.assign(r, { rating: stars, ratingNote: note.trim().slice(0, 500), ratedAt: new Date().toISOString() });
+    await write(LOCAL, l);
+    return true;
+  }
+  const { data, error } = await supabase.rpc('customer_rate_repair', { p_id: id, p_stars: stars, p_note: note.trim().slice(0, 500) });
+  if (error) throw error;
+  return data === true;
 }
 
 // Кардар мастер келгенге чейин жокко чыгарат (выезд акысы кайтарылат)
