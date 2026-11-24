@@ -74,12 +74,16 @@ function RepairOrder({ r, onChange }: { r: Repair; onChange: () => void }) {
         </View>
       </View>
 
-      {!!r.visitAt && !cancelled && (
+      {!!r.etaAt && !cancelled && r.status !== 'done' && (
         <View style={styles.when}>
-          <MaterialCommunityIcons name="clock-outline" size={20} color={colors.primary} />
-          <Text style={{ color: colors.text, fontWeight: '800', flex: 1 }}>
-            {r.outcall ? t('my.comesAt', { v: fmtVisit(r.visitAt) }) : t('my.at', { v: fmtVisit(r.visitAt) })}
-          </Text>
+          <MaterialCommunityIcons name="clock-check-outline" size={22} color={colors.primary} />
+          <Text style={{ color: colors.text, fontWeight: '900', flex: 1, fontSize: 15 }}>{r.outcall ? t('my.etaOutcall', { v: fmtVisit(r.etaAt) }) : t('my.etaShop', { v: fmtVisit(r.etaAt) })}</Text>
+        </View>
+      )}
+      {!!r.visitAt && !cancelled && !r.etaAt && (
+        <View style={[styles.when, { backgroundColor: colors.bg }]}>
+          <MaterialCommunityIcons name="clock-outline" size={20} color={colors.muted} />
+          <Text style={{ color: colors.text, fontWeight: '700', flex: 1 }}>{t('my.wish', { v: fmtVisit(r.visitAt) })}</Text>
         </View>
       )}
       {!!r.arrivedAt && <Text style={[styles.text, { color: '#2563EB', fontWeight: '800' }]}>📍 {t('mp.arrivedAt', { v: fmtVisit(r.arrivedAt) })}</Text>}

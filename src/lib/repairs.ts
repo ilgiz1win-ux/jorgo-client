@@ -31,6 +31,7 @@ export type Repair = {
   outcallFee?: number;
   arrivedAt?: string;
   userId?: string;
+  etaAt?: string;
 };
 type Row = {
   id: string;
@@ -56,6 +57,7 @@ type Row = {
   outcall_fee?: number | null;
   arrived_at?: string | null;
   user_id?: string | null;
+  eta_at?: string | null;
 };
 const fromRow = (r: Row): Repair => ({
   id: r.id,
@@ -81,6 +83,7 @@ const fromRow = (r: Row): Repair => ({
   outcallFee: r.outcall_fee ?? undefined,
   arrivedAt: r.arrived_at ?? undefined,
   userId: r.user_id ?? undefined,
+  etaAt: r.eta_at ?? undefined,
 });
 
 const LOCAL = 'jorgo.local.repairs';
@@ -141,11 +144,11 @@ export async function fetchRepairs(): Promise<Repair[]> {
   return (data as Row[]).map(fromRow);
 }
 
-export async function updateRepair(id: string, patch: { status?: RepairStatus; masterNote?: string; masterId?: string | null; visitAt?: string | null; bring?: string; arrived?: boolean }): Promise<Repair | null> {
+export async function updateRepair(id: string, patch: { status?: RepairStatus; masterNote?: string; masterId?: string | null; visitAt?: string | null; bring?: string; arrived?: boolean; etaAt?: string }): Promise<Repair | null> {
   if (!supabase) {
     const l = (await read<Repair[]>(LOCAL, [])).map((x) =>
       x.id === id
-        ? { ...x, updatedAt: new Date().toISOString(), visitAt: patch.visitAt === undefined ? x.visitAt : patch.visitAt ?? undefined, bring: patch.bring ?? x.bring, arrivedAt: patch.arrived && !x.arrivedAt ? new Date().toISOString() : x.arrivedAt, status: patch.status ?? x.status, masterNote: patch.masterNote ?? x.masterNote, masterId: patch.masterId === undefined ? x.masterId : patch.masterId ?? undefined }
+        ? { ...x, updatedAt: new Date().toISOString(), visitAt: patch.visitAt === undefined ? x.visitAt : patch.visitAt ?? undefined, bring: patch.bring ?? x.bring, arrivedAt: patch.arrived && !x.arrivedAt ? new Date().toISOString() : x.arrivedAt, etaAt: patch.etaAt ?? x.etaAt, status: patch.status ?? x.status, masterNote: patch.masterNote ?? x.masterNote, masterId: patch.masterId === undefined ? x.masterId : patch.masterId ?? undefined }
         : x,
     );
     await write(LOCAL, l);
@@ -160,6 +163,7 @@ export async function updateRepair(id: string, patch: { status?: RepairStatus; m
   if (patch.visitAt !== undefined) row.visit_at = patch.visitAt;
   if (patch.bring !== undefined) row.bring = patch.bring;
   if (patch.arrived) row.arrived_at = new Date().toISOString();
+  if (patch.etaAt) row.eta_at = patch.etaAt;
   const { data, error } = await supabase.from('repair_requests').update(row).eq('id', id).select('*').single();
   if (error) throw error;
   return fromRow(data as Row);
