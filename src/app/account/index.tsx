@@ -10,6 +10,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { fmtSom, myBalance } from '../../lib/wallet';
 import { ChatButton } from '../../components/chat/ChatButton';
+import { MyRentalCard } from '../../components/rent/MyRentalCard';
 
 // Меню: профиль, документтер, ижаралар, билдирмелер, төлөм, жөндөөлөр
 export default function AccountMenu() {
@@ -50,6 +51,7 @@ export default function AccountMenu() {
         </MenuGroup>
       )}
 
+      <MyRentalCard />
       <ChatButton />
 
       <MenuGroup>

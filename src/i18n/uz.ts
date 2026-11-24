@@ -612,4 +612,10 @@ export const uz: Record<TKey, string> = {
   'rv.about.repair': "Ta'mirlash / chiqish",
   'rv.about.rental': "Ijara",
   'rv.about.product': "Mahsulot",
+  'mr.title': "Mening ijaram",
+  'mr.days': "kun o'tdi",
+  'mr.daysLeft': "kunga yetadi",
+  'mr.charged': "yechildi: {v}",
+  'mr.minLeft': "Kamida 1 haftaga yana {n} kun qoldi",
+  'mr.contract': "Shartnoma",
 };

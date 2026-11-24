@@ -14,6 +14,7 @@ import { docsReady, useAccount } from '../../context/AccountContext';
 import { useContent } from '../../context/ContentContext';
 import { dailyPrice, RentalBike } from '../../data/rentals';
 import { useT } from '../../i18n';
+import { MyRentalCard } from '../../components/rent/MyRentalCard';
 import { formatPrice, openWhatsApp } from '../../lib/format';
 
 function ModelCard({ bike, index }: { bike: RentalBike; index: number }) {
@@ -85,6 +86,7 @@ function RentModels() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}>
+        <MyRentalCard />
         <View style={styles.head}>
           <View style={styles.headIcon}>
             <MaterialCommunityIcons name="bicycle-electric" size={30} color={colors.primary} />
