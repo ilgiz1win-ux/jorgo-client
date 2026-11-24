@@ -7,13 +7,10 @@ import { Button } from '../../components/ui';
 import { colors } from '../../config/theme';
 import { useAccount } from '../../context/AccountContext';
 import { useContent } from '../../context/ContentContext';
-import { periodsOf, priceFor, RentPeriod } from '../../data/rentals';
-import { TKey, useT } from '../../i18n';
+import { dailyPrice, RENT_MIN_DAYS } from '../../data/rentals';
+import { useT } from '../../i18n';
 import { formatPrice } from '../../lib/format';
 
-const DAYS: Record<RentPeriod, number> = { day: 1, week: 7, month: 30 };
-const TITLE: Record<RentPeriod, TKey> = { day: 'rent.tariff.day', week: 'rent.tariff.week', month: 'rent.tariff.month' };
-const TEXT: Record<RentPeriod, TKey> = { day: 'rent.tariffText.day', week: 'rent.tariffText.week', month: 'rent.tariffText.month' };
 
 // Бир велосипеддин тарифтери (скриншоттогудай карталар)
 export default function Tariffs() {
@@ -32,12 +29,11 @@ export default function Tariffs() {
     );
   }
 
-  const periods = periodsOf(bike);
-  const popular: RentPeriod | undefined = periods.includes('week') ? 'week' : periods[0];
+  const daily = dailyPrice(bike);
 
-  const order = (p: RentPeriod) => {
-    // Катталуу жана паспорт тариздөө барагында суралат
-    router.push({ pathname: '/rental/checkout', params: { bike: bike.id, period: p } });
+  const order = () => {
+    // Катталуу, паспорт жана баланс тариздөө барагында суралат
+    router.push({ pathname: '/rental/checkout', params: { bike: bike.id } });
   };
 
   return (
@@ -70,50 +66,37 @@ export default function Tariffs() {
         </View>
         <View style={{ flex: 1 }}>
           <Text style={styles.headTitle}>{t('rent.tariffs')}</Text>
-          <Text style={styles.muted}>{t('rent.tariffsSub')}</Text>
+          <Text style={styles.muted}>{t('rd.tariffSub')}</Text>
         </View>
       </View>
 
-      {periods.map((p, i) => {
-        const price = priceFor(bike, p)!;
-        return (
-          <FadeIn key={p} delay={i * 80}>
-            <View style={styles.tariff}>
-              <View style={styles.tariffHead}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.tariffTitle}>{t(TITLE[p])}</Text>
-                  <Text style={styles.muted}>{t('rent.days', { n: DAYS[p] })}</Text>
-                </View>
-                {p === popular && periods.length > 1 && (
-                  <View style={styles.popular}>
-                    <MaterialCommunityIcons name="star" size={14} color={colors.accent} />
-                    <Text style={styles.popularText}>{t('rent.popular').toUpperCase()}</Text>
-                  </View>
-                )}
-              </View>
-              <View style={styles.tariffBody}>
-                <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.price}>{formatPrice(price)}</Text>
-                  </View>
-                  <View style={styles.daysChip}>
-                    <MaterialCommunityIcons name="calendar-blank-outline" size={16} color={colors.muted} />
-                    <Text style={styles.daysText}>{t('rent.days', { n: DAYS[p] })}</Text>
-                  </View>
-                </View>
-                <Text style={styles.desc}>{t(TEXT[p])}</Text>
-                {!!bike.deposit && <Text style={styles.muted}>{t('rent.deposit', { sum: formatPrice(bike.deposit) })}</Text>}
-                <Button
-                  title={bike.available ? t('rent.order') : t('rent.busy')}
-                  disabled={!bike.available}
-                  onPress={() => order(p)}
-                  style={{ borderRadius: 999 }}
-                />
-              </View>
+      <FadeIn>
+        <View style={styles.tariff}>
+          <View style={styles.tariffHead}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.tariffTitle}>{daily ? t('rd.perDay', { v: formatPrice(daily) }) : t('rd.noPrice')}</Text>
+              <Text style={styles.muted}>{t('rd.minWeek', { n: RENT_MIN_DAYS })}</Text>
             </View>
-          </FadeIn>
-        );
-      })}
+          </View>
+          <View style={styles.tariffBody}>
+            {!!daily && (
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.price}>{formatPrice(daily * RENT_MIN_DAYS)}</Text>
+                  <Text style={styles.muted}>{t('rd.msgMin', { v: '' }).replace(/[:\s]+$/, '')}</Text>
+                </View>
+                <View style={styles.daysChip}>
+                  <MaterialCommunityIcons name="calendar-blank-outline" size={16} color={colors.muted} />
+                  <Text style={styles.daysText}>{t('rent.days', { n: RENT_MIN_DAYS })}</Text>
+                </View>
+              </View>
+            )}
+            <Text style={styles.desc}>{t('rd.howBilled')}</Text>
+            {!!bike.deposit && <Text style={styles.muted}>{t('rent.deposit', { sum: formatPrice(bike.deposit) })}</Text>}
+            <Button title={bike.available ? t('rent.order') : t('rent.busy')} disabled={!bike.available || !daily} onPress={order} style={{ borderRadius: 999 }} />
+          </View>
+        </View>
+      </FadeIn>
     </ScrollView>
   );
 }

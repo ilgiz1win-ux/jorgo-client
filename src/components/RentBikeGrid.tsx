@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { colors, radius } from '../config/theme';
-import { periodsOf, priceFor, RentalBike } from '../data/rentals';
+import { dailyPrice, RentalBike } from '../data/rentals';
 import { useT } from '../i18n';
 import { formatPrice } from '../lib/format';
 import { FadeIn, PressScale } from './anim';
@@ -11,9 +11,7 @@ import { BIKE_IMAGE, BIKE_RATIO } from './BikeRide';
 // Ижара велосипеди товардын карточкасындай: сүрөт, аты, жумалык (же айлык) баасы
 function RentBikeCard({ bike }: { bike: RentalBike }) {
   const { t } = useT();
-  const periods = periodsOf(bike);
-  const p = periods.includes('week') ? 'week' : periods[0];
-  const price = p ? priceFor(bike, p) : undefined;
+  const price = dailyPrice(bike);
   return (
     <PressScale
       outerStyle={{ flex: 1 }}
@@ -36,8 +34,8 @@ function RentBikeCard({ bike }: { bike: RentalBike }) {
       </Text>
       <View style={styles.bottom}>
         <View style={{ flex: 1 }}>
-          {!!price && <Text style={styles.price}>{formatPrice(price)}</Text>}
-          {!!p && <Text style={styles.unit}>{p === 'week' ? t('rent.perWeek') : t('rent.perMonth')}</Text>}
+          {!!price && <Text style={styles.price}>{t('rd.perDay', { v: formatPrice(price) })}</Text>}
+          <Text style={styles.unit}>{t('rd.minWeek', { n: 7 })}</Text>
         </View>
         <View style={styles.btn}>
           <MaterialCommunityIcons name="key-variant" size={18} color="#fff" />

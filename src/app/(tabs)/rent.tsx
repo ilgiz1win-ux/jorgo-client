@@ -12,16 +12,14 @@ import { SHOP } from '../../config/shop';
 import { colors, radius } from '../../config/theme';
 import { docsReady, useAccount } from '../../context/AccountContext';
 import { useContent } from '../../context/ContentContext';
-import { periodsOf, priceFor, RentalBike } from '../../data/rentals';
+import { dailyPrice, RentalBike } from '../../data/rentals';
 import { useT } from '../../i18n';
 import { formatPrice, openWhatsApp } from '../../lib/format';
 
 function ModelCard({ bike, index }: { bike: RentalBike; index: number }) {
   const { t } = useT();
-  const periods = periodsOf(bike);
-  // Картада: жумалык баа, жок болсо — айлык
-  const shown = periods.includes('week') ? 'week' : periods[0];
-  const shownPrice = shown ? priceFor(bike, shown) : undefined;
+  // Картада: күндүк баа (минимум 1 жума)
+  const shownPrice = dailyPrice(bike);
   return (
     <FadeIn delay={index * 70}>
       <Pressable
@@ -43,7 +41,7 @@ function ModelCard({ bike, index }: { bike: RentalBike; index: number }) {
             {bike.name}
           </Text>
           {!!shownPrice && (
-            <Text style={styles.from}>{t(shown === 'week' ? 'rent.perWeekShort' : 'rent.perMonthShort', { sum: formatPrice(shownPrice) })}</Text>
+            <Text style={styles.from}>{t('rd.perDay', { v: formatPrice(shownPrice) })}</Text>
           )}
           <View style={styles.modelFoot}>
             <View style={styles.kind}>

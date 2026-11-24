@@ -12,7 +12,10 @@ import { daysLeft, fetchPayments, fmtDay, PAY_METHODS, PayMethod, recordPayment,
 import { setLocalPaidUntil } from '../../lib/rentRequests';
 import { priceFor } from '../../data/rentals';
 import { useContent } from '../../context/ContentContext';
-import { fetchRentRequests, mapLink, RentRequest, RentStatus, setRentStatus } from '../../lib/rentRequests';
+import { ContractDetails, fetchRentRequests, mapLink, RentRequest, RentStatus, returnRent, setRentStatus, startRent } from '../../lib/rentRequests';
+import { router } from 'expo-router';
+import { balanceOf, fmtSom } from '../../lib/wallet';
+import { RENT_MIN_DAYS } from '../../data/rentals';
 
 const STATUS: Record<RentStatus, { label: string; color: string }> = {
   new: { label: 'Жаңы', color: '#2563EB' },
@@ -23,7 +26,7 @@ const STATUS: Record<RentStatus, { label: string; color: string }> = {
 type Filter = RentStatus | 'all' | 'due';
 const FILTERS: Filter[] = ['due', 'new', 'active', 'returned', 'rejected', 'all'];
 // Бүгүн/эртең төлөй тургандар жана кечиккендер
-const isDue = (r: RentRequest) => r.status === 'active' && (daysLeft(r.paidUntil) ?? -1) <= 1;
+const isDue = (r: RentRequest) => r.status === 'active' && !r.billing && (daysLeft(r.paidUntil) ?? -1) <= 1;
 const UNIT: Record<RentPeriod, string> = { day: 'күн', week: 'жума', month: 'ай' };
 
 const fmtDate = (iso: string) => {
@@ -178,6 +181,154 @@ function Payments({ r, unitPrice, onPaid }: { r: RentRequest; unitPrice?: number
   );
 }
 
+// Велосипедди берүү: келишимдин маалыматы (кагаз келишимдегидей)
+const KIT = ['Батарея', 'Заряддагыч', 'Багажник', 'Кулпу', 'Шлем'];
+function StartForm({ r, defaults, onDone, onCancel }: { r: RentRequest; defaults: Partial<ContractDetails>; onDone: () => void; onCancel: () => void }) {
+  const [bikeNo, setBikeNo] = useState(defaults.bikeNo ?? '');
+  const [jorgoNo, setJorgoNo] = useState(defaults.jorgoNo ?? '');
+  const [batteryNo, setBatteryNo] = useState(defaults.batteryNo ?? '');
+  const [bikeValue, setBikeValue] = useState(defaults.bikeValue ? String(defaults.bikeValue) : '');
+  const [deposit, setDeposit] = useState(defaults.deposit ? String(defaults.deposit) : '');
+  const [collateral, setCollateral] = useState('');
+  const [kit, setKit] = useState<string[]>(['Батарея', 'Заряддагыч', 'Багажник']);
+  const [defects, setDefects] = useState<'none' | 'scratches'>('none');
+  const [handoverNote, setHandoverNote] = useState('');
+  const [handoverOk, setHandoverOk] = useState(true);
+  const [staff, setStaff] = useState(defaults.staff ?? '');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const num = (v: string) => (v.replace(/\D/g, '') ? parseInt(v.replace(/\D/g, ''), 10) : undefined);
+  const save = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      await startRent(r.id, { bikeNo: bikeNo.trim(), jorgoNo: jorgoNo.trim(), batteryNo: batteryNo.trim(), bikeValue: num(bikeValue), deposit: num(deposit), collateral: collateral.trim(), kit, defects, handoverNote: handoverNote.trim(), handoverOk, staff: staff.trim() });
+      onDone();
+    } catch (e) {
+      const m = e instanceof Error ? e.message : String(e);
+      setErr(m.includes('admin_rent_start') ? 'SQL иштетиле элек (028).' : m);
+    }
+    setBusy(false);
+  };
+  return (
+    <View style={styles.payBox}>
+      <Text style={{ fontWeight: '900', color: colors.text, fontSize: 15 }}>🚲 Велосипедди берүү — келишим</Text>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <View style={{ flex: 1 }}>
+          <Field label="Велосипеддин номери" value={bikeNo} onChangeText={setBikeNo} placeholder="0476" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Field label="Жорго №" value={jorgoNo} onChangeText={setJorgoNo} placeholder="4" />
+        </View>
+      </View>
+      <Field label="Батарея (номери)" value={batteryNo} onChangeText={setBatteryNo} placeholder="13/70" />
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <View style={{ flex: 1 }}>
+          <Field label="Велосипеддин баасы, сом" value={bikeValue} onChangeText={setBikeValue} keyboardType="number-pad" placeholder="10000" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Field label="Депозит, сом" value={deposit} onChangeText={setDeposit} keyboardType="number-pad" placeholder="3000" />
+        </View>
+      </View>
+      <Field label="Залог (эмне калтырды)" value={collateral} onChangeText={setCollateral} placeholder="Мисалы: айдоочулук күбөлүк" />
+      <Text style={styles.rowLabel}>Комплектация</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        {KIT.map((k) => (
+          <Chip key={k} label={k} active={kit.includes(k)} onPress={() => setKit((l) => (l.includes(k) ? l.filter((x) => x !== k) : [...l, k]))} />
+        ))}
+      </View>
+      <Text style={{ fontWeight: '900', color: colors.text, marginTop: 6 }}>📋 Кабыл алуу-өткөрүп берүү акты</Text>
+      <Text style={styles.rowLabel}>Берилгенде кемчилиги</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        <Chip label="Кемчилиги жок" active={defects === 'none'} onPress={() => setDefects('none')} />
+        <Chip label="Чийилген (царапины)" active={defects === 'scratches'} onPress={() => setDefects('scratches')} />
+      </View>
+      <Field label="Сүрөттөп жазуу (керек болсо)" value={handoverNote} onChangeText={setHandoverNote} placeholder="Мисалы: сол жагы чийилген" />
+      <View style={styles.verifyRow}>
+        <MaterialCommunityIcons name="check-decagram" size={18} color={colors.primary} />
+        <Text style={{ flex: 1, color: colors.text, fontWeight: '600' }}>Тормоз, дөңгөлөк, передача — иштейт</Text>
+        <Switch value={handoverOk} onValueChange={setHandoverOk} trackColor={{ true: colors.primary, false: colors.border }} />
+      </View>
+      <Field label="Ким берди (Выдал)" value={staff} onChangeText={setStaff} placeholder="Атыңыз" />
+      {err && <Text style={{ color: colors.danger }}>{err}</Text>}
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Button title="Жокко чыгаруу" variant="outline" style={{ flex: 1 }} onPress={onCancel} />
+        <Button title="Берүү жана баштоо" icon="bicycle-electric" style={{ flex: 1 }} disabled={busy} onPress={save} />
+      </View>
+    </View>
+  );
+}
+
+// Велосипед кайтарылды: абалы жана зыян (электроника 50%, механика 100%, жоголгон 100%, батарея акысыз)
+function ReturnForm({ r, onDone, onCancel }: { r: RentRequest; onDone: () => void; onCancel: () => void }) {
+  const [el, setEl] = useState('');
+  const [mech, setMech] = useState('');
+  const [lost, setLost] = useState('');
+  const [battery, setBattery] = useState(false);
+  const [note, setNote] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const n = (v: string) => Math.max(0, parseInt(v.replace(/\D/g, ''), 10) || 0);
+  // Келишимдеги прайс (4.1): басса механика суммасына жана эскертүүгө кошулат
+  const PRICE: [string, number][] = [
+    ['Прокол', 300],
+    ['Восьмерка (дөңгөлөк ийилген)', 1500],
+    ['Переключатель сынган', 600],
+    ['Отургуч (седло) айрылган', 1000],
+    ['Кулпу / фара жоголду', 1000],
+  ];
+  const addPrice = (name: string, sum: number) => {
+    setMech(String(n(mech) + sum));
+    setNote((x) => (x ? `${x}, ${name}` : name));
+  };
+  const restDays = r.billing ? Math.max(0, RENT_MIN_DAYS - (r.chargedDays ?? 0)) : 0;
+  const rest = restDays * (r.dailyPrice ?? 0);
+  const dmg = Math.round(n(el) * 0.5) + n(mech) + n(lost);
+  const save = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      await returnRent(r.id, { electronics: n(el), mechanics: n(mech), lost: n(lost), battery, note: note.trim() });
+      onDone();
+    } catch (e) {
+      const m = e instanceof Error ? e.message : String(e);
+      setErr(m.includes('admin_rent_return') ? 'SQL иштетиле элек (027).' : m);
+    }
+    setBusy(false);
+  };
+  return (
+    <View style={styles.payBox}>
+      <Text style={{ fontWeight: '900', color: colors.text, fontSize: 15 }}>🔧 Кандай абалда алып келди?</Text>
+      <Field label="Электроника бузулду — баасы (кардар 50% төлөйт)" value={el} onChangeText={setEl} keyboardType="number-pad" placeholder="0" />
+      <Text style={styles.rowLabel}>Прайс (басса кошулат):</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        {PRICE.map(([name, sum]) => (
+          <Chip key={name} label={`${name} · ${sum}`} active={false} onPress={() => addPrice(name, sum)} />
+        ))}
+      </View>
+      <Field label="Механика бузулду — баасы (кардар толук төлөйт)" value={mech} onChangeText={setMech} keyboardType="number-pad" placeholder="0" />
+      <Field label={`Жоголду — баасы (толук)${r.bikeValue ? ` · велосипед ${fmtSom(r.bikeValue)}` : ''}`} value={lost} onChangeText={setLost} keyboardType="number-pad" placeholder="0" />
+      <View style={styles.verifyRow}>
+        <MaterialCommunityIcons name="battery-sync" size={18} color={colors.primary} />
+        <Text style={{ flex: 1, color: colors.text, fontWeight: '600' }}>Батарея алмаштырылды (акысыз)</Text>
+        <Switch value={battery} onValueChange={setBattery} trackColor={{ true: colors.primary, false: colors.border }} />
+      </View>
+      <Field label="Эскертүү" value={note} onChangeText={setNote} placeholder="Мисалы: арткы тормоз сынган" />
+      <View style={{ gap: 2, backgroundColor: colors.bg, borderRadius: radius.md, padding: 10 }}>
+        {rest > 0 && <Text style={{ color: colors.text }}>Минимум {RENT_MIN_DAYS} күн: дагы {restDays} күн × {fmtSom(r.dailyPrice ?? 0)} = <Text style={{ fontWeight: '800' }}>{fmtSom(rest)}</Text></Text>}
+        {dmg > 0 && <Text style={{ color: colors.text }}>Зыян: <Text style={{ fontWeight: '800' }}>{fmtSom(dmg)}</Text></Text>}
+        <Text style={{ color: colors.danger, fontWeight: '800' }}>Балансынан алынат: {fmtSom(rest + dmg)}</Text>
+        {!!r.deposit && <Text style={{ color: colors.muted, fontSize: 12 }}>Депозит {fmtSom(r.deposit)} — колго берилген. Велосипед бузулбаса кайтарылат; зыян болсо ошондон кармаса болот (4.3).</Text>}
+      </View>
+      {err && <Text style={{ color: colors.danger }}>{err}</Text>}
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Button title="Жокко чыгаруу" variant="outline" style={{ flex: 1 }} onPress={onCancel} />
+        <Button title="Кабыл алдым" icon="check" style={{ flex: 1 }} disabled={busy} onPress={save} />
+      </View>
+    </View>
+  );
+}
+
 // Ижарага келген өтүнмөлөр: паспорт, телефон, GPS — админ гана көрөт
 export default function AdminRentRequests() {
   const [list, setList] = useState<RentRequest[]>([]);
@@ -187,6 +338,9 @@ export default function AdminRentRequests() {
   const [profiles, setProfiles] = useState<Record<string, Profile>>({});
   const [equipment, setEquipment] = useState<Record<string, Equipment>>({});
   const { rentals } = useContent();
+  const [returning, setReturning] = useState<string | null>(null);
+  const [starting, setStarting] = useState<string | null>(null);
+  const [balances, setBalances] = useState<Record<string, number>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -200,6 +354,11 @@ export default function AdminRentRequests() {
       fetchEquipment()
         .then(setEquipment)
         .catch(() => {});
+      [...new Set(rows.filter((r) => r.billing && r.userId && r.status !== 'returned').map((r) => r.userId!))].forEach((u) =>
+        balanceOf(u)
+          .then((b) => setBalances((m) => ({ ...m, [u]: b })))
+          .catch(() => {}),
+      );
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       setError(msg.includes('rental_requests') ? 'SQL иштетиле элек (007_rental_requests.sql).' : 'Жүктөлгөн жок: ' + msg);
@@ -256,7 +415,25 @@ export default function AdminRentRequests() {
           <Row icon="phone" label="Телефон" value={r.phone} onPress={() => Linking.openURL(`tel:${r.phone.replace(/[^\d+]/g, '')}`)} />
           <Row icon="card-account-details-outline" label="Паспорт" value={r.passport} />
           <Row icon="bicycle-electric" label="Велосипед" value={r.bikeName} />
-          <Row icon="calendar-range" label="Мөөнөт" value={`${r.count} ${UNIT[r.period]}${r.total ? ` · ${formatPrice(r.total)}` : ''}`} />
+          {r.billing ? (
+            <>
+              <Row icon="cash-clock" label="Тариф" value={`күнүнө ${formatPrice(r.dailyPrice ?? 0)} · минимум ${RENT_MIN_DAYS} күн`} />
+              {!!r.startedAt && <Row icon="calendar-start" label="Башталды" value={`${fmtDate(r.startedAt)} · ${r.chargedDays ?? 0} күн алынды`} />}
+              {r.userId && balances[r.userId] !== undefined && (
+                <Row icon="wallet" label="Балансы" value={`${fmtSom(balances[r.userId])}${balances[r.userId] <= (r.dailyPrice ?? 0) ? '  ⚠️ аз калды' : ''}`} />
+              )}
+              {r.status === 'returned' && (
+                <Text style={styles.muted}>
+                  ✅ Кайтарылды{r.returnedAt ? ` ${fmtDate(r.returnedAt)}` : ''} · {r.chargedDays} күн
+                  {r.damageCharged ? ` · зыян ${fmtSom(r.damageCharged)}` : ''}
+                  {r.batterySwapped ? ' · батарея алмаштырылды' : ''}
+                  {r.returnNote ? ` · ${r.returnNote}` : ''}
+                </Text>
+              )}
+            </>
+          ) : (
+            <Row icon="calendar-range" label="Мөөнөт" value={`${r.count} ${UNIT[r.period]}${r.total ? ` · ${formatPrice(r.total)}` : ''}`} />
+          )}
           {!!equipment[r.bikeId]?.gpsNo && <Row icon="crosshairs-gps" label="GPS номери" value={equipment[r.bikeId].gpsNo} />}
           {!!equipment[r.bikeId]?.battery1No && <Row icon="battery-50" label="Батарея 1" value={equipment[r.bikeId].battery1No} />}
           {!!equipment[r.bikeId]?.battery2No && <Row icon="battery-50" label="Батарея 2" value={equipment[r.bikeId].battery2No} />}
@@ -274,7 +451,7 @@ export default function AdminRentRequests() {
 
           {r.userId && profiles[r.userId] && <CustomerDocs p={profiles[r.userId]} onVerify={(v) => verify(r.userId!, v)} />}
 
-          {(r.status === 'active' || r.status === 'new') && (
+          {!r.billing && (r.status === 'active' || r.status === 'new') && (
             <Payments
               r={r}
               unitPrice={(() => {
@@ -285,7 +462,56 @@ export default function AdminRentRequests() {
             />
           )}
 
-          <View style={styles.actions}>
+          {r.billing && returning === r.id && (
+            <ReturnForm
+              r={r}
+              onCancel={() => setReturning(null)}
+              onDone={() => {
+                setReturning(null);
+                load();
+              }}
+            />
+          )}
+          {r.billing && starting === r.id && (
+            <StartForm
+              r={r}
+              defaults={{
+                batteryNo: [equipment[r.bikeId]?.battery1No, equipment[r.bikeId]?.battery2No].filter(Boolean).join(' / '),
+                deposit: rentals.find((b) => b.id === r.bikeId)?.deposit,
+              }}
+              onCancel={() => setStarting(null)}
+              onDone={() => {
+                setStarting(null);
+                setFilter('active');
+                load();
+              }}
+            />
+          )}
+          {!!r.contractNo && (
+            <Pressable onPress={() => router.push({ pathname: '/admin/contract/[id]', params: { id: r.id } })}>
+              <Text style={{ color: '#2563EB', fontWeight: '800' }}>📄 Келишим №{r.contractNo} — ачуу / басып чыгаруу</Text>
+            </Pressable>
+          )}
+          {r.billing && returning !== r.id && starting !== r.id && r.status !== 'returned' && r.status !== 'rejected' && (
+            <View style={styles.actions}>
+              {r.status === 'new' && (
+                <Pressable onPress={() => setStarting(r.id)} style={[styles.action, { backgroundColor: colors.success, borderColor: colors.success }]}>
+                  <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13 }}>🚲 Велосипедди берди — ижараны баштоо</Text>
+                </Pressable>
+              )}
+              {r.status === 'active' && (
+                <Pressable onPress={() => setReturning(r.id)} style={[styles.action, { borderColor: '#64748B' }]}>
+                  <Text style={{ color: '#64748B', fontWeight: '800', fontSize: 13 }}>↩️ Кайтарылды (абалын жазуу)</Text>
+                </Pressable>
+              )}
+              {r.status === 'new' && (
+                <Pressable onPress={() => change(r.id, 'rejected')} style={[styles.action, { borderColor: STATUS.rejected.color }]}>
+                  <Text style={{ color: STATUS.rejected.color, fontWeight: '700', fontSize: 13 }}>{STATUS.rejected.label}</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
+          {!r.billing && <View style={styles.actions}>
             {(['active', 'returned', 'rejected'] as RentStatus[])
               .filter((s) => s !== r.status)
               .map((s) => (
@@ -293,7 +519,7 @@ export default function AdminRentRequests() {
                   <Text style={{ color: STATUS[s].color, fontWeight: '700', fontSize: 13 }}>{STATUS[s].label}</Text>
                 </Pressable>
               ))}
-          </View>
+          </View>}
         </Card>
       ))}
 

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Button, Card, Field } from '../../components/ui';
 import { colors, radius } from '../../config/theme';
+import { DEFAULT_LESSOR, getLessor, Lessor, saveLessor } from '../../lib/lessor';
 import { useContent } from '../../context/ContentContext';
 import { periodsOf, priceFor, RentalBike } from '../../data/rentals';
 import { newId } from '../../lib/catalogApi';
@@ -263,8 +264,40 @@ export default function AdminRentals() {
             }}
           />
         </Card>
+        <LessorCard />
       </ScrollView>
     </KeyboardAvoidingView>
+  );
+}
+
+// Келишимдеги ижара берүүчүнүн (Арендодатель) реквизиттери
+function LessorCard() {
+  const [l, setL] = useState<Lessor>(DEFAULT_LESSOR);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  useEffect(() => {
+    getLessor().then(setL).catch(() => {});
+  }, []);
+  const set = (k: keyof Lessor) => (v: string) => setL((x) => ({ ...x, [k]: v }));
+  return (
+    <Card style={{ gap: 10, marginTop: 8 }}>
+      <Text style={styles.h}>Келишимдеги реквизиттер (Арендодатель)</Text>
+      <Text style={styles.hint}>Сотто келишим далил болушу үчүн ижара берүүчү так жазылышы керек: ИП же уюмдун аты, ИНН, дареги, телефону. Бул маалымат ар бир ижара келишиминде чыгат.</Text>
+      <Field label="Аты (ИП / ОсОО же ФИО)" value={l.name} onChangeText={set('name')} placeholder="ИП Асанов Асан / ОсОО «Jorgo Eco Service»" />
+      <Field label="ИНН" value={l.inn} onChangeText={set('inn')} keyboardType="number-pad" placeholder="14 сан" />
+      <Field label="Дареги" value={l.address} onChangeText={set('address')} placeholder="г. Бишкек, ул. ..." />
+      <Field label="Телефону" value={l.phone} onChangeText={set('phone')} keyboardType="phone-pad" placeholder="+996 ..." />
+      <Field label="Шаар (келишим түзүлгөн жер)" value={l.city} onChangeText={set('city')} placeholder="г. Бишкек" />
+      {msg && <Text style={{ color: msg.ok ? colors.success : colors.danger, fontWeight: '600' }}>{msg.text}</Text>}
+      <Button
+        title="Реквизиттерди сактоо"
+        icon="content-save"
+        onPress={() =>
+          saveLessor(l)
+            .then(() => setMsg({ ok: true, text: 'Сакталды' }))
+            .catch((e) => setMsg({ ok: false, text: e instanceof Error ? e.message : 'Ката кетти' }))
+        }
+      />
+    </Card>
   );
 }
 
