@@ -29,7 +29,12 @@ export default function Repair() {
   const [masterId, setMasterId] = useState<string | null>(null);
   const master = masters.find((m) => m.id === masterId);
   // «Биздин мастерлер» барагынан мастер тандалып келсе
-  const params = useLocalSearchParams<{ master?: string }>();
+  const params = useLocalSearchParams<{ master?: string; mode?: string }>();
+  // Эки жол: 🚗 выезд (мастер өзү келет) же 🏪 точкага алып келүү
+  const [mode, setMode] = useState<'outcall' | 'shop'>(params.mode === 'shop' ? 'shop' : 'outcall');
+  useEffect(() => {
+    if (params.mode === 'shop' || params.mode === 'outcall') setMode(params.mode);
+  }, [params.mode]);
   useEffect(() => {
     if (params.master && masters.some((m) => m.id === params.master)) chooseMaster(params.master);
   }, [params.master, masters.length]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -38,8 +43,16 @@ export default function Repair() {
     const m = masters.find((x) => x.id === id);
     const i = m ? branches.findIndex((b) => b.name === m.branch) : -1;
     if (i >= 0) setBranchIdx(i);
+    // Тандалган мастер выездге чыкпаса — точка жолуна өтөбүз
+    if (m && !m.outcall) setMode('shop');
   };
-  const [outcall, setOutcall] = useState(false);
+  const outcall = mode === 'outcall';
+  const shownMasters = outcall ? masters.filter((m) => m.outcall) : masters;
+  const switchMode = (m: 'outcall' | 'shop') => {
+    setMode(m);
+    if (m === 'outcall' && master && !master.outcall) setMasterId(null);
+    setError(null);
+  };
   const { branches } = useContent();
   const [branchIdx, setBranchIdx] = useState(0);
   const branch = branches[Math.min(branchIdx, branches.length - 1)] ?? branches[0];
@@ -183,13 +196,18 @@ export default function Repair() {
             <MaterialCommunityIcons name="chevron-right" size={24} color="#fff" />
           </Pressable>
         )}
-        <Card style={styles.banner}>
-          <MaterialCommunityIcons name="tools" size={32} color="#fff" />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.bannerTitle}>{t('repair.title')}</Text>
-            <Text style={{ color: colors.primarySoft }}>{t('repair.subtitle')}</Text>
-          </View>
-        </Card>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          {(['outcall', 'shop'] as const).map((m) => {
+            const on = mode === m;
+            return (
+              <Pressable key={m} onPress={() => switchMode(m)} style={[styles.mode, on && styles.modeOn]} accessibilityRole="tab" accessibilityState={{ selected: on }}>
+                <MaterialCommunityIcons name={m === 'outcall' ? 'car-side' : 'store'} size={30} color={on ? '#fff' : colors.primary} />
+                <Text style={[styles.modeTitle, on && { color: '#fff' }]}>{m === 'outcall' ? t('rm.outcall') : t('rm.shop')}</Text>
+                <Text style={[styles.modeSub, on && { color: colors.primarySoft }]}>{m === 'outcall' ? t('rm.outcallSub') : t('rm.shopSub')}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
         <Pressable style={styles.cta} onPress={() => router.push('/become-master')} accessibilityRole="button">
           <MaterialCommunityIcons name="account-hard-hat-outline" size={30} color={colors.primary} />
           <View style={{ flex: 1 }}>
@@ -206,12 +224,18 @@ export default function Repair() {
           </Pressable>
         )}
 
-        {masters.some((m) => m.active) && (
+        {shownMasters.some((m) => m.active) && (
           <>
-            <SectionTitle>{t('masters.title')}</SectionTitle>
+            <SectionTitle>{outcall ? t('rm.outcallMasters') : t('masters.title')}</SectionTitle>
             <Text style={{ color: colors.muted, fontSize: 13, marginTop: -4 }}>{t('masters.choose')}</Text>
-            <MastersList masters={masters} selectedId={masterId} onSelect={chooseMaster} />
+            <MastersList masters={shownMasters} selectedId={masterId} onSelect={chooseMaster} />
           </>
+        )}
+        {outcall && !outcallAvailable && (
+          <View style={styles.feeBox}>
+            <Text style={{ color: '#78350F', fontWeight: '700' }}>{t('rm.noOutcall')}</Text>
+            <Button title={t('rm.shop')} icon="store" variant="outline" onPress={() => switchMode('shop')} />
+          </View>
         )}
 
         <SectionTitle>{t('repair.services')}</SectionTitle>
@@ -242,13 +266,14 @@ export default function Repair() {
           </>
         )}
 
-        <SectionTitle>{t('repair.book')}</SectionTitle>
+        <SectionTitle>{outcall ? t('rm.bookOutcall') : t('repair.book')}</SectionTitle>
         {sent ? (
           <Card style={{ alignItems: 'center', gap: 10 }}>
             <PopIn>
               <MaterialCommunityIcons name="check-circle" size={48} color={colors.success} />
             </PopIn>
             <Text style={{ fontSize: 16, fontWeight: '700', textAlign: 'center' }}>{t('repair.sent')}</Text>
+            {!!profile && <Button title={t('my.see')} icon="cart-check" onPress={() => router.push('/cart')} />}
             <Button
               title={t('repair.new')}
               variant="outline"
@@ -268,7 +293,7 @@ export default function Repair() {
             <Field label={t('common.name')} value={name} onChangeText={setName} placeholder={t('repair.namePh')} />
             <Field label={t('common.phone')} value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
             <View style={{ gap: 8 }}>
-              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: '600' }}>{t('branch.repair')}</Text>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: '600' }}>{outcall ? t('rm.branchOutcall') : t('branch.repair')}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {branches.map((b, i) => (
                   <Chip key={b.name + i} label={`📍 ${branchLabel(b, t)}`} active={branchIdx === i} onPress={() => setBranchIdx(i)} />
@@ -276,26 +301,19 @@ export default function Repair() {
               </View>
             </View>
             <Field label={t('repair.bike')} value={bike} onChangeText={setBike} placeholder={t('repair.bikePh')} />
-            {outcallAvailable && (
-              <Pressable style={styles.outcall} onPress={() => setOutcall(!outcall)} accessibilityRole="checkbox" accessibilityState={{ checked: outcall }}>
-                <MaterialCommunityIcons name={outcall ? 'checkbox-marked' : 'checkbox-blank-outline'} size={24} color={outcall ? colors.primary : colors.muted} />
-                <MaterialCommunityIcons name="car-side" size={20} color={colors.primary} />
-                <Text style={{ flex: 1, color: colors.text, fontWeight: '600' }}>
-                  {t('masters.outcallAsk')}
-                  {master?.outcallNote ? `\n${master.outcallNote}` : ''}
-                </Text>
+            {outcall && !!master?.outcallNote && <Text style={{ color: colors.primary, fontWeight: '700' }}>🚗 {master.outcallNote}</Text>}
+            {outcall && (
+              <Pressable onPress={() => router.push({ pathname: '/chat', params: { q: t('chat.q.outcall') } })} accessibilityRole="link">
+                <Text style={{ color: colors.primary, fontWeight: '700' }}>{t('chat.askOutcall')}</Text>
               </Pressable>
             )}
-            <Pressable onPress={() => router.push({ pathname: '/chat', params: { q: t('chat.q.outcall') } })} accessibilityRole="link">
-              <Text style={{ color: colors.primary, fontWeight: '700' }}>{t('chat.askOutcall')}</Text>
-            </Pressable>
             {wantsOutcall && (
               <View style={styles.feeBox}>
                 <Text style={{ color: '#78350F', lineHeight: 20 }}>⚠️ {t('w.outcallInfo', { v: String(fee) })}</Text>
                 {!profile ? (
                   <>
                     <Text style={{ color: colors.danger, fontWeight: '700' }}>{t('w.needLogin')}</Text>
-                    <Button title={t('acc.signIn')} icon="login" onPress={() => router.push({ pathname: '/account/login', params: { next: '/repair' } })} />
+                    <Button title={t('acc.signIn')} icon="login" onPress={() => router.push({ pathname: '/account/login', params: { next: '/repair?mode=outcall' } })} />
                   </>
                 ) : (balance ?? 0) < fee ? (
                   <>
@@ -346,12 +364,13 @@ export default function Repair() {
 }
 
 const styles = StyleSheet.create({
-  banner: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.primary, borderColor: colors.primary },
-  bannerTitle: { color: '#fff', fontSize: 17, fontWeight: '800' },
   service: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.card, padding: 14, borderRadius: 14, borderWidth: 1.5, borderColor: colors.border },
   serviceOn: { borderColor: colors.primary, backgroundColor: '#F0FDFA' },
-  outcall: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.primarySoft, borderRadius: 14, padding: 12 },
   masterBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#B45309', borderRadius: 16, padding: 14 },
+  mode: { flex: 1, gap: 4, backgroundColor: colors.card, borderRadius: 18, padding: 14, borderWidth: 2, borderColor: colors.border },
+  modeOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  modeTitle: { fontSize: 16, fontWeight: '900', color: colors.text },
+  modeSub: { fontSize: 12, color: colors.muted },
   feeBox: { gap: 10, backgroundColor: '#FEF3C7', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: '#F59E0B' },
   locBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, alignSelf: 'flex-start', borderWidth: 1.5, borderColor: colors.primary, borderStyle: 'dashed', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
   masterLink: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1.5, borderColor: '#B45309', backgroundColor: '#FFFBEB' },

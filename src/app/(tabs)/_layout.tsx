@@ -40,7 +40,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: t('tab.home'), headerShown: false, tabBarIcon: icon('home') }} />
       <Tabs.Screen name="catalog" options={{ title: t('tab.catalog'), tabBarIcon: icon('view-grid') }} />
       <Tabs.Screen name="rent" options={{ title: t('tab.rent'), headerShown: false, tabBarStyle: { display: 'none' }, tabBarIcon: icon('bicycle-electric') }} />
-      <Tabs.Screen name="repair" options={{ title: t('tab.repair'), tabBarIcon: icon('wrench') }} />
+      <Tabs.Screen name="repair" options={{ title: t('tab.outcall'), tabBarIcon: icon('car-side') }} />
       <Tabs.Screen
         name="cart"
         options={{

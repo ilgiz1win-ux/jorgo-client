@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../config/backend';
 import { base64ToBytes } from './catalogApi';
 import { supabase } from './supabase';
-import { getWalletSettings, localChargeOutcall, localRefundOutcall } from './wallet';
+import { getWalletSettings, localChargeOutcall, localRefundOutcall, localUserId } from './wallet';
 
 // Оңдоо өтүнмөлөрү (базада), мастердин панели, «мастер болом» өтүнмөлөрү
 export type RepairStatus = 'new' | 'accepted' | 'in_progress' | 'done' | 'cancelled';
@@ -30,6 +30,7 @@ export type Repair = {
   bring: string;
   outcallFee?: number;
   arrivedAt?: string;
+  userId?: string;
 };
 type Row = {
   id: string;
@@ -54,6 +55,7 @@ type Row = {
   bring?: string;
   outcall_fee?: number | null;
   arrived_at?: string | null;
+  user_id?: string | null;
 };
 const fromRow = (r: Row): Repair => ({
   id: r.id,
@@ -78,6 +80,7 @@ const fromRow = (r: Row): Repair => ({
   bring: r.bring ?? '',
   outcallFee: r.outcall_fee ?? undefined,
   arrivedAt: r.arrived_at ?? undefined,
+  userId: r.user_id ?? undefined,
 });
 
 const LOCAL = 'jorgo.local.repairs';
@@ -103,7 +106,7 @@ export async function createRepair(r: Omit<Repair, 'id' | 'createdAt' | 'status'
       if (res !== 'ok') return res;
       outcallFee = (await getWalletSettings()).outcallFee;
     }
-    l.unshift({ ...r, id, createdAt: new Date().toISOString(), status: 'new', masterNote: '', bring: '', outcallFee });
+    l.unshift({ ...r, id, createdAt: new Date().toISOString(), status: 'new', masterNote: '', bring: '', outcallFee, userId: (await localUserId()) ?? undefined });
     await write(LOCAL, l);
     return 'ok';
   }
@@ -407,4 +410,25 @@ export async function fetchMasterUsers(names: Record<string, string>): Promise<R
   const { data, error } = await supabase.rpc('admin_master_accounts');
   if (error) return {};
   return Object.fromEntries((data as { master_id: string; user_id: string }[]).map((r) => [r.user_id, names[r.master_id] ?? '']));
+}
+
+// Кардардын өз оңдоо заказдары
+export async function fetchMyRepairs(userId: string): Promise<Repair[]> {
+  if (!supabase) return (await read<Repair[]>(LOCAL, [])).filter((r) => r.userId === userId);
+  const { data, error } = await supabase.from('repair_requests').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(50);
+  if (error) throw error;
+  return (data as Row[]).map(fromRow);
+}
+
+// Кардар мастер келгенге чейин жокко чыгарат (выезд акысы кайтарылат)
+export async function cancelMyRepair(id: string): Promise<boolean> {
+  if (!supabase) {
+    const r = (await read<Repair[]>(LOCAL, [])).find((x) => x.id === id);
+    if (!r || !['new', 'accepted'].includes(r.status) || r.arrivedAt) return false;
+    await updateRepair(id, { status: 'cancelled', masterNote: 'Кардар жокко чыгарды' });
+    return true;
+  }
+  const { data, error } = await supabase.rpc('customer_cancel_repair', { p_id: id });
+  if (error) throw error;
+  return data === true;
 }

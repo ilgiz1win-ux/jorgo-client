@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { ProductImage } from '../../components/ProductCard';
 import { Button, Card, QtyStepper } from '../../components/ui';
@@ -8,27 +8,24 @@ import { colors } from '../../config/theme';
 import { useCart } from '../../context/CartContext';
 import { formatPrice } from '../../lib/format';
 import { useT } from '../../i18n';
+import { MyOrders } from '../../components/orders/MyOrders';
 
 export default function Cart() {
-  const { lines, subtotal, setQty, remove, orders } = useCart();
+  const { lines, subtotal, setQty, remove } = useCart();
   const { t } = useT();
 
   if (!lines.length) {
     return (
-      <View style={styles.empty}>
-        <MaterialCommunityIcons name="cart-outline" size={72} color={colors.muted} />
-        <Text style={styles.emptyTitle}>{t('cart.empty')}</Text>
-        <Text style={{ color: colors.muted, textAlign: 'center' }}>{t('cart.emptyText')}</Text>
-        <Button title={t('common.goCatalog')} icon="view-grid" onPress={() => router.push('/catalog')} />
-        {orders.length > 0 && (
-          <Link href="/orders" style={styles.link}>
-            {t('cart.myOrders', { n: orders.length })}
-          </Link>
-        )}
-      </View>
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 96 }}>
+        <View style={styles.emptyBox}>
+          <MaterialCommunityIcons name="cart-outline" size={48} color={colors.muted} />
+          <Text style={styles.emptyTitle}>{t('cart.empty')}</Text>
+          <Button title={t('common.goCatalog')} icon="view-grid" variant="outline" onPress={() => router.push('/catalog')} />
+        </View>
+        <MyOrders />
+      </ScrollView>
     );
   }
-
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 96 }}>
@@ -61,16 +58,13 @@ export default function Cart() {
       </Card>
 
       <Button title={t('cart.checkout')} icon="check-circle" onPress={() => router.push('/checkout')} />
-      {orders.length > 0 && (
-        <Link href="/orders" style={[styles.link, { textAlign: 'center' }]}>
-          {t('cart.myOrders', { n: orders.length })}
-        </Link>
-      )}
+      <MyOrders />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  emptyBox: { alignItems: 'center', gap: 10, padding: 18, backgroundColor: colors.card, borderRadius: 18, borderWidth: 1, borderColor: colors.border },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12, padding: 32 },
   emptyTitle: { fontSize: 20, fontWeight: '800', color: colors.text },
   line: { flexDirection: 'row', gap: 12, padding: 10 },
