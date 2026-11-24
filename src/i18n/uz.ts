@@ -540,4 +540,13 @@ export const uz: Record<TKey, string> = {
   'my.paidUntil': "{v} gacha to'langan",
   'my.past': "Oldingi buyurtmalar",
   'my.see': "Buyurtmamni ko'rish (Savatda)",
+  'tab.outcall': "Chiqish",
+  'rm.outcall': "Chiqish",
+  'rm.outcallSub': "Usta o'zingizga keladi",
+  'rm.shop': "Shoxobchaga olib kelaman",
+  'rm.shopSub': "Bepul yozilish",
+  'rm.outcallMasters': "Chiqishga boradigan ustalar",
+  'rm.noOutcall': "Hozir chiqadigan usta yo'q. Velosipedni shoxobchaga olib kelishingiz mumkin.",
+  'rm.branchOutcall': "Sizga yaqin shoxobcha (usta o'sha yerdan keladi)",
+  'rm.bookOutcall': "Ustani chaqirish",
 };

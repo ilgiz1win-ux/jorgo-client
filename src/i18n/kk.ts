@@ -540,4 +540,13 @@ export const kk: Record<TKey, string> = {
   'my.paidUntil': "{v} дейін төленген",
   'my.past': "Бұрынғы тапсырыстар",
   'my.see': "Тапсырысымды көру (Себетте)",
+  'tab.outcall': "Шығу",
+  'rm.outcall': "Шығу",
+  'rm.outcallSub': "Шебер өзіңізге келеді",
+  'rm.shop': "Нүктеге әкелемін",
+  'rm.shopSub': "Тегін жазылу",
+  'rm.outcallMasters': "Шығуға шығатын шеберлер",
+  'rm.noOutcall': "Қазір шығатын шебер жоқ. Велосипедті нүктеге әкелуге болады.",
+  'rm.branchOutcall': "Сізге жақын нүкте (шебер сол жақтан келеді)",
+  'rm.bookOutcall': "Шебер шақыру",
 };

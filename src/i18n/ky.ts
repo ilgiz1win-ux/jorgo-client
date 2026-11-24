@@ -565,6 +565,15 @@ export const ky = {
   'my.paidUntil': "Төлөнгөнү: {v} чейин",
   'my.past': "Мурунку заказдар",
   'my.see': "Заказымды көрүү (Себетте)",
+  'tab.outcall': "Выезд",
+  'rm.outcall': "Выезд",
+  'rm.outcallSub': "Мастер өзүңүзгө келет",
+  'rm.shop': "Точкага алып келем",
+  'rm.shopSub': "Акысыз жазылуу",
+  'rm.outcallMasters': "Выездге чыккан мастерлер",
+  'rm.noOutcall': "Азыр выездге чыга турган мастер жок. Велосипедди точкага алып келсеңиз болот.",
+  'rm.branchOutcall': "Сизге жакын точка (мастер ошол жактан келет)",
+  'rm.bookOutcall': "Выезд чакыруу",
 };
 
 export type TKey = keyof typeof ky;

@@ -23,7 +23,8 @@ const HOME_TILES: { key: string; label: TKey; icon: IconName; color: string; hre
   { key: 'ebike', label: 'cat.ebike', icon: 'bicycle-electric', color: '#2E7D32', href: { pathname: '/catalog', params: { category: 'ebike' } } },
   { key: 'products', label: 'home.products', icon: 'view-grid', color: '#0284C7', href: '/catalog' },
   { key: 'rent', label: 'tab.rent', icon: 'key-variant', color: '#0F766E', href: '/rent' },
-  { key: 'repair', label: 'tab.repair', icon: 'wrench', color: '#EA580C', href: '/repair' },
+  { key: 'outcall', label: 'tab.outcall', icon: 'car-side', color: '#7C3AED', href: { pathname: '/repair', params: { mode: 'outcall' } } },
+  { key: 'repair', label: 'tab.repair', icon: 'wrench', color: '#EA580C', href: { pathname: '/repair', params: { mode: 'shop' } } },
   { key: 'masters', label: 'masters.title', icon: 'account-hard-hat', color: '#B45309', href: '/masters' },
 ];
 

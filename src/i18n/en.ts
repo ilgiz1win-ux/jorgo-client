@@ -540,4 +540,13 @@ export const en: Record<TKey, string> = {
   'my.paidUntil': "Paid until {v}",
   'my.past': "Past orders",
   'my.see': "View my order (in Cart)",
+  'tab.outcall': "Outcall",
+  'rm.outcall': "Outcall",
+  'rm.outcallSub': "The mechanic comes to you",
+  'rm.shop': "I'll bring it in",
+  'rm.shopSub': "Free booking",
+  'rm.outcallMasters': "Mechanics who do outcalls",
+  'rm.noOutcall': "No mechanics are doing outcalls right now. You can bring the bike in.",
+  'rm.branchOutcall': "Nearest shop (the mechanic comes from there)",
+  'rm.bookOutcall': "Book an outcall",
 };

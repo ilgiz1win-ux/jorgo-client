@@ -554,4 +554,13 @@ export const ru: Record<TKey, string> = {
   'my.paidUntil': "Оплачено до {v}",
   'my.past': "Прошлые заказы",
   'my.see': "Мой заказ (в Корзине)",
+  'tab.outcall': "Выезд",
+  'rm.outcall': "Выезд",
+  'rm.outcallSub': "Мастер приедет к вам",
+  'rm.shop': "Привезу в точку",
+  'rm.shopSub': "Запись бесплатно",
+  'rm.outcallMasters': "Мастера на выезд",
+  'rm.noOutcall': "Сейчас нет мастеров на выезд. Можно привезти велосипед в точку.",
+  'rm.branchOutcall': "Ближайшая точка (мастер приедет оттуда)",
+  'rm.bookOutcall': "Вызвать мастера",
 };
