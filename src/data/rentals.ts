@@ -21,6 +21,11 @@ export type RentalBike = {
 
 export const priceFor = (b: RentalBike, p: RentPeriod) => (p === 'day' ? b.priceDay : p === 'week' ? b.priceWeek : b.priceMonth);
 export const periodsOf = (b: RentalBike) => RENT_PERIODS.filter((p) => !!priceFor(b, p));
+// Күндүк баа: priceDay, жок болсо жуманын/айдын баасынан (серверде да ушундай эсептелет)
+export const dailyPrice = (b: RentalBike): number | undefined =>
+  b.priceDay ?? (b.priceWeek ? Math.round(b.priceWeek / 7) : b.priceMonth ? Math.round(b.priceMonth / 30) : undefined);
+// Минимум ижара мөөнөтү (күн)
+export const RENT_MIN_DAYS = 7;
 
 // Ижаранын шарттары (админ өзгөртөт). Ар бир сап — өзүнчө шарт.
 export type RentTerms = { text: string };

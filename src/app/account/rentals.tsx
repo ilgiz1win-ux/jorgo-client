@@ -9,6 +9,9 @@ import { TKey, useT } from '../../i18n';
 import { formatPrice } from '../../lib/format';
 import { daysLeft, fmtDay } from '../../lib/notifications';
 import { fetchMyRentRequests, RentRequest, RentStatus } from '../../lib/rentRequests';
+import { fmtSom, myBalance } from '../../lib/wallet';
+import { router } from 'expo-router';
+import { Button } from '../../components/ui';
 
 const STATUS_COLOR: Record<RentStatus, string> = { new: '#2563EB', active: colors.primary, returned: colors.muted, rejected: colors.danger };
 const UNIT: Record<RentPeriod, TKey> = { day: 'rent.unit.day', week: 'rent.unit.week', month: 'rent.unit.month' };
@@ -18,10 +21,12 @@ function List() {
   const { profile } = useAccount();
   const [list, setList] = useState<RentRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [balance, setBalance] = useState<number | null>(null);
   const load = useCallback(async () => {
     setLoading(true);
     try {
       setList(await fetchMyRentRequests(profile!.id));
+      myBalance().then(setBalance).catch(() => setBalance(null));
     } catch {
       setList([]);
     }
@@ -47,12 +52,36 @@ function List() {
               <Text style={styles.badgeText}>{t(`acc.status.${r.status}` as TKey)}</Text>
             </View>
           </View>
-          <Text style={styles.muted}>
-            {r.count} {t(UNIT[r.period])}
-            {r.total ? ` · ${formatPrice(r.total)}` : ''}
-          </Text>
+          {!r.billing && (
+            <Text style={styles.muted}>
+              {r.count} {t(UNIT[r.period])}
+              {r.total ? ` · ${formatPrice(r.total)}` : ''}
+            </Text>
+          )}
           <Text style={styles.muted}>{new Date(r.createdAt).toLocaleDateString()}</Text>
-          {r.status === 'active' && !!r.paidUntil && (
+          {r.billing && r.status === 'new' && <Text style={styles.muted}>⏳ {t('rd.waiting')}</Text>}
+          {r.billing && !!r.dailyPrice && <Text style={[styles.muted, { color: colors.text, fontWeight: '700' }]}>{t('rd.perDay', { v: formatPrice(r.dailyPrice) })}</Text>}
+          {r.billing && r.status === 'active' && !!r.startedAt && !!r.dailyPrice && (
+            <View style={{ gap: 6 }}>
+              <Text style={styles.muted}>{t('rd.started', { v: new Date(r.startedAt).toLocaleDateString('ru-RU') })}</Text>
+              <Text style={styles.muted}>{t('rd.used', { n: r.chargedDays ?? 0, s: formatPrice((r.chargedDays ?? 0) * r.dailyPrice) })}</Text>
+              {balance !== null && (
+                <View style={[styles.paid, balance <= r.dailyPrice && { backgroundColor: '#FEE2E2' }]}>
+                  <MaterialCommunityIcons name="wallet" size={18} color={balance <= r.dailyPrice ? colors.danger : colors.primary} />
+                  <Text style={styles.paidText}>
+                    {fmtSom(balance)} · {balance <= r.dailyPrice ? t('rd.lowNow') : t('rd.daysLeft', { n: Math.floor(balance / r.dailyPrice) })}
+                  </Text>
+                </View>
+              )}
+              {balance !== null && balance <= r.dailyPrice * 2 && <Button title={t('w.go')} icon="wallet-plus" onPress={() => router.push('/wallet')} style={{ borderRadius: 999 }} />}
+            </View>
+          )}
+          {r.billing && r.status === 'returned' && (
+            <Text style={styles.muted}>
+              ✅ {t('rd.result', { n: r.chargedDays ?? 0, d: r.damageCharged ? t('rd.damage', { v: formatPrice(r.damageCharged) }) : '' })}
+            </Text>
+          )}
+          {!r.billing && r.status === 'active' && !!r.paidUntil && (
             <View style={[styles.paid, (daysLeft(r.paidUntil) ?? 0) <= 1 && { backgroundColor: '#FEF3C7' }]}>
               <MaterialCommunityIcons name="calendar-check" size={18} color={(daysLeft(r.paidUntil) ?? 0) <= 1 ? '#92400E' : colors.primary} />
               <Text style={styles.paidText}>{t('acc.paidUntil', { d: fmtDay(r.paidUntil) })}</Text>

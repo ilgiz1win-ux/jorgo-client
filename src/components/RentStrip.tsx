@@ -1,13 +1,12 @@
 import { router } from 'expo-router';
 import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, radius } from '../config/theme';
-import { periodsOf, priceFor, RentalBike, RentPeriod } from '../data/rentals';
-import { TKey, useT } from '../i18n';
+import { dailyPrice, RentalBike } from '../data/rentals';
+import { useT } from '../i18n';
 import { formatPrice } from '../lib/format';
 import { PressScale } from './anim';
 import { BIKE_IMAGE, BIKE_RATIO } from './BikeRide';
 
-const PER: Record<RentPeriod, TKey> = { day: 'rent.perDay', week: 'rent.perWeek', month: 'rent.perMonth' };
 
 // Башкы беттеги ижарага велосипеддер тилкеси (басканда «Аренда» барагы ошол велосипед менен ачылат)
 export function RentStrip({ bikes }: { bikes: RentalBike[] }) {
@@ -15,7 +14,7 @@ export function RentStrip({ bikes }: { bikes: RentalBike[] }) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 4 }}>
       {bikes.map((b) => {
-        const first = periodsOf(b)[0];
+        const daily = dailyPrice(b);
         return (
           <PressScale
             key={b.id}
@@ -37,11 +36,7 @@ export function RentStrip({ bikes }: { bikes: RentalBike[] }) {
             <Text style={styles.name} numberOfLines={2}>
               {b.name}
             </Text>
-            {first && (
-              <Text style={styles.price}>
-                {formatPrice(priceFor(b, first)!)} <Text style={styles.per}>{t(PER[first])}</Text>
-              </Text>
-            )}
+            {!!daily && <Text style={styles.price}>{t('rd.perDay', { v: formatPrice(daily) })}</Text>}
           </PressScale>
         );
       })}

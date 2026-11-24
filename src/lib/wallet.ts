@@ -6,7 +6,7 @@ import { supabase } from './supabase';
 
 // Кардардын балансы: толуктоо (админ ырастайт), выезд акысы
 export type WalletSettings = { outcallFee: number; topupInfo: string };
-export type WalletTx = { id: string; createdAt: string; amount: number; kind: 'topup' | 'outcall' | 'refund' | 'adjust'; note: string };
+export type WalletTx = { id: string; createdAt: string; amount: number; kind: 'topup' | 'outcall' | 'refund' | 'adjust' | 'rent' | 'damage'; note: string };
 export type TopupStatus = 'new' | 'approved' | 'rejected';
 export type Topup = { id: string; createdAt: string; userId: string; code: string; amount: number; method: string; senderName: string; senderAccount: string; receipt?: string; comment: string; status: TopupStatus; name?: string; phone?: string };
 export type WalletRow = { userId: string; name: string; phone: string; balance: number; lastAt: string };
@@ -36,6 +36,9 @@ const localAdd = async (t: Omit<LTx, 'id' | 'createdAt'>) => {
   l.unshift({ ...t, id: String(Date.now() + Math.random()), createdAt: new Date().toISOString() });
   await write(L_TX, l);
 };
+// Демо: ижара акысы (rentRequests.ts колдонот)
+export const localBalanceOf = (u: string) => localBalance(u);
+export const localWalletAdd = (userId: string, amount: number, kind: WalletTx['kind'], note: string) => localAdd({ userId, amount, kind, note });
 // Демо: выезд акысын алуу / кайтаруу (repairs.ts колдонот)
 export async function localChargeOutcall(repairId: string, number: string): Promise<'ok' | 'login' | 'balance'> {
   const u = await localUserId();
@@ -231,5 +234,13 @@ export async function adjustWallet(userId: string, amount: number, note: string)
   if (error) throw error;
 }
 
-export const TX_LABEL: Record<WalletTx['kind'], string> = { topup: '💰 Толуктоо', outcall: '🚗 Выезд', refund: '↩️ Кайтарылды', adjust: '✏️ Админ' };
+export const TX_LABEL: Record<WalletTx['kind'], string> = { topup: '💰 Толуктоо', outcall: '🚗 Выезд', refund: '↩️ Кайтарылды', adjust: '✏️ Админ', rent: '🚲 Ижара', damage: '⚠️ Зыян' };
 export const fmtSom = (n: number) => `${n.toLocaleString('ru-RU')} сом`;
+
+// Админ: бир кардардын балансы
+export async function balanceOf(userId: string): Promise<number> {
+  if (!supabase) return localBalance(userId);
+  const { data, error } = await supabase.rpc('wallet_balance', { p_user: userId });
+  if (error) throw error;
+  return Number(data) || 0;
+}

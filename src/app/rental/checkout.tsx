@@ -1,24 +1,23 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { LoginForm } from '../../components/account/LoginForm';
 import { RentOnboarding, RentSteps } from '../../components/account/RentOnboarding';
 import { PopIn } from '../../components/anim';
 import { BIKE_IMAGE, BIKE_RATIO } from '../../components/BikeRide';
-import { Button, Field, QtyStepper } from '../../components/ui';
+import { Button, Field } from '../../components/ui';
 import { SHOP } from '../../config/shop';
 import { colors } from '../../config/theme';
 import { docsReady, useAccount } from '../../context/AccountContext';
 import { useContent } from '../../context/ContentContext';
-import { periodsOf, priceFor, RentPeriod } from '../../data/rentals';
-import { TKey, useT } from '../../i18n';
+import { dailyPrice, RENT_MIN_DAYS } from '../../data/rentals';
+import { myBalance } from '../../lib/wallet';
+import { useT } from '../../i18n';
 import { track } from '../../lib/analytics';
 import { formatPrice, openWhatsApp } from '../../lib/format';
 import { getLocationOnce, mapLink, submitRentRequest } from '../../lib/rentRequests';
 
-const UNIT: Record<RentPeriod, TKey> = { day: 'rent.unit.day', week: 'rent.unit.week', month: 'rent.unit.month' };
-const TITLE: Record<RentPeriod, TKey> = { day: 'rent.tariff.day', week: 'rent.tariff.week', month: 'rent.tariff.month' };
 
 function Checkout() {
   const { t } = useT();
@@ -26,9 +25,14 @@ function Checkout() {
   const { rentals } = useContent();
   const { profile } = useAccount();
   const bike = rentals.find((b) => b.id === params.bike);
-  const periods = bike ? periodsOf(bike) : [];
-  const period: RentPeriod = periods.includes(params.period as RentPeriod) ? (params.period as RentPeriod) : periods[0] ?? 'week';
-  const [count, setCount] = useState(1);
+  const daily = bike ? dailyPrice(bike) : undefined;
+  const minTotal = daily ? daily * RENT_MIN_DAYS : 0;
+  const [balance, setBalance] = useState<number | null>(null);
+  useFocusEffect(
+    useCallback(() => {
+      myBalance().then(setBalance).catch(() => setBalance(null));
+    }, []),
+  );
   const [start, setStart] = useState('');
   const [consent, setConsent] = useState(false);
   const [sending, setSending] = useState(false);
@@ -36,10 +40,9 @@ function Checkout() {
   const [sent, setSent] = useState<null | { gps: boolean }>(null);
 
   if (!bike || !profile) return null;
-  const unitPrice = priceFor(bike, period);
-  const total = unitPrice ? unitPrice * count : 0;
   const ready = docsReady(profile);
-  const valid = ready && consent && bike.available && profile.fullName.trim().length > 1;
+  const enough = balance !== null && balance >= minTotal;
+  const valid = ready && consent && bike.available && !!daily && enough && profile.fullName.trim().length > 1;
 
   const submit = async () => {
     if (sending) return;
@@ -50,9 +53,10 @@ function Checkout() {
       await submitRentRequest({
         bikeId: bike.id,
         bikeName: bike.name,
-        period,
-        count,
-        total: total || undefined,
+        period: 'day',
+        count: RENT_MIN_DAYS,
+        total: minTotal || undefined,
+        dailyPrice: daily,
         startText: start.trim(),
         name: profile.fullName.trim(),
         phone: profile.phone,
@@ -64,11 +68,19 @@ function Checkout() {
       });
     } catch (e) {
       const m = e instanceof Error ? e.message : String((e as { message?: string })?.message ?? '');
-      setError(/row-level security/i.test(m) ? t('checkout.blocked') : t('rent.error'));
+      setError(
+        /row-level security/i.test(m)
+          ? t('checkout.blocked')
+          : m === 'rent_low_balance'
+            ? t('rd.low', { v: formatPrice(minTotal) })
+            : m === 'rent_no_price'
+              ? t('rd.noPrice')
+              : t('rent.error'),
+      );
       setSending(false);
       return;
     }
-    const periodText = `${count} ${t(UNIT[period])}${unitPrice ? ` × ${formatPrice(unitPrice)}` : ''}`;
+    const periodText = t('rd.perDay', { v: formatPrice(daily ?? 0) });
     // Паспорт жана документтер WhatsApp'ка жиберилбейт — алар админ панелде гана
     const msg = [
       t('msg.rent'),
@@ -76,7 +88,7 @@ function Checkout() {
       t('msg.rentBike', { v: bike.name }),
       t('msg.rentPeriod', { v: periodText }),
       start.trim() ? t('msg.rentStart', { v: start.trim() }) : null,
-      total ? t('msg.rentTotal', { v: formatPrice(total) }) : null,
+      minTotal ? t('rd.msgMin', { v: formatPrice(minTotal) }) : null,
       '',
       t('msg.name', { v: profile.fullName.trim() }),
       t('msg.phone', { v: profile.phone }),
@@ -119,22 +131,17 @@ function Checkout() {
             </View>
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={styles.title}>{bike.name}</Text>
-              <Text style={styles.muted}>
-                {t(TITLE[period])} · {unitPrice ? formatPrice(unitPrice) : ''}
-              </Text>
+              <Text style={[styles.muted, { color: colors.primary, fontWeight: '800', fontSize: 15 }]}>{daily ? t('rd.perDay', { v: formatPrice(daily) }) : t('rd.noPrice')}</Text>
             </View>
-          </View>
-          <View style={styles.row}>
-            <Text style={[styles.text, { flex: 1 }]}>{t('rent.count', { unit: t(UNIT[period]) })}</Text>
-            <QtyStepper value={count} onChange={setCount} />
           </View>
           <Field label={t('rent.start')} value={start} onChangeText={setStart} placeholder={t('rent.startPh')} />
-          {!!total && (
+          {!!daily && (
             <View style={[styles.row, styles.totalRow]}>
-              <Text style={styles.title}>{t('rent.total')}</Text>
-              <Text style={[styles.title, { color: colors.primary }]}>{formatPrice(total)}</Text>
+              <Text style={[styles.text, { flex: 1 }]}>{t('rd.minWeek', { n: RENT_MIN_DAYS })}</Text>
+              <Text style={[styles.title, { color: colors.primary }]}>{formatPrice(minTotal)}</Text>
             </View>
           )}
+          <Text style={styles.muted}>{t('rd.howBilled')}</Text>
           {!!bike.deposit && <Text style={styles.muted}>{t('rent.deposit', { sum: formatPrice(bike.deposit) })}</Text>}
         </View>
 
@@ -159,9 +166,29 @@ function Checkout() {
           {!ready && <Button title={t('rent.docsGo')} icon="upload" variant="outline" onPress={() => router.push('/account/documents')} style={{ borderRadius: 999 }} />}
         </View>
 
+        <View style={[styles.card, { gap: 10 }]}>
+          <Text style={styles.label}>{t('w.balance').toUpperCase()}</Text>
+          <Text style={[styles.title, { color: enough ? colors.success : colors.danger }]}>{balance === null ? '…' : formatPrice(balance)}</Text>
+          {balance !== null && !enough && (
+            <>
+              <Text style={{ color: colors.danger, fontWeight: '700' }}>{t('rd.low', { v: formatPrice(minTotal) })}</Text>
+              <Button title={t('w.go')} icon="wallet-plus" onPress={() => router.push('/wallet')} style={{ borderRadius: 999 }} />
+            </>
+          )}
+        </View>
+
+        <View style={[styles.card, { gap: 8, backgroundColor: '#FFFBEB', borderColor: '#F59E0B' }]}>
+          <Text style={[styles.label, { color: '#92400E' }]}>{t('rd.rules').toUpperCase()}</Text>
+          {(['rd.r1', 'rd.r2', 'rd.r3', 'rd.r4', 'rd.r5', 'rd.r6', 'rd.r7'] as const).map((k) => (
+            <Text key={k} style={{ color: '#78350F', lineHeight: 20 }}>
+              • {t(k, { n: RENT_MIN_DAYS, v: daily ? formatPrice(daily) : '' })}
+            </Text>
+          ))}
+        </View>
+
         <Pressable style={styles.consent} onPress={() => setConsent(!consent)} accessibilityRole="checkbox" accessibilityState={{ checked: consent }}>
           <MaterialCommunityIcons name={consent ? 'checkbox-marked' : 'checkbox-blank-outline'} size={24} color={consent ? colors.primary : colors.muted} />
-          <Text style={[styles.text, { flex: 1, lineHeight: 20 }]}>{t('rent.consent')}</Text>
+          <Text style={[styles.text, { flex: 1, lineHeight: 20 }]}>{t('rd.consent')}</Text>
         </Pressable>
         <View style={styles.line}>
           <MaterialCommunityIcons name="map-marker-radius" size={18} color={colors.primary} />
