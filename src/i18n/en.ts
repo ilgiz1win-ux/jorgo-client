@@ -596,4 +596,7 @@ export const en: Record<TKey, string> = {
   'ct.view': "📄 Rental contract",
   'ct.print': "Print / PDF",
   'ct.notYet': "The contract is made when the bike is handed over",
+  'rd.r8': "Take care of the bike: no jumps, no mountains or stairs; don't lend it to others; never leave it unattended — always lock it; report any breakdown right away.",
+  'rd.r9': "Damage prices: puncture — 300, bent wheel — 1500, gear shifter — 600, torn saddle — 1000, lost lock/light — 1000 som.",
+  'rd.r10': "The deposit is returned when the bike comes back in good condition; damage is deducted from it. Extensions only by phone and agreement. Jorgo is not liable for injuries while riding.",
 };

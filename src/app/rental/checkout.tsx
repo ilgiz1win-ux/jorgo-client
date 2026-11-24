@@ -179,7 +179,7 @@ function Checkout() {
 
         <View style={[styles.card, { gap: 8, backgroundColor: '#FFFBEB', borderColor: '#F59E0B' }]}>
           <Text style={[styles.label, { color: '#92400E' }]}>{t('rd.rules').toUpperCase()}</Text>
-          {(['rd.r1', 'rd.r2', 'rd.r3', 'rd.r4', 'rd.r5', 'rd.r6', 'rd.r7'] as const).map((k) => (
+          {(['rd.r1', 'rd.r2', 'rd.r3', 'rd.r4', 'rd.r5', 'rd.r9', 'rd.r6', 'rd.r7', 'rd.r8', 'rd.r10'] as const).map((k) => (
             <Text key={k} style={{ color: '#78350F', lineHeight: 20 }}>
               • {t(k, { n: RENT_MIN_DAYS, v: daily ? formatPrice(daily) : '' })}
             </Text>

@@ -50,6 +50,11 @@ export type RentRequest = {
   deposit?: number;
   collateral?: string;
   kit?: string[];
+  // Кабыл алуу-өткөрүп берүү акты
+  handoverDefects?: '' | 'none' | 'scratches';
+  handoverNote?: string;
+  handoverOk?: boolean;
+  staffName?: string;
 };
 
 type Row = {
@@ -89,6 +94,10 @@ type Row = {
   deposit?: number | null;
   collateral?: string;
   kit?: string[] | null;
+  handover_defects?: '' | 'none' | 'scratches';
+  handover_note?: string;
+  handover_ok?: boolean;
+  staff_name?: string;
 };
 
 const LOCAL = 'jorgo.local.rentRequests';
@@ -130,6 +139,10 @@ const fromRow = (r: Row): RentRequest => ({
   deposit: r.deposit ?? undefined,
   collateral: r.collateral ?? '',
   kit: Array.isArray(r.kit) ? r.kit : [],
+  handoverDefects: r.handover_defects ?? '',
+  handoverNote: r.handover_note ?? '',
+  handoverOk: r.handover_ok ?? true,
+  staffName: r.staff_name ?? '',
 });
 
 async function readLocal(): Promise<RentRequest[]> {
@@ -215,14 +228,14 @@ async function localBill(list: RentRequest[]): Promise<RentRequest[]> {
   return list;
 }
 
-export type ContractDetails = { bikeNo: string; jorgoNo: string; batteryNo: string; bikeValue?: number; deposit?: number; collateral: string; kit: string[] };
+export type ContractDetails = { bikeNo: string; jorgoNo: string; batteryNo: string; bikeValue?: number; deposit?: number; collateral: string; kit: string[]; defects?: 'none' | 'scratches'; handoverNote?: string; handoverOk?: boolean; staff?: string };
 
 // Админ: велосипедди берди — ижара башталды (бүгүн акысыз), келишимдин маалыматы менен. Келишимдин номерин кайтарат.
 export async function startRent(id: string, d?: ContractDetails): Promise<number | null> {
   if (!supabase) {
     const list = await readLocal();
     const no = list.reduce((m, x) => Math.max(m, x.contractNo ?? 0), 0) + 1;
-    const next = list.map((x) => (x.id === id && x.status === 'new' ? { ...x, status: 'active' as const, startedAt: new Date().toISOString(), chargedDays: 0, contractNo: no, ...(d ?? {}) } : x));
+    const next = list.map((x) => (x.id === id && x.status === 'new' ? { ...x, status: 'active' as const, startedAt: new Date().toISOString(), chargedDays: 0, contractNo: no, ...(d ?? {}), handoverDefects: d?.defects ?? '', staffName: d?.staff ?? '' } : x));
     await AsyncStorage.setItem(LOCAL, JSON.stringify(next)).catch(() => {});
     return no;
   }

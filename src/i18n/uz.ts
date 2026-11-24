@@ -596,4 +596,7 @@ export const uz: Record<TKey, string> = {
   'ct.view': "📄 Ijara shartnomasi",
   'ct.print': "Chop etish / PDF",
   'ct.notYet': "Shartnoma velosiped berilganda tuziladi",
+  'rd.r8': "Velosipedni ehtiyot qiling: sakramang, tog' va zinadan yurmang; boshqaga bermang; qarovsiz qoldirmang — albatta qulflang; buzilsa darhol xabar bering.",
+  'rd.r9': "Zarar narxi: teshilish — 300, g'ildirak egilsa — 1500, pereklyuchatel — 600, o'rindiq yirtilsa — 1000, qulf/fara yo'qolsa — 1000 so'm.",
+  'rd.r10': "Depozit velosiped soz qaytarilganda qaytariladi; zarar bo'lsa undan ushlanadi. Uzaytirish — faqat qo'ng'iroq va kelishuv bilan. Haydash paytidagi jarohat uchun Jorgo javob bermaydi.",
 };

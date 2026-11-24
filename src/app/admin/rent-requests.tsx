@@ -191,6 +191,10 @@ function StartForm({ r, defaults, onDone, onCancel }: { r: RentRequest; defaults
   const [deposit, setDeposit] = useState(defaults.deposit ? String(defaults.deposit) : '');
   const [collateral, setCollateral] = useState('');
   const [kit, setKit] = useState<string[]>(['Батарея', 'Заряддагыч', 'Багажник']);
+  const [defects, setDefects] = useState<'none' | 'scratches'>('none');
+  const [handoverNote, setHandoverNote] = useState('');
+  const [handoverOk, setHandoverOk] = useState(true);
+  const [staff, setStaff] = useState(defaults.staff ?? '');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const num = (v: string) => (v.replace(/\D/g, '') ? parseInt(v.replace(/\D/g, ''), 10) : undefined);
@@ -198,7 +202,7 @@ function StartForm({ r, defaults, onDone, onCancel }: { r: RentRequest; defaults
     setBusy(true);
     setErr(null);
     try {
-      await startRent(r.id, { bikeNo: bikeNo.trim(), jorgoNo: jorgoNo.trim(), batteryNo: batteryNo.trim(), bikeValue: num(bikeValue), deposit: num(deposit), collateral: collateral.trim(), kit });
+      await startRent(r.id, { bikeNo: bikeNo.trim(), jorgoNo: jorgoNo.trim(), batteryNo: batteryNo.trim(), bikeValue: num(bikeValue), deposit: num(deposit), collateral: collateral.trim(), kit, defects, handoverNote: handoverNote.trim(), handoverOk, staff: staff.trim() });
       onDone();
     } catch (e) {
       const m = e instanceof Error ? e.message : String(e);
@@ -233,6 +237,19 @@ function StartForm({ r, defaults, onDone, onCancel }: { r: RentRequest; defaults
           <Chip key={k} label={k} active={kit.includes(k)} onPress={() => setKit((l) => (l.includes(k) ? l.filter((x) => x !== k) : [...l, k]))} />
         ))}
       </View>
+      <Text style={{ fontWeight: '900', color: colors.text, marginTop: 6 }}>📋 Кабыл алуу-өткөрүп берүү акты</Text>
+      <Text style={styles.rowLabel}>Берилгенде кемчилиги</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        <Chip label="Кемчилиги жок" active={defects === 'none'} onPress={() => setDefects('none')} />
+        <Chip label="Чийилген (царапины)" active={defects === 'scratches'} onPress={() => setDefects('scratches')} />
+      </View>
+      <Field label="Сүрөттөп жазуу (керек болсо)" value={handoverNote} onChangeText={setHandoverNote} placeholder="Мисалы: сол жагы чийилген" />
+      <View style={styles.verifyRow}>
+        <MaterialCommunityIcons name="check-decagram" size={18} color={colors.primary} />
+        <Text style={{ flex: 1, color: colors.text, fontWeight: '600' }}>Тормоз, дөңгөлөк, передача — иштейт</Text>
+        <Switch value={handoverOk} onValueChange={setHandoverOk} trackColor={{ true: colors.primary, false: colors.border }} />
+      </View>
+      <Field label="Ким берди (Выдал)" value={staff} onChangeText={setStaff} placeholder="Атыңыз" />
       {err && <Text style={{ color: colors.danger }}>{err}</Text>}
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Button title="Жокко чыгаруу" variant="outline" style={{ flex: 1 }} onPress={onCancel} />
@@ -252,6 +269,18 @@ function ReturnForm({ r, onDone, onCancel }: { r: RentRequest; onDone: () => voi
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const n = (v: string) => Math.max(0, parseInt(v.replace(/\D/g, ''), 10) || 0);
+  // Келишимдеги прайс (4.1): басса механика суммасына жана эскертүүгө кошулат
+  const PRICE: [string, number][] = [
+    ['Прокол', 300],
+    ['Восьмерка (дөңгөлөк ийилген)', 1500],
+    ['Переключатель сынган', 600],
+    ['Отургуч (седло) айрылган', 1000],
+    ['Кулпу / фара жоголду', 1000],
+  ];
+  const addPrice = (name: string, sum: number) => {
+    setMech(String(n(mech) + sum));
+    setNote((x) => (x ? `${x}, ${name}` : name));
+  };
   const restDays = r.billing ? Math.max(0, RENT_MIN_DAYS - (r.chargedDays ?? 0)) : 0;
   const rest = restDays * (r.dailyPrice ?? 0);
   const dmg = Math.round(n(el) * 0.5) + n(mech) + n(lost);
@@ -271,6 +300,12 @@ function ReturnForm({ r, onDone, onCancel }: { r: RentRequest; onDone: () => voi
     <View style={styles.payBox}>
       <Text style={{ fontWeight: '900', color: colors.text, fontSize: 15 }}>🔧 Кандай абалда алып келди?</Text>
       <Field label="Электроника бузулду — баасы (кардар 50% төлөйт)" value={el} onChangeText={setEl} keyboardType="number-pad" placeholder="0" />
+      <Text style={styles.rowLabel}>Прайс (басса кошулат):</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+        {PRICE.map(([name, sum]) => (
+          <Chip key={name} label={`${name} · ${sum}`} active={false} onPress={() => addPrice(name, sum)} />
+        ))}
+      </View>
       <Field label="Механика бузулду — баасы (кардар толук төлөйт)" value={mech} onChangeText={setMech} keyboardType="number-pad" placeholder="0" />
       <Field label={`Жоголду — баасы (толук)${r.bikeValue ? ` · велосипед ${fmtSom(r.bikeValue)}` : ''}`} value={lost} onChangeText={setLost} keyboardType="number-pad" placeholder="0" />
       <View style={styles.verifyRow}>
@@ -283,6 +318,7 @@ function ReturnForm({ r, onDone, onCancel }: { r: RentRequest; onDone: () => voi
         {rest > 0 && <Text style={{ color: colors.text }}>Минимум {RENT_MIN_DAYS} күн: дагы {restDays} күн × {fmtSom(r.dailyPrice ?? 0)} = <Text style={{ fontWeight: '800' }}>{fmtSom(rest)}</Text></Text>}
         {dmg > 0 && <Text style={{ color: colors.text }}>Зыян: <Text style={{ fontWeight: '800' }}>{fmtSom(dmg)}</Text></Text>}
         <Text style={{ color: colors.danger, fontWeight: '800' }}>Балансынан алынат: {fmtSom(rest + dmg)}</Text>
+        {!!r.deposit && <Text style={{ color: colors.muted, fontSize: 12 }}>Депозит {fmtSom(r.deposit)} — колго берилген. Велосипед бузулбаса кайтарылат; зыян болсо ошондон кармаса болот (4.3).</Text>}
       </View>
       {err && <Text style={{ color: colors.danger }}>{err}</Text>}
       <View style={{ flexDirection: 'row', gap: 8 }}>
