@@ -626,4 +626,10 @@ export const ru: Record<TKey, string> = {
   'rv.about.repair': "Ремонт / выезд",
   'rv.about.rental': "Аренда",
   'rv.about.product': "Товар",
+  'mr.title': "Моя аренда",
+  'mr.days': "дней прошло",
+  'mr.daysLeft': "дней хватит",
+  'mr.charged': "списано: {v}",
+  'mr.minLeft': "До минимальной недели осталось {n} дн.",
+  'mr.contract': "Договор",
 };

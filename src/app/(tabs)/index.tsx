@@ -4,6 +4,7 @@ import { Link, router } from 'expo-router';
 import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ReviewsCarousel, StatsRow } from '../../components/HomeSections';
+import { MyRentalCard } from '../../components/rent/MyRentalCard';
 import { InstallBanner } from '../../components/InstallApp';
 import { ProductGrid } from '../../components/ProductGrid';
 import { PromoCarousel } from '../../components/PromoCarousel';
@@ -102,6 +103,7 @@ export default function Home() {
 
       <View style={styles.body}>
         <InstallBanner />
+        <MyRentalCard />
         <StatsRow stats={settings.stats} />
 
         <PromoCarousel promos={activePromos} />

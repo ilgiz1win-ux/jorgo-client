@@ -637,6 +637,12 @@ export const ky = {
   'rv.about.repair': "Оңдоо / выезд",
   'rv.about.rental': "Ижара",
   'rv.about.product': "Товар",
+  'mr.title': "Менин ижарам",
+  'mr.days': "күн болду",
+  'mr.daysLeft': "күнгө жетет",
+  'mr.charged': "алынды: {v}",
+  'mr.minLeft': "Минимум 1 жумага дагы {n} күн калды",
+  'mr.contract': "Келишим",
 };
 
 export type TKey = keyof typeof ky;

@@ -612,4 +612,10 @@ export const kk: Record<TKey, string> = {
   'rv.about.repair': "Жөндеу / шығу",
   'rv.about.rental': "Жалға алу",
   'rv.about.product': "Тауар",
+  'mr.title': "Менің жалға алуым",
+  'mr.days': "күн өтті",
+  'mr.daysLeft': "күнге жетеді",
+  'mr.charged': "алынды: {v}",
+  'mr.minLeft': "Ең аз 1 аптаға тағы {n} күн қалды",
+  'mr.contract': "Шарт",
 };

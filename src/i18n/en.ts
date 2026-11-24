@@ -612,4 +612,10 @@ export const en: Record<TKey, string> = {
   'rv.about.repair': "Repair / outcall",
   'rv.about.rental': "Rental",
   'rv.about.product': "Product",
+  'mr.title': "My rental",
+  'mr.days': "days so far",
+  'mr.daysLeft': "days covered",
+  'mr.charged': "charged: {v}",
+  'mr.minLeft': "{n} days left to the 1-week minimum",
+  'mr.contract': "Contract",
 };
