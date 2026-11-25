@@ -6,6 +6,7 @@ import { colors, radius } from '../../config/theme';
 import { formatPrice } from '../../lib/format';
 import { fetchOverview, Money, Overview } from '../../lib/overview';
 import { Chip } from '../ui';
+import { useWide } from './useWide';
 
 const WD = ['Жк', 'Дш', 'Шш', 'Шр', 'Бш', 'Жм', 'Иш'];
 const dayLabel = (iso: string) => {
@@ -29,6 +30,7 @@ export function AdminOverview() {
   const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState<'today' | 'month'>('today');
   const [showDays, setShowDays] = useState(false);
+  const wide = useWide();
 
   useFocusEffect(
     useCallback(() => {
@@ -56,9 +58,9 @@ export function AdminOverview() {
   const mc = data.mastersCount;
 
   return (
-    <View style={{ gap: 12 }}>
+    <View style={[{ gap: 12 }, wide && { flexDirection: 'row', alignItems: 'flex-start' }]}>
       {/* Акча */}
-      <View style={styles.card}>
+      <View style={[styles.card, wide && { flex: 1 }]}>
         <View style={styles.row}>
           <MaterialCommunityIcons name="cash-multiple" size={22} color={colors.primary} />
           <Text style={styles.h}>Акча</Text>
@@ -109,7 +111,7 @@ export function AdminOverview() {
       </View>
 
       {/* Мастерлер */}
-      <View style={styles.card}>
+      <View style={[styles.card, wide && { flex: 1 }]}>
         <View style={styles.row}>
           <MaterialCommunityIcons name="account-hard-hat" size={22} color="#B45309" />
           <Text style={styles.h}>Мастерлер: {mc.total}</Text>
