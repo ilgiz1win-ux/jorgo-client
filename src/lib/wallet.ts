@@ -82,13 +82,19 @@ export async function myBalance(): Promise<number> {
 type TxRow = { id: string; created_at: string; amount: number; kind: WalletTx['kind']; note: string };
 const txFrom = (r: TxRow): WalletTx => ({ id: r.id, createdAt: r.created_at, amount: r.amount, kind: r.kind, note: r.note });
 
-export async function fetchTx(userId?: string): Promise<WalletTx[]> {
+// Баланстын тарыхы барак-барак: before — мурунку барактын акыркы жазуусунун убактысы («Дагы көрсөтүү»)
+export const PAGE = 50;
+export async function fetchTx(userId?: string, before?: string, limit = PAGE): Promise<WalletTx[]> {
   if (!supabase) {
     const u = userId ?? (await localUserId());
-    return (await read<LTx[]>(L_TX, [])).filter((t) => t.userId === u);
+    return (await read<LTx[]>(L_TX, []))
+      .filter((t) => t.userId === u && (!before || t.createdAt < before))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, limit);
   }
-  let q = supabase.from('wallet_tx').select('id,created_at,amount,kind,note').order('created_at', { ascending: false }).limit(100);
+  let q = supabase.from('wallet_tx').select('id,created_at,amount,kind,note').order('created_at', { ascending: false }).limit(limit);
   if (userId) q = q.eq('user_id', userId);
+  if (before) q = q.lt('created_at', before);
   const { data, error } = await q;
   if (error) throw error;
   return (data as TxRow[]).map(txFrom);
@@ -172,12 +178,21 @@ type TopupRow = { id: string; created_at: string; user_id: string; code: string 
 const topFrom = (r: TopupRow): Topup => ({ id: r.id, createdAt: r.created_at, userId: r.user_id, code: r.code ?? '', amount: r.amount, method: r.method, senderName: r.sender_name ?? '', senderAccount: r.sender_account ?? '', receipt: r.receipt ?? undefined, comment: r.comment, status: r.status });
 
 // Кардар — өзүнүкүн, админ — баарын (RLS)
-export async function fetchTopups(): Promise<Topup[]> {
+// Толуктоолор барак-барак. userId — бир кардардыкы; since — ушул убакыттан бери (мезгил сүзгүчү)
+export async function fetchTopups(opts: { userId?: string; before?: string; since?: string; limit?: number } = {}): Promise<Topup[]> {
+  const limit = opts.limit ?? 200;
   if (!supabase) {
     const all = await read<Topup[]>(L_TOPUP, []);
-    return all;
+    return all
+      .filter((t) => (!opts.userId || t.userId === opts.userId) && (!opts.before || t.createdAt < opts.before) && (!opts.since || t.createdAt >= opts.since))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, limit);
   }
-  const { data, error } = await supabase.from('topup_requests').select('*').order('created_at', { ascending: false }).limit(200);
+  let q = supabase.from('topup_requests').select('*').order('created_at', { ascending: false }).limit(limit);
+  if (opts.userId) q = q.eq('user_id', opts.userId);
+  if (opts.before) q = q.lt('created_at', opts.before);
+  if (opts.since) q = q.gte('created_at', opts.since);
+  const { data, error } = await q;
   if (error) throw error;
   const list = (data as TopupRow[]).map(topFrom);
   // Админ үчүн: аты жана телефону

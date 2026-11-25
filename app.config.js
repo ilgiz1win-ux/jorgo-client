@@ -21,6 +21,10 @@ module.exports = ({ config: base }) => {
       // expo.dev'деги долбоордун slug'ы менен дал келиши керек
       slug: EAS_SLUG,
       extra: { ...config.extra, eas: { projectId: EAS_PROJECT_ID } },
+      // Абадан жаңылоо (EAS Update): JS өзгөртүүлөрү колдонмо кийинки ачылганда өзү жүктөлөт.
+      // Версия (app.json → version) өзгөрмөйүнчө жаңы APK керек эмес.
+      runtimeVersion: { policy: 'appVersion' },
+      updates: { url: `https://u.expo.dev/${EAS_PROJECT_ID}`, checkAutomatically: 'ON_LOAD', fallbackToCacheTimeout: 0 },
     };
   }
   if (!IS_ADMIN) return { ...config, extra: { ...config.extra, variant: 'client' } };

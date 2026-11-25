@@ -5,7 +5,7 @@ import { Image, KeyboardAvoidingView, Linking, Platform, Pressable, RefreshContr
 import { Button, Card, Chip, Field } from '../../components/ui';
 import { colors, radius } from '../../config/theme';
 import { docUrl } from '../../lib/account';
-import { adjustWallet, decideTopup, DEFAULT_WALLET, fetchTopups, fetchTx, fetchWallets, fmtSom, getWalletSettings, saveWalletSettings, Topup, TX_LABEL, WalletRow, WalletSettings, WalletTx } from '../../lib/wallet';
+import { adjustWallet, decideTopup, DEFAULT_WALLET, fetchTopups, fetchTx, fetchWallets, fmtSom, getWalletSettings, PAGE, saveWalletSettings, Topup, TX_LABEL, WalletRow, WalletSettings, WalletTx } from '../../lib/wallet';
 
 const ST: Record<Topup['status'], { label: string; color: string }> = {
   new: { label: 'Жаңы', color: '#D97706' },
@@ -33,16 +33,36 @@ export default function AdminWallets() {
   const [adjNote, setAdjNote] = useState('');
   const [search, setSearch] = useState('');
   const [shots, setShots] = useState<Record<string, string>>({});
+  // «Бардык толуктоолор»: мезгил сүзгүчү, жалпы сумма жана «Дагы көрсөтүү»
+  const [period, setPeriod] = useState<'today' | '7' | '30' | 'all'>('30');
+  const [allTops, setAllTops] = useState<Topup[]>([]);
+  const [allMore, setAllMore] = useState(false);
+  const [histMore, setHistMore] = useState(false);
+  const sinceOf = (p: typeof period) => {
+    if (p === 'all') return undefined;
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    if (p !== 'today') d.setDate(d.getDate() - (Number(p) - 1));
+    return d.toISOString();
+  };
+  const loadAll = useCallback(async (p: typeof period) => {
+    const l = await fetchTopups({ since: sinceOf(p), limit: 100 }).catch(() => [] as Topup[]);
+    setAllTops(l);
+    setAllMore(l.length >= 100);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (tab === 'all') loadAll(period);
+  }, [tab, period, loadAll]);
   // Скриншоттор жабык бакетте — убактылуу шилтеме алабыз
   useEffect(() => {
-    tops
+    [...tops, ...allTops]
       .filter((t) => t.receipt && !shots[t.id])
       .slice(0, 30)
       .forEach((t) => {
         if (t.receipt!.startsWith('data:')) return setShots((m) => ({ ...m, [t.id]: t.receipt! }));
         docUrl(t.receipt).then((u) => u && setShots((m) => ({ ...m, [t.id]: u })));
       });
-  }, [tops]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tops, allTops]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,6 +89,7 @@ export default function AdminWallets() {
     try {
       await decideTopup(id, ok);
       load();
+      if (tab === 'all') loadAll(period);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Ката кетти');
     }
@@ -82,7 +103,9 @@ export default function AdminWallets() {
     setOpen(userId);
     setAdjAmount('');
     setAdjNote('');
-    setHist(await fetchTx(userId).catch(() => []));
+    const h = await fetchTx(userId).catch(() => [] as WalletTx[]);
+    setHist(h);
+    setHistMore(h.length >= PAGE);
   };
   const adjust = async (userId: string) => {
     const n = parseInt(adjAmount.replace(/[^\d-]/g, ''), 10);
@@ -111,7 +134,7 @@ export default function AdminWallets() {
 
   const pending = tops.filter((t) => t.status === 'new');
   const qq = search.trim().toLowerCase().replace(/\s/g, '');
-  const shownTops = (tab === 'new' ? pending : tops).filter(
+  const shownTops = (tab === 'new' ? pending : allTops).filter(
     (t) => !qq || [t.code, String(t.amount), t.name, t.phone, t.senderName, t.senderAccount].some((v) => (v ?? '').toLowerCase().replace(/\s/g, '').includes(qq)),
   );
   const total = wallets.reduce((s, w) => s + w.balance, 0);
@@ -133,6 +156,29 @@ export default function AdminWallets() {
               Кардардын скриншотундагы сумманы, убакытты жана атын банк колдонмосунан түшкөн акча менен салыштырыңыз. Акча чындап түшкөндө гана ырастаңыз.
             </Text>
             <Field label="Издөө: код, сумма, аты же номери" value={search} onChangeText={setSearch} placeholder="J1027" autoCapitalize="characters" />
+            {tab === 'all' && (
+              <>
+                <View style={[styles.row, { gap: 6 }]}>
+                  {(
+                    [
+                      ['today', 'Бүгүн'],
+                      ['7', '7 күн'],
+                      ['30', '30 күн'],
+                      ['all', 'Баары'],
+                    ] as const
+                  ).map(([k, l]) => (
+                    <Chip key={k} label={l} active={period === k} onPress={() => setPeriod(k)} />
+                  ))}
+                </View>
+                <View style={styles.sumBox}>
+                  <Text style={styles.sumBig}>{fmtSom(shownTops.filter((t) => t.status === 'approved').reduce((s, t) => s + t.amount, 0))}</Text>
+                  <Text style={styles.label}>
+                    Ырасталды: {shownTops.filter((t) => t.status === 'approved').length} · Каралууда: {shownTops.filter((t) => t.status === 'new').length} (
+                    {fmtSom(shownTops.filter((t) => t.status === 'new').reduce((s, t) => s + t.amount, 0))}) · Четке кагылды: {shownTops.filter((t) => t.status === 'rejected').length}
+                  </Text>
+                </View>
+              </>
+            )}
             {!loading && shownTops.length === 0 && <Text style={styles.empty}>Толуктоо өтүнмөсү жок</Text>}
             {shownTops.map((t) => (
               <Card key={t.id} style={{ gap: 6, borderLeftWidth: 5, borderLeftColor: ST[t.status].color }}>
@@ -180,6 +226,17 @@ export default function AdminWallets() {
                 )}
               </Card>
             ))}
+            {tab === 'all' && allMore && (
+              <Button
+                title="Дагы көрсөтүү"
+                variant="outline"
+                onPress={async () => {
+                  const more = await fetchTopups({ since: sinceOf(period), before: allTops[allTops.length - 1]?.createdAt, limit: 100 }).catch(() => [] as Topup[]);
+                  setAllTops((l) => [...l, ...more]);
+                  setAllMore(more.length >= 100);
+                }}
+              />
+            )}
           </>
         )}
 
@@ -212,6 +269,20 @@ export default function AdminWallets() {
                         </Text>
                       </View>
                     ))}
+                    {histMore && (
+                      <Pressable
+                        onPress={async () => {
+                          const more = await fetchTx(w.userId, hist[hist.length - 1]?.createdAt).catch(() => [] as WalletTx[]);
+                          setHist((l) => [...l, ...more]);
+                          setHistMore(more.length >= PAGE);
+                        }}
+                      >
+                        <Text style={{ color: colors.primary, fontWeight: '800' }}>Дагы көрсөтүү ↓</Text>
+                      </Pressable>
+                    )}
+                    <Pressable onPress={() => router.push({ pathname: '/admin/customer/[id]', params: { id: w.userId } })}>
+                      <Text style={{ color: colors.primary, fontWeight: '800' }}>Кардардын толук барагы →</Text>
+                    </Pressable>
                     <Text style={styles.label}>Балансты кол менен өзгөртүү (мисалы: 500 же -500)</Text>
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                       <View style={{ flex: 1 }}>
@@ -256,5 +327,7 @@ const styles = StyleSheet.create({
   text: { color: colors.text, fontSize: 14 },
   label: { fontSize: 13, fontWeight: '600', color: colors.muted },
   empty: { color: colors.muted, textAlign: 'center', paddingVertical: 24 },
+  sumBox: { backgroundColor: '#F0FDF4', borderRadius: radius.md, padding: 12, gap: 4, borderWidth: 1, borderColor: '#BBF7D0' },
+  sumBig: { fontSize: 22, fontWeight: '900', color: colors.success },
   action: { borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: 12, paddingVertical: 10, alignItems: 'center' },
 });

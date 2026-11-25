@@ -31,8 +31,7 @@ export default function Checkout() {
   const [branchIdx, setBranchIdx] = useState(0);
   const { branches, express } = useContent();
   const { profile } = useAccount();
-  // Экспресс заказы аккаунт менен гана — абалын кардар өзү көрө алышы үчүн
-  const needLogin = delivery === 'express' && !profile;
+  // Каттоосуз да заказ берсе болот (экспресс да). Кирген кардар заказдын абалын «Себеттен» көрөт.
   useEffect(() => {
     if (!profile) return;
     setName((v) => v || profile.fullName);
@@ -212,18 +211,9 @@ export default function Checkout() {
         </Card>
 
 
-        {needLogin ? (
-          <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, textAlign: 'center', fontSize: 13 }}>{t('order.loginForExpress')}</Text>
-            <Button title={t('order.loginBtn')} icon="login" onPress={() => router.push({ pathname: '/account/login', params: { next: '/checkout' } })} />
-          </View>
-        ) : (
-          <>
-            {error && <Text style={{ color: colors.danger, textAlign: 'center', fontWeight: '600' }}>{error}</Text>}
-            <Button title={sending ? '…' : t('checkout.send')} icon="whatsapp" variant="whatsapp" disabled={!valid || sending} onPress={submit} />
-          </>
-        )}
-        {!valid && !needLogin && (
+        {error && <Text style={{ color: colors.danger, textAlign: 'center', fontWeight: '600' }}>{error}</Text>}
+        <Button title={sending ? '…' : t('checkout.send')} icon="whatsapp" variant="whatsapp" disabled={!valid || sending} onPress={submit} />
+        {!valid && (
           <Text style={{ color: colors.danger, textAlign: 'center', fontSize: 14, fontWeight: '600' }}>{t('checkout.missing', { v: missing.join(', ') })}</Text>
         )}
       </ScrollView>
