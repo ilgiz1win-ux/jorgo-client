@@ -2,20 +2,17 @@ import { Stack, useLocalSearchParams } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../../config/theme';
-import { useContent } from '../../context/ContentContext';
+import { useRentRules } from '../../hooks/useRentRules';
 import { useT } from '../../i18n';
 
 // Ижара шарттары же жеке маалыматты иштетүү саясаты
 export default function Info() {
   const { t } = useT();
   const { type } = useLocalSearchParams<{ type?: string }>();
-  const { rentTerms } = useContent();
+  const { rules } = useRentRules();
   const isTerms = type === 'terms';
   const lines = isTerms
-    ? rentTerms.text
-        .split('\n')
-        .map((l) => l.trim())
-        .filter(Boolean)
+    ? rules
     : t('acc.privacyFull').split('\n').filter(Boolean);
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}>

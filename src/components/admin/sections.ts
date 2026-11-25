@@ -1,11 +1,12 @@
 import type { IconName } from '../../data/products';
 
-export type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/notifications' | '/admin/admins' | '/admin/masters' | '/admin/broadcast' | '/admin/branches' | '/admin/orders' | '/admin/customers' | '/admin/repairs' | '/admin/applications' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery' | '/admin/chats' | '/admin/assistant' | '/admin/wallets' | '/admin/finance'; title: string; text: string; icon: IconName; color: string };
+export type Tile = { href: '/admin/stats' | '/admin/rent-requests' | '/admin/rentals' | '/admin/rent-terms' | '/admin/notifications' | '/admin/admins' | '/admin/masters' | '/admin/broadcast' | '/admin/branches' | '/admin/orders' | '/admin/customers' | '/admin/repairs' | '/admin/applications' | '/admin/home' | '/admin/promos' | '/admin/services' | '/admin/reviews' | '/admin/gallery' | '/admin/chats' | '/admin/assistant' | '/admin/wallets' | '/admin/finance'; title: string; text: string; icon: IconName; color: string };
 
 // Ижара панели — дүкөндөн өзүнчө
 export const RENT_SECTIONS: Tile[] = [
   { href: '/admin/rent-requests', title: 'Ижаралар жана төлөмдөр', text: 'Өтүнмөлөр, ким төлөдү, ким кечиктирди', icon: 'clipboard-account', color: '#2563EB' },
   { href: '/admin/rentals', title: 'Велосипеддер', text: 'Баалар, GPS жана батарея номерлери', icon: 'bicycle-electric', color: '#0F766E' },
+  { href: '/admin/rent-terms', title: 'Ижаранын шарттары', text: 'Кардар ижарага алганда көрө турган шарттар', icon: 'file-document-edit', color: '#92400E' },
   { href: '/admin/notifications', title: 'Билдирмелер', text: 'Жаңы өтүнмөлөр, төлөм күнү', icon: 'bell-ring', color: '#D97706' },
   { href: '/admin/admins', title: 'Админдер', text: 'Админ кошуу жана алып салуу', icon: 'shield-account', color: '#475569' },
 ];

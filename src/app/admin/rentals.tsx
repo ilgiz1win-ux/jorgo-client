@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { Button, Card, Field } from '../../components/ui';
@@ -70,13 +71,11 @@ const PERIOD_LABEL = { day: 'күнүнө', week: 'жумасына', month: 'а
 
 // Ижарага велосипеддер жана ижаранын шарттары
 export default function AdminRentals() {
-  const { rentals, rentTerms, saveRental, deleteRental, saveRentTerms } = useContent();
+  const { rentals, saveRental, deleteRental } = useContent();
   const [draft, setDraft] = useState<Draft | null>(null);
   const [uploading, setUploading] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [terms, setTerms] = useState(rentTerms.text);
-  const [termsMsg, setTermsMsg] = useState<string | null>(null);
   const [equipment, setEquipment] = useState<Record<string, Equipment>>({});
 
   useEffect(() => {
@@ -85,7 +84,6 @@ export default function AdminRentals() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => setTerms(rentTerms.text), [rentTerms.text]);
 
   const run = async (fn: () => Promise<void>) => {
     setError(null);
@@ -244,26 +242,13 @@ export default function AdminRentals() {
           ),
         )}
 
-        <Card style={{ gap: 10, marginTop: 8 }}>
-          <Text style={styles.h}>Ижаранын шарттары</Text>
-          <Text style={styles.hint}>Ар бир шартты жаңы саптан жазыңыз. Кардарлар «Аренда» барагында көрөт.</Text>
-          <Field
-            label="Шарттар"
-            value={terms}
-            onChangeText={setTerms}
-            multiline
-            placeholder={'Паспорт керек\nКүрөө: 5000 сом\nЗаряддагыч менен берилет'}
-          />
-          {termsMsg && <Text style={{ color: colors.success, fontWeight: '600' }}>{termsMsg}</Text>}
-          <Button
-            title="Шарттарды сактоо"
-            icon="content-save"
-            onPress={async () => {
-              setTermsMsg(null);
-              if (await run(() => saveRentTerms({ text: terms.trim() }))) setTermsMsg('Сакталды');
-            }}
-          />
-        </Card>
+        <Pressable onPress={() => router.push('/admin/rent-terms')}>
+          <Card style={{ gap: 4, marginTop: 8, flexDirection: 'row', alignItems: 'center' }}>
+            <MaterialCommunityIcons name="file-document-edit" size={22} color="#92400E" />
+            <Text style={[styles.h, { flex: 1 }]}>Ижаранын шарттары</Text>
+            <MaterialCommunityIcons name="chevron-right" size={22} color={colors.muted} />
+          </Card>
+        </Pressable>
         <LessorCard />
       </ScrollView>
     </KeyboardAvoidingView>
