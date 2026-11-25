@@ -432,6 +432,14 @@ export async function fetchMasterUsers(names: Record<string, string>): Promise<R
   return Object.fromEntries((data as { master_id: string; user_id: string }[]).map((r) => [r.user_id, names[r.master_id] ?? '']));
 }
 
+// Админ: бир кардардын бардык оңдоо / выезд заказдары
+export async function fetchRepairsOf(userId: string): Promise<Repair[]> {
+  if (!supabase) return (await read<Repair[]>(LOCAL, [])).filter((r) => r.userId === userId);
+  const { data, error } = await supabase.from('repair_requests').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(200);
+  if (error) throw error;
+  return (data as Row[]).map(fromRow);
+}
+
 // Кардардын өз оңдоо заказдары
 export async function fetchMyRepairs(userId: string): Promise<Repair[]> {
   if (!supabase) return (await read<Repair[]>(LOCAL, [])).filter((r) => r.userId === userId);

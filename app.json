@@ -7,7 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "kg.jorgo.client"
     },
     "android": {
@@ -39,15 +39,15 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Товарлардын сүрөттөрүн тандоо үчүн галереяга уруксат керек.",
-          "cameraPermission": false,
+          "photosPermission": "Паспорт, селфи, төлөмдүн скриншоту жана оңдолчу велосипеддин сүрөтүн жүктөө үчүн галереяга уруксат керек.",
+          "cameraPermission": "Ижарага каттоодо селфи жана паспорттун сүрөтүн тартуу үчүн камерага уруксат керек.",
           "microphonePermission": false
         }
       ],
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Ижарага өтүнмө бергенде жайгашкан жериңизди дүкөнгө жөнөтүү үчүн.",
+          "locationWhenInUsePermission": "Мастер выездге так келиши жана ижара өтүнмөсүнө дарек кошуу үчүн жайгашкан жериңиз керек. Колдонмо колдонулуп жатканда гана алынат.",
           "isAndroidBackgroundLocationEnabled": false
         }
       ]

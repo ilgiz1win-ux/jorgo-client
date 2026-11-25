@@ -16,7 +16,7 @@ export default function Info() {
         .split('\n')
         .map((l) => l.trim())
         .filter(Boolean)
-    : [t('acc.privacyText')];
+    : t('acc.privacyFull').split('\n').filter(Boolean);
   return (
     <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}>
       <Stack.Screen options={{ title: isTerms ? t('acc.rentTerms') : t('acc.privacy') }} />

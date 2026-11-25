@@ -5,6 +5,7 @@ import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextI
 import { Button, Card, Chip, Field } from '../../components/ui';
 import { colors, radius } from '../../config/theme';
 import { addToBlacklist, BlackItem, Customer, fetchBlacklist, fetchCustomers, removeFromBlacklist } from '../../lib/orders';
+import { fetchWallets, fmtSom } from '../../lib/wallet';
 
 const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('ru-RU');
 const showPhone = (p9: string) => `+996 ${p9.slice(0, 3)} ${p9.slice(3, 6)} ${p9.slice(6)}`;
@@ -15,6 +16,8 @@ export default function AdminCustomers() {
   const [list, setList] = useState<Customer[]>([]);
   const [black, setBlack] = useState<BlackItem[]>([]);
   const [q, setQ] = useState('');
+  const [bal, setBal] = useState<Record<string, number>>({});
+  const [filter, setFilter] = useState<'all' | 'rent' | 'debt' | 'money'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [blocking, setBlocking] = useState<string | null>(null);
@@ -26,9 +29,10 @@ export default function AdminCustomers() {
     setLoading(true);
     setError(null);
     try {
-      const [c, b] = await Promise.all([fetchCustomers(), fetchBlacklist()]);
+      const [c, b, w] = await Promise.all([fetchCustomers(), fetchBlacklist(), fetchWallets().catch(() => [])]);
       setList(c);
       setBlack(b);
+      setBal(Object.fromEntries(w.map((x) => [x.userId, x.balance])));
     } catch (e) {
       const m = e instanceof Error ? e.message : String(e);
       setError(m.includes('admin_customers') || m.includes('blacklist') ? 'SQL иштетиле элек (015_customers_blacklist.sql).' : m);
@@ -43,9 +47,11 @@ export default function AdminCustomers() {
     const s = q.trim().toLowerCase();
     const digits = s.replace(/\D/g, '');
     return list.filter(
-      (c) => !s || c.fullName.toLowerCase().includes(s) || c.login.toLowerCase().includes(s) || (digits.length >= 3 && c.phone.replace(/\D/g, '').includes(digits)),
+      (c) =>
+        (!s || c.fullName.toLowerCase().includes(s) || c.login.toLowerCase().includes(s) || (digits.length >= 3 && c.phone.replace(/\D/g, '').includes(digits))) &&
+        (filter === 'all' || (filter === 'rent' && c.rents > 0) || (filter === 'debt' && (bal[c.id] ?? 0) < 0) || (filter === 'money' && (bal[c.id] ?? 0) > 0)),
     );
-  }, [list, q]);
+  }, [list, q, filter, bal]);
 
   const run = async (fn: () => Promise<void>) => {
     setError(null);
@@ -71,6 +77,18 @@ export default function AdminCustomers() {
             <MaterialCommunityIcons name="magnify" size={20} color={colors.muted} />
             <TextInput value={q} onChangeText={setQ} placeholder="Аты, почтасы же телефону" placeholderTextColor={colors.muted} style={styles.searchInput} />
           </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            {(
+              [
+                ['all', `Баары (${list.length})`],
+                ['rent', 'Ижара алгандар'],
+                ['money', 'Балансы бар'],
+                ['debt', `Карыздар (${list.filter((c) => (bal[c.id] ?? 0) < 0).length})`],
+              ] as const
+            ).map(([k, l]) => (
+              <Chip key={k} label={l} active={filter === k} onPress={() => setFilter(k)} />
+            ))}
+          </View>
           {!loading && shown.length === 0 && <Text style={styles.empty}>Кардар табылган жок</Text>}
           {shown.map((c) => (
             <Card key={c.id} style={[{ gap: 6 }, c.blacklisted && { borderColor: colors.danger }]}>
@@ -90,6 +108,9 @@ export default function AdminCustomers() {
               <Text style={styles.muted}>
                 Катталган: {fmtDate(c.createdAt)} · Заказ: {c.orders} · Ижара: {c.rents}
               </Text>
+              {bal[c.id] !== undefined && (
+                <Text style={{ fontWeight: '800', color: bal[c.id] < 0 ? colors.danger : colors.success }}>👛 Баланс: {fmtSom(bal[c.id])}</Text>
+              )}
               {c.blacklisted && !!c.blacklistReason && <Text style={{ color: colors.danger, fontSize: 13 }}>Себеби: {c.blacklistReason}</Text>}
 
               {blocking === c.id ? (

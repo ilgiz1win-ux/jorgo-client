@@ -60,7 +60,11 @@ function CustomerChat() {
   const quick = [t('chat.q.outcall'), t('chat.q.stock'), t('chat.q.repairTime')];
   return (
     <ChatView
-      items={list.map((m) => ({ id: m.id, mine: !m.fromAdmin, text: m.body, time: fmtChatTime(m.createdAt), author: m.fromAdmin ? 'Jorgo Eco Service' : undefined }))}
+      items={[
+        // Чат ачылганда биринчи саламдашуу (базага жазылбайт, ар дайым эң башында)
+        { id: 'greet', mine: false, text: t('chat.greet'), author: 'Jorgo Eco Service' },
+        ...list.map((m) => ({ id: m.id, mine: !m.fromAdmin, text: m.body, time: fmtChatTime(m.createdAt), author: m.fromAdmin ? 'Jorgo Eco Service' : undefined })),
+      ]}
       onSend={send}
       placeholder={t('chat.placeholder')}
       initialText={draft}
@@ -68,7 +72,6 @@ function CustomerChat() {
       error={error}
       header={
         <View style={{ gap: 8, marginBottom: 6 }}>
-          <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{t('chat.intro')}</Text>
           {list.length === 0 && (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {quick.map((q) => (

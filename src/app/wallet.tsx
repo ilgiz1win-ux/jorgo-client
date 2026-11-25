@@ -8,7 +8,7 @@ import { Button, Card, Chip, Field, SectionTitle } from '../components/ui';
 import { colors, radius } from '../config/theme';
 import { useAccount } from '../context/AccountContext';
 import { TKey, useT } from '../i18n';
-import { fetchTopups, fetchTx, fmtSom, getWalletSettings, myBalance, pickReceipt, Receipt, sendTopup, Topup, WalletSettings, WalletTx, DEFAULT_WALLET } from '../lib/wallet';
+import { fetchTopups, fetchTx, fmtSom, getWalletSettings, myBalance, PAGE, pickReceipt, Receipt, sendTopup, Topup, WalletSettings, WalletTx, DEFAULT_WALLET } from '../lib/wallet';
 
 const AMOUNTS = [500, 1000, 2000, 5000];
 const METHODS = ['MBank', 'O!Деньги', 'Бакай', 'Элсом', 'Накталай'];
@@ -26,6 +26,10 @@ function Wallet() {
   const [cfg, setCfg] = useState<WalletSettings>(DEFAULT_WALLET);
   const [tx, setTx] = useState<WalletTx[]>([]);
   const [tops, setTops] = useState<Topup[]>([]);
+  // «Дагы көрсөтүү»: тарыхтын баары барак-барак жүктөлөт
+  const [txMore, setTxMore] = useState(false);
+  const [topMore, setTopMore] = useState(false);
+  const [moreBusy, setMoreBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [amount, setAmount] = useState('1000');
   const [method, setMethod] = useState(METHODS[0]);
@@ -42,11 +46,13 @@ function Wallet() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [b, c, x, tp] = await Promise.all([myBalance(), getWalletSettings(), fetchTx(), fetchTopups()]);
+      const [b, c, x, tp] = await Promise.all([myBalance(), getWalletSettings(), fetchTx(), fetchTopups({ userId: profile?.id, limit: 10 })]);
       setBalance(b);
       setCfg(c);
       setTx(x);
-      setTops(tp.filter((v) => !profile || v.userId === profile.id || v.userId.startsWith('local-')));
+      setTxMore(x.length >= PAGE);
+      setTops(tp);
+      setTopMore(tp.length >= 10);
     } catch (e) {
       const m = e instanceof Error ? e.message : '';
       setMsg({ ok: false, text: m.includes('wallet') || m.includes('topup') ? t('w.notReady') : t('chat.error') });
@@ -151,7 +157,7 @@ function Wallet() {
 
         <ChatButton compact q={t('chat.q.topup')} />
         {tops.length > 0 && <SectionTitle>{t('w.requests')}</SectionTitle>}
-        {tops.slice(0, 10).map((r) => (
+        {tops.map((r) => (
           <View key={r.id} style={styles.row}>
             <Text style={{ flex: 1, color: colors.text, fontWeight: '700' }}>
               {r.code ? `${r.code} · ` : ''}
@@ -160,6 +166,20 @@ function Wallet() {
             <Text style={{ color: ST_COLOR[r.status], fontWeight: '800' }}>{t(`w.st.${r.status}` as TKey)}</Text>
           </View>
         ))}
+        {topMore && (
+          <Button
+            title={moreBusy ? '…' : t('w.more')}
+            variant="outline"
+            disabled={moreBusy}
+            onPress={async () => {
+              setMoreBusy(true);
+              const more = await fetchTopups({ userId: profile?.id, before: tops[tops.length - 1]?.createdAt, limit: 20 }).catch(() => []);
+              setTops((l) => [...l, ...more]);
+              setTopMore(more.length >= 20);
+              setMoreBusy(false);
+            }}
+          />
+        )}
 
         {tx.length > 0 && <SectionTitle>{t('w.history')}</SectionTitle>}
         {tx.map((x) => (
@@ -177,6 +197,20 @@ function Wallet() {
             </Text>
           </View>
         ))}
+        {txMore && (
+          <Button
+            title={moreBusy ? '…' : t('w.more')}
+            variant="outline"
+            disabled={moreBusy}
+            onPress={async () => {
+              setMoreBusy(true);
+              const more = await fetchTx(undefined, tx[tx.length - 1]?.createdAt).catch(() => []);
+              setTx((l) => [...l, ...more]);
+              setTxMore(more.length >= PAGE);
+              setMoreBusy(false);
+            }}
+          />
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
