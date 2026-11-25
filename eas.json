@@ -19,5 +19,10 @@
       },
       "channel": "production"
     }
+  },
+  "submit": {
+    "production": {
+      "ios": {}
+    }
   }
 }

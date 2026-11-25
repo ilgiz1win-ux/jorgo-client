@@ -1,0 +1,87 @@
+# iPhone колдонмосун чогултуп, App Store Connect'ке (TestFlight → App Store) жөнөтүү.
+# Иштетүү: GitHub → Actions → «iOS App Store» → Run workflow.
+#
+# Керектүү жөндөө (бир жолу), Settings → Secrets and variables → Actions:
+#   Secrets:
+#     EXPO_TOKEN     — мурунтан бар (APK үчүн)
+#     ASC_KEY_P8     — App Store Connect API ачкычынын .p8 файлынын ичиндеги текст (толугу менен)
+#     ASC_KEY_ID     — ошол ачкычтын Key ID'си (мисалы 2X9R4HXF34)
+#     ASC_ISSUER_ID  — Issuer ID (Users and Access → Integrations бетинин үстүндө)
+#   Variables:
+#     APPLE_TEAM_ID  — Apple Developer Team ID (10 белги)
+#     ASC_APP_ID     — App Store Connect'теги колдонмонун Apple ID'си (сандар, App Information бетинде)
+# Ачкычтар чатка эмес, ушул жерге гана жазылат.
+name: iOS App Store
+
+on:
+  workflow_dispatch:
+    inputs:
+      submit:
+        description: "Чогулгандан кийин App Store Connect'ке жөнөтүү"
+        type: boolean
+        default: true
+
+concurrency:
+  group: ios-appstore
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      EXPO_ASC_API_KEY_PATH: ${{ github.workspace }}/asc-key.p8
+      EXPO_ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      EXPO_ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      EXPO_APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+      # INDIVIDUAL (жеке адам) же COMPANY_OR_ORGANIZATION (ИП / ОсОО катары катталса) — APPLE_TEAM_TYPE variable
+      EXPO_APPLE_TEAM_TYPE: ${{ vars.APPLE_TEAM_TYPE || 'INDIVIDUAL' }}
+    steps:
+      - name: Check settings
+        env:
+          HAS_TOKEN: ${{ secrets.EXPO_TOKEN != '' }}
+          HAS_KEY: ${{ secrets.ASC_KEY_P8 != '' && secrets.ASC_KEY_ID != '' && secrets.ASC_ISSUER_ID != '' }}
+          TEAM: ${{ vars.APPLE_TEAM_ID }}
+          APP: ${{ vars.ASC_APP_ID }}
+        run: |
+          ok=1
+          [ "$HAS_TOKEN" = "true" ] || { echo "::error::EXPO_TOKEN secret жок"; ok=0; }
+          [ "$HAS_KEY" = "true" ] || { echo "::error::ASC_KEY_P8 / ASC_KEY_ID / ASC_ISSUER_ID secrets жок"; ok=0; }
+          [ -n "$TEAM" ] || { echo "::error::APPLE_TEAM_ID variable жок"; ok=0; }
+          if [ "${{ inputs.submit }}" = "true" ] && [ -z "$APP" ]; then echo "::error::ASC_APP_ID variable жок (App Store Connect'те колдонмону түзгөндөн кийин кошуңуз)"; ok=0; fi
+          [ $ok = 1 ]
+
+      - uses: actions/checkout@v4
+
+      - name: Write App Store Connect key
+        env:
+          KEY: ${{ secrets.ASC_KEY_P8 }}
+        run: printf '%s\n' "$KEY" > asc-key.p8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: 27.4.0
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+
+      - name: Build iOS on EAS
+        run: eas build --platform ios --profile production --non-interactive --wait
+
+      - name: Submit to App Store Connect
+        if: ${{ inputs.submit }}
+        env:
+          APP: ${{ vars.ASC_APP_ID }}
+        run: |
+          jq --arg app "$APP" '.submit.production.ios.ascAppId = $app' eas.json > eas.tmp && mv eas.tmp eas.json
+          eas submit --platform ios --profile production --latest --non-interactive
+          echo "Жөнөтүлдү. App Store Connect → TestFlight'та 10–30 мүнөттөн кийин көрүнөт." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove key
+        if: always()
+        run: rm -f asc-key.p8
